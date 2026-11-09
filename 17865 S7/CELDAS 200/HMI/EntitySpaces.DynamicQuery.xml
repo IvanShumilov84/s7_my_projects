@@ -1,0 +1,3556 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>EntitySpaces.DynamicQuery</name>
+    </assembly>
+    <members>
+        <member name="T:EntitySpaces.DynamicQuery.esQueryType">
+            <summary>
+            The query type
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQueryType.Unassigned">
+            <summary>
+            Unassigned
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQueryType.TableDirect">
+            <summary>
+            TableDirect
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQueryType.StoredProcedure">
+            <summary>
+            StoredProcedure
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQueryType.Function">
+            <summary>
+            Database Function
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQueryType.DynamicQuery">
+            <summary>
+            DynamicQuery
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQueryType.DynamicQueryParseOnly">
+            <summary>
+            DynamicQuery returns only the SQL, doesn't execute the query
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQueryType.Text">
+            <summary>
+            Raw Text
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQueryType.IQueryable">
+            <summary>
+            Use a LINQ Query (IQueryable) as the source
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQueryType.ManyToMany">
+            <summary>
+            ManyToMany - Used internally by the EntitySpaces Hierarchical code.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esQuerySubOperatorType">
+            <summary>
+            The type of SubOperator such as ToLower
+            </summary>
+            Aggregate and GROUP BY Feature Support by DBMS:
+            <code>
+                            MS    MS    My    SQ    Vista Fire  Post
+            Feature         SQL   Acces SQL   Lite  DB    bird  gre   Oracle  Ads
+            --------------- ----- ----- ----- ----- ----- ----- ----- ------ -----
+            Avg              Y     Y     Y     Y     Y     Y     Y     Y       Y
+            Count            Y     Y     Y     Y     Y     Y     Y     Y       Y
+            Max              Y     Y     Y     Y     Y     Y     Y     Y       Y
+            Min              Y     Y     Y     Y     Y     Y     Y     Y       Y
+            Sum              Y     Y     Y     Y     Y     Y     Y     Y       Y
+            StdDev           Y     Y     Y     -     Y     -     Y    (4)      -
+            Var              Y     Y     Y     -     -     -     Y     Y       -
+            Aggregate in
+              ORDER BY       Y     Y    (1)    Y    (3)    Y     Y     Y       Y
+              GROUP BY       -     -     -     Y    (3)    Y     Y     Y       -
+            WITH ROLLUP      Y     -    (2)    -     Y     -     -     Y       -
+            COUNT(DISTINCT)  Y     -     Y     -     Y     Y     Y     Y       Y
+            
+            Notes:
+              (1) - MySQL - accepts an aggregate's alias in an
+                    ORDER BY clause.
+              (2) - MySQL - WITH ROLLUP and ORDER BY are mutually
+                    exclusive
+              (3) - VistaDB - will not ORDER BY or GROUP BY 'COUNT(*)' 
+                    the rest works fine.   
+              (4) - Uses TRUNC(STDDEV(column),10) to avoid overflow errors
+              
+            </code>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Unassigned">
+            <summary>
+            Unassigned
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.ToUpper">
+            <summary>
+            Convert to upper case
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.ToLower">
+            <summary>
+            Convert to lower case
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.LTrim">
+            <summary>
+            Left trim any leading spaces
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.RTrim">
+            <summary>
+            Right trin any trailing spaces
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Trim">
+            <summary>
+            Trim both leading and trailing spaces
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.SubString">
+            <summary>
+            Return a sub-string 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Coalesce">
+            <summary>
+             Return the first non null evaluating expresssion
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Date">
+            <summary>
+             Returns only the date of a datetime type
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Length">
+            <summary>
+            If the string contains multi-byte characters, and the proper collation is being used, 
+            LENGTH returns the number of characters, not the number of bytes. If string is of 
+            BINARY data type, the LENGTH function behaves as BYTE_LENGTH.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Round">
+            <summary>
+            Rounds the numeric-expression to the specified integer-expression amount of places after the decimal point.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.DatePart">
+            <summary>
+            Returns the value of part of a datetime value.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Avg">
+            <summary>
+            Average
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Count">
+            <summary>
+            Count
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Max">
+            <summary>
+            Maximum
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Min">
+            <summary>
+            Minimum
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.StdDev">
+            <summary>
+            Standard Deviation
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Var">
+            <summary>
+            Variance
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Sum">
+            <summary>
+            Sum
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperatorType.Cast">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esOrderByDirection">
+            <summary>
+            The direction used by DynamicQuery.AddOrderBy
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esOrderByDirection.Unassigned">
+            <summary>
+            Unassigned
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esOrderByDirection.Ascending">
+            <summary>
+            Ascending
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esOrderByDirection.Descending">
+            <summary>
+            Descending
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esComparisonOperand">
+            <summary>
+            The type of comparison in a Where clause
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.Unassigned">
+            <summary>
+            Unassigned
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.Equal">
+            <summary>
+            Equal Comparison
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.NotEqual">
+            <summary>
+            Not Equal Comparison
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.GreaterThan">
+            <summary>
+            Greater Than Comparison
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.GreaterThanOrEqual">
+            <summary>
+            Greater Than or Equal Comparison
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.LessThan">
+            <summary>
+            Less Than Comparison
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.LessThanOrEqual">
+            <summary>
+            Less Than or Equal Comparison
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.Like">
+            <summary>
+            Like Comparison, "%s%" does it have an 's' in it? "s%" does it begin with 's'?
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.IsNull">
+            <summary>
+            Is the value null in the database
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.IsNotNull">
+            <summary>
+            Is the value non-null in the database
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.Between">
+            <summary>
+            Is the value between two parameters? 
+            Note that Between can be for other data types than just dates.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.In">
+            <summary>
+            Is the value in a list, ie, "4,5,6,7,8"
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.NotIn">
+            <summary>
+            NOT in a list, ie not in, "4,5,6,7,8"
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.NotLike">
+            <summary>
+            Not Like Comparison, "%s%", anything that does not it have an 's' in it.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.Contains">
+            <summary>
+            SQL Server only -
+            Contains is used to search columns containing
+            character-based data types for precise or
+            fuzzy (less precise) matches to single words and phrases.
+            The column must have a Full Text index.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.Exists">
+            <summary>
+            A subquery is being used in an Exists command
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparisonOperand.NotExists">
+            <summary>
+            A subquery is being used in an Not Exists command
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esConjunction">
+            <summary>
+            The conjunction used between WhereParameters
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esConjunction.Unassigned">
+            <summary>
+            WhereParameters are used via the default passed into DynamicQuery.Load.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esConjunction.And">
+            <summary>
+            WhereParameters are joined via "And"
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esConjunction.Or">
+            <summary>
+            WhereParameters are joined via "Or"
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esConjunction.AndNot">
+            <summary>
+            WhereParameters are joined via "And Not"
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esConjunction.OrNot">
+            <summary>
+            WhereParameters are joined via "Or Not"
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esParenthesis">
+            <summary>
+            The Parenthesis used in queries, '(' and ')'
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esParenthesis.Unassigned">
+            <summary>
+            Unassigned.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esParenthesis.Open">
+            <summary>
+            WhereParameters need an open paren '('
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esParenthesis.Close">
+            <summary>
+            WhereParameters need a closing paren ')'
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esSubquerySearchCondition">
+             <summary>
+             ANY, ALL, and SOME are SubQuery qualifiers.
+             <remarks>
+             SubQuery qualifiers precede the SubQuery they apply to. For most databases, ANY and SOME are synonymous. 
+             Usually, if you use an operator (= | &lt;> | != | > | >= | !> | &lt; | &lt;= | !&lt;) in a Where clause against a SubQuery, 
+             then the SubQuery must return a single value. By applying a qualifier to the SubQuery, you can use operators against SubQueries
+             that return multiple results.
+             </remarks>
+             </summary>
+             <example>
+             Notice, below, that the ALL qualifier is set to true for the SubQuery with "cq.es.All = true". 
+             This query searches for the DateAdded for Customers whose Manager = 3.
+             <code>
+             // DateAdded for Customers whose Manager = 3
+             CustomerQuery cq = new CustomerQuery("c");
+             cq.es.All = true;  // &lt;== This will set it to esSubquerySearchCondition.ALL
+             cq.Select(cq.DateAdded);
+             cq.Where(cq.Manager == 3);
+             
+             // OrderID and CustID where the OrderDate is 
+             // less than all of the dates in the CustomerQuery above.
+             OrderQuery oq = new OrderQuery("o");
+             oq.Select(
+                 oq.OrderID,
+                oq.CustID
+             );
+             oq.Where(oq.OrderDate &lt; cq);
+            
+             OrderCollection collection = new OrderCollection();
+             collection.Load(oq);
+             </code>
+             </example>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSubquerySearchCondition.Unassigned">
+            <summary>
+            Unassigned.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSubquerySearchCondition.All">
+            <summary>
+            scalar_expression { = | &lt;> | != | > | >= | !> | &lt; | &lt;= | !&lt; } ALL ( subquery )
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSubquerySearchCondition.Any">
+            <summary>
+            scalar_expression { = | &lt;> | != | > | >= | !> | &lt; | &lt;= | !&lt; }  ANY ( subquery ) 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSubquerySearchCondition.Some">
+            <summary>
+            scalar_expression { = | &lt;> | != | > | >= | !> | &lt; | &lt;= | !&lt; }  Some ( subquery )
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esJoinType">
+            <summary>
+            The Type of Join
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esJoinType.Unassigned">
+            <summary>
+            Unassigned.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esJoinType.InnerJoin">
+            <summary>
+            INNER JOIN
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esJoinType.LeftJoin">
+            <summary>
+            LEFT OUTER JOIN
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esJoinType.RightJoin">
+            <summary>
+            RIGHT OUTER JOIN
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esJoinType.FullJoin">
+            <summary>
+            FULL OUTER JOIN
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esJoinType.CrossJoin">
+            <summary>
+            CROSS JOIN
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esSetOperationType">
+            <summary>
+            The type of Combination
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSetOperationType.Unassigned">
+            <summary>
+            Unassigned.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSetOperationType.Union">
+            <summary>
+            UNION
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSetOperationType.UnionAll">
+            <summary>
+            UNION ALL
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSetOperationType.Intersect">
+            <summary>
+            INTERSECT
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSetOperationType.Except">
+            <summary>
+            EXCEPT
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esArithmeticOperator">
+            <summary>
+            Used to Track arithmetic expression in the DynamicQuery API
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esArithmeticOperator.Unassigned">
+            <summary>
+            Unassigned.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esArithmeticOperator.Add">
+            <summary>
+            Addition
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esArithmeticOperator.Subtract">
+            <summary>
+            Subtraction
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esArithmeticOperator.Multiply">
+            <summary>
+            Multiplication
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esArithmeticOperator.Divide">
+            <summary>
+            Division
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esArithmeticOperator.Modulo">
+            <summary>
+            Returns the remainder of one number divided by another. 
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esCastType">
+            <summary>
+            Used to track the type of Cast requested, set automatically by the implicit cast 
+            operators such as (esString)query.Age. See also <see cref="M:EntitySpaces.DynamicQuery.esQueryItem.Cast(EntitySpaces.DynamicQuery.esCastType)"/>
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Unassigned">
+            <summary>
+            Unassigned.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Boolean">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Byte">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Char">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.DateTime">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Double">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Decimal">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Guid">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Int16">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Int32">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Int64">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.Single">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esCastType.String">
+            <summary>
+            Self Explanatory
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esSystemType">
+            <summary>
+            Used to track data types in various places within the EntitySpaces Architecture
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Unassigned">
+            <summary>
+            Unassigned.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Boolean">
+            <summary>
+            System.Boolean
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Byte">
+            <summary>
+            System.Byte
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Char">
+            <summary>
+            System.Char
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.DateTime">
+            <summary>
+            System.DateTime
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.DateTimeOffset">
+            <summary>
+            System.DateTimeOffset
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Double">
+            <summary>
+            System.Double
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Decimal">
+            <summary>
+            System.Decimal
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Guid">
+            <summary>
+            System.Guid
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Int16">
+            <summary>
+            System.Int16
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Int32">
+            <summary>
+            System.Int32
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Int64">
+            <summary>
+            System.Int64
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Object">
+            <summary>
+            System.Object
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.SByte">
+            <summary>
+            System.SByte
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Single">
+            <summary>
+            System.Single
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.String">
+            <summary>
+            System.String
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.TimeSpan">
+            <summary>
+            System.TimeSpan
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.UInt16">
+            <summary>
+            System.UInt16
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.UInt32">
+            <summary>
+            System.UInt32
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.UInt64">
+            <summary>
+            System.UInt64
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.BooleanArray">
+            <summary>
+            System.Boolean[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.ByteArray">
+            <summary>
+            System.Byte[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.CharArray">
+            <summary>
+            System.Char[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.DateTimeArray">
+            <summary>
+            System.DateTime[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.DoubleArray">
+            <summary>
+            System.Double[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.DecimalArray">
+            <summary>
+            System.Decimal[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.GuidArray">
+            <summary>
+            System.Guid[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Int16Array">
+            <summary>
+            System.Int16[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Int32Array">
+            <summary>
+            System.Int32[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.Int64Array">
+            <summary>
+            System.Int32[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.ObjectArray">
+            <summary>
+            System.Object[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.SByteArray">
+            <summary>
+            System.SByte[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.SingleArray">
+            <summary>
+            System.Single[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.StringArray">
+            <summary>
+            System.String[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.TimeSpanArray">
+            <summary>
+            System.TimeSpan[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.UInt16Array">
+            <summary>
+            System.UInt16[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.UInt32Array">
+            <summary>
+            System.UInt32[]
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSystemType.UInt64Array">
+            <summary>
+            System.UInt64[]
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esCast">
+            <summary>
+            The base class for all of the explicit casting operators such as 
+            <see cref="T:EntitySpaces.DynamicQuery.esByte"/>, <see cref="T:EntitySpaces.DynamicQuery.esChar"/>, <see cref="T:EntitySpaces.DynamicQuery.esDateTime"/>.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esBoolean">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esBoolean)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esBoolean.op_Implicit(EntitySpaces.DynamicQuery.esBoolean)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esByte">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esByte)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esByte.op_Implicit(EntitySpaces.DynamicQuery.esByte)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esChar">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esChar)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esChar.op_Implicit(EntitySpaces.DynamicQuery.esChar)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esDateTime">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esDateTime)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDateTime.op_Implicit(EntitySpaces.DynamicQuery.esDateTime)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esDecimal">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esDecimal)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDecimal.op_Implicit(EntitySpaces.DynamicQuery.esDecimal)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esDouble">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esDouble)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDouble.op_Implicit(EntitySpaces.DynamicQuery.esDouble)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esGuid">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esGuid)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esGuid.op_Implicit(EntitySpaces.DynamicQuery.esGuid)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esInt16">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esInt16)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esInt16.op_Implicit(EntitySpaces.DynamicQuery.esInt16)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esInt32">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esInt32)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esInt32.op_Implicit(EntitySpaces.DynamicQuery.esInt32)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esInt64">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esInt64)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esInt64.op_Implicit(EntitySpaces.DynamicQuery.esInt64)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esSingle">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esSingle)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esSingle.op_Implicit(EntitySpaces.DynamicQuery.esSingle)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esString">
+            <summary>
+            Used in the DynamicQuery syntax to cast like this: (esString)query.SomeProperty
+            </summary>
+            <remarks>
+            VB.NET users will need to use esQueryItem.Cast.
+            </remarks>
+            <example>
+            Here we are building a special column like this "Smith, John [24]" where 24 is
+            his age. We use the (esString) cast operator so that the database system will
+            convert it to a string.
+            <code>
+            EmployeeCollection coll = new EmployeeCollection(); 
+            EmployeeQuery q = coll.Query; 
+            
+            q.Select
+            (
+                (
+                    (q.LastName + ", " + q.FirstName).Trim() + " [" + (esString)q.Age + "]"
+                )
+                .ToUpper().As("FullName")
+            ); 
+            
+            if (coll.Query.Load())
+            {
+                foreach (Employee emp in coll)
+                {
+                    string fn = emp.GetColumn("FullName");
+                }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esString.op_Implicit(EntitySpaces.DynamicQuery.esString)~EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            This is called automatically for you when necessary.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esColumnItem">
+            <summary>
+            Used through the internal DynamicQuery classes and contains all of the
+            information needed to decribe a column, including it's alias (if any),
+            its DataType, and any JoinAlias to use.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esColumnItem.Name">
+            <summary>
+            The column name
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esColumnItem.Alias">
+            <summary>
+            Returns the column name if there is no Alias, otherwise, returns 
+            the Alias.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esColumnItem.HasAlias">
+            <summary>
+            Returns true if this column has an Alias
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esColumnItem.Query">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esColumnItem.Datatype">
+            <summary>
+            This is passed into the esQueryItem's constructor, it ultimately makes its 
+            way here
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esDataContractSerializer">
+            <summary>
+            This class can be used to serialize and deserialize the server side proxy stubs
+            to the client side proxy stubs and back again
+            </summary>
+            <example>
+            <code>
+            // Select 3 Employees
+            EmployeesCollection coll = new EmployeesCollection();
+            coll.Query.es.Top = 3;
+            if (coll.Query.Load())
+            {
+               // Create Our Proxy Stubb
+               BusinessObjects.EmployeesCollectionProxyStub server = new BusinessObjects.EmployeesCollectionProxyStub(coll);
+            
+               // Serialize it into a string and return this string to Silverlight
+               string xml = esDataContractSerializer.ToXml(server);
+            
+               // Deserialize the string above into our Client side proxy
+               Proxies.EmployeesCollectionProxyStub client = esDataContractSerializer.FromXml(xml, typeof(Proxies.EmployeesCollectionProxyStub))
+                   as Proxies.EmployeesCollectionProxyStub;
+            
+               // Set a property and notice that esRowState goes to Modified
+               client.Collection[0].LastName = "crazy_horse";
+            
+               // Serialize our client side proxy into xml and send it to the server
+               xml = esDataContractSerializer.ToXml(client);
+            
+               // Deserialize it on the server, the esRowState is modifed as we would expect
+               BusinessObjects.EmployeesCollectionProxyStub server1 = esDataContractSerializer.FromXml(xml, typeof(BusinessObjects.EmployeesCollectionProxyStub))
+                   as BusinessObjects.EmployeesCollectionProxyStub;
+            
+               // Now save the Entity
+               server1.GetCollection().Save();
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToXml(System.Object)">
+            <summary>
+            Serialize an object 
+            </summary>
+            <param name="o">The object to convert to XML</param>
+            <returns>The serialized contract in the form of a string</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToXml(System.Object,System.Boolean)">
+            <summary>
+            This overload can preserve object references
+            </summary>
+            <param name="o">The object to convert to XML</param>
+            <param name="preserveObjectReferences">If 'True' then if the same object is in the graph twice it will only be serialized once. The other instance will be a pointer to the first</param>
+            <returns>The serialized contract in the form of a string</returns>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToXml(System.Object,System.String,System.String)" -->
+        <!-- Badly formed XML comment ignored for member "M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToXml(System.Object,System.String,System.String,System.Boolean)" -->
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToByteArray(System.Object)">
+            <summary>
+            Serialize an object 
+            </summary>
+            <param name="o">The object to convert to a byte array</param>
+            <returns>The byte[] encoded with UTF8Encoding</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToByteArray(System.Object,System.Boolean)">
+            <summary>
+            This overload can preserve object references
+            </summary>
+            <param name="o">The object to convert to a byte array</param>
+            <param name="preserveObjectReferences">If 'True' then if the same object is in the graph twice it will only be serialized once. The other instance will be a pointer to the first</param>
+            <returns>The byte[] encoded with UTF8Encoding</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToByteArray(System.Object,System.String,System.String)">
+            <summary>
+            Serialize an object 
+            </summary>
+            <param name="o">The object to convert to a byte array</param>
+            <param name="rootName">Typically the object name, 'Employees', for instance</param>
+            <param name="rootNamespace">An xml namespaces, example, 'http://www.entityspaces.net'</param>
+            <returns>The byte[] encoded with UTF8Encoding</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToByteArray(System.Object,System.String,System.String,System.Boolean)">
+            <summary>
+            This overload can preserve object references
+            </summary>
+            <param name="o">The object to convert to a byte array</param>
+            <param name="rootName">Typically the object name, 'Employees', for instance</param>
+            <param name="rootNamespace">An xml namespaces, example, 'http://www.entityspaces.net'</param>
+            <param name="preserveObjectReferences">If 'True' then if the same object is in the graph twice it will only be serialized once. The other instance will be a pointer to the first</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.FromXml(System.String,System.Type)">
+            <summary>
+            Deserialize an object 
+            </summary>
+            <param name="xml">The results of a previous call to <see cref="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToXml(System.Object)"/></param>
+            <param name="type">Type type of the object, in C# use typeof(), VB use GetType()</param>
+            <returns>The deserialized object</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.FromXml``1(System.String)">
+            <summary>
+            Deserialize an object
+            </summary>
+            <typeparam name="T">The Type of object being deserialized</typeparam>
+            <param name="xml">The results of a previous call to <see cref="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToXml(System.Object)"/></param>
+            <returns>The deserialized object</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.FromXml(System.String,System.Type,System.String,System.String)">
+            <summary>
+            Deserialize an object 
+            </summary>
+            <param name="xml">The results of a previous call to <see cref="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToXml(System.Object)"/></param>
+            <param name="type">Type type of the object, in C# use typeof(), VB use GetType()</param>
+            <param name="rootName">Typically the object name, 'Employees', for instance</param>
+            <param name="rootNamespace">An xml namespaces, example, 'http://www.entityspaces.net'</param>
+            <returns>The deserialized object</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.FromXml``1(System.String,System.String,System.String)">
+            <summary>
+            Deserialize an object 
+            </summary>
+            <typeparam name="T">The Type of object being deserialized</typeparam>
+            <param name="xml">The results of a previous call to <see cref="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToXml(System.Object)"/></param>
+            <param name="type">Type type of the object, in C# use typeof(), VB use GetType()</param>
+            <param name="rootName">Typically the object name, 'Employees', for instance</param>
+            <param name="rootNamespace">An xml namespaces, example, 'http://www.entityspaces.net'</param>
+            <returns>The deserialized object</returns>        
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.FromByteArray(System.Byte[],System.Type)">
+            <summary>
+            Deserialize an object 
+            </summary>
+            <param name="bytes">The results of a previous call to <see cref="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToByteArray(System.Object)"/></param>        
+            <param name="type">Type type of the object, in C# use typeof(), VB use GetType()</param>
+            <returns>The deserialized object</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.FromByteArray``1(System.Byte[])">
+            <summary>
+            Deserialize an object
+            </summary>
+            <typeparam name="T">The Type of object being deserialized</typeparam>
+            <param name="bytes">The results of a previous call to <see cref="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToByteArray(System.Object)"/></param>
+            <returns>The deserialized object</returns>        
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.FromByteArray(System.Byte[],System.Type,System.String,System.String)">
+            <summary>
+            Deserialize an object 
+            </summary>
+            <param name="bytes">The results of a previous call to <see cref="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToByteArray(System.Object)"/></param>
+            <param name="type">Type type of the object, in C# use typeof(), VB use GetType()</param>
+            <param name="rootName">Typically the object name, 'Employees', for instance</param>
+            <param name="rootNamespace">An xml namespaces, example, 'http://www.entityspaces.net'</param>
+            <returns>The deserialized object</returns>        
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDataContractSerializer.FromByteArray``1(System.Byte[],System.String,System.String)">
+            <summary>
+            Deserialize an object 
+            </summary>
+            <typeparam name="T">The Type of object being deserialized</typeparam>
+            <param name="bytes">The results of a previous call to <see cref="M:EntitySpaces.DynamicQuery.esDataContractSerializer.ToByteArray(System.Object)"/></param>
+            <param name="type">Type type of the object, in C# use typeof(), VB use GetType()</param>
+            <param name="rootName">Typically the object name, 'Employees', for instance</param>
+            <param name="rootNamespace">An xml namespaces, example, 'http://www.entityspaces.net'</param>
+            <returns>The deserialized object</returns>         
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esDynamicQuerySerializable">
+            <summary>
+            This provides the Dynamic Query mechanism used by your Business object (Employees),
+            collection (EmployeesCollection), and query caching (EmployeesQuery).
+            </summary>
+            <example>
+            DynamicQuery allows you to (without writing any stored procedures)
+            query your database on the fly. All selection criteria are passed in
+            via Parameters (SAParameter, OleDbParameter) in order to prevent
+            sql injection techniques often attempted by hackers.  
+            Additional examples are provided here:
+            <code>
+            http://www.entityspaces.net/portal/QueryAPISamples/tabid/80/Default.aspx
+            </code>
+            <code>
+            EmployeesCollection emps = new EmployeesCollection;
+            
+            emps.Query.es.CountAll = true;
+            emps.Query.Select
+            (
+            	emps.Query.LastName,
+            	emps.Query.FirstName
+            )
+            .Where
+            (
+            	emps.Query.Or
+            	(
+            		emps.Query.LastName.Like("%A%"),
+            		emps.Query.LastName.Like("%O%")
+            	),
+            	emps.Query.BirthDate.Between("1940-01-01", "2006-12-31")
+            )
+            .GroupBy
+            (
+            	emps.Query.LastName,
+            	emps.Query.FirstName
+            )
+            .OrderBy
+            (
+            	emps.Query.LastName.Descending,
+            	emps.Query.FirstName.Ascending
+            );
+            
+            emps.Query.Load();
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.#ctor">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.#ctor(System.String)">
+            <summary>
+            The Constructor used when using this query in a "Join"
+            </summary>
+            <param name="joinAlias">The alias of the associated Table to be used in the "Join"</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.GetConnectionName">
+            <summary>
+            Called whenever the Entity needs a connection. This can be used to override the default connection 
+            per object manually, or automatically by filling in the "Connection Name" on the "Generated Master"
+            template. 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.GetQueryName">
+            <summary>
+            Used during DataContract Serializaton
+            </summary>
+            <returns>The Name of the Query such as EmployeesQuery and not EmployeesQueryProxyStub</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.AddQueryToList(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Used by EntitySpaces internally
+            </summary>
+            <param name="query">The SubQuery</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Select">
+            <summary>
+            The query's SELECT clause. SELECT * by default (all columns).
+            </summary>
+            <example>
+            <code>
+            emps.Query.Select();
+            </code>
+            </example>
+            <returns>An esDynamicQueryTransport containing a select clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Select(System.Object)">
+            <summary>
+            A query SELECT clause for the specified column.
+            </summary>
+            <example>
+            <code>
+            emps.Query.Select(emps.Query.LastName);
+            </code>
+            </example>
+            <param name="column">The column to place in the select statement.</param>
+            <returns>An esDynamicQueryTransport containing a select clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Select(System.Object[])">
+            <summary>
+            A query SELECT clause for columns or aggregates.
+            </summary>
+            <example>
+            See <see cref="T:EntitySpaces.DynamicQuery.esQuerySubOperatorType"/> Enumeration.
+            <code>
+            emps.Query.Select
+            (
+            	emps.Query.LastName,
+            	emps.Query.Age.Avg("Average Age")
+            );
+            </code>
+            </example>
+            <param name="columns">The list of columns or aggregates to place in the select statement.</param>
+            <returns>An esDynamicQueryTransport containing a select clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.SelectAllExcept(EntitySpaces.DynamicQuery.esQueryItem[])">
+            <summary>
+            This method will create a Select statement for all of the columns in the entity except for the ones passed in.
+            This is very useful when you want to eliminate blobs and other fields for performance.
+            </summary>
+            <param name="columns">The columns which you wish to exclude from the Select statement</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.SelectAll">
+            <summary>
+            This method will select all of the columns explicity by name that were present when you generated your
+            classes as opposed to doing a SELECT *
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Skip(System.Int32)">
+            <summary>
+            Use this method in conjuction with Take()
+            </summary>
+            <param name="count">The number of rows to skip</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Take(System.Int32)">
+            <summary>
+            Use this method in conjuction with Skip()
+            </summary>
+            <param name="count">The number of rows to return</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.InnerJoin(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Creates an INNER JOIN 
+            </summary>
+            <param name="joinQuery">This query represents the table you are joining to</param>
+            <returns>An esJoinItem, which you then call the On() method.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.LeftJoin(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Creates a LEFT JOIN 
+            </summary>
+            <param name="joinQuery">This query represents the table you are joining to</param>
+            <returns>An esJoinItem, which you then call the On() method.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.RightJoin(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Creates a RIGHT JOIN 
+            </summary>
+            <param name="joinQuery">This query represents the table you are joining to</param>
+            <returns>An esJoinItem, which you then call the On() method.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.FullJoin(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Creates a FULL JOIN 
+            </summary>
+            <param name="joinQuery">This query represents the table you are joining to</param>
+            <returns>An esJoinItem, which you then call the On() method.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.CrossJoin(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Creates an INNER JOIN 
+            </summary>
+            <param name="joinQuery">This query represents the table you are joining to</param>
+            <returns>An esJoinItem, which you then call the On() method.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.JoinCommon(EntitySpaces.DynamicQuery.esDynamicQuerySerializable,EntitySpaces.DynamicQuery.esJoinType)">
+            <summary>
+            Used by all of the join functions as all of the logic is the same except for 
+            the type of join
+            </summary>
+            <param name="joinQuery">This query represents the table you are joining to</param>
+            <param name="joinType">The type of join, ie, Inner, Left, Right, Full</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.From(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Allows you to pass in a SubQuery for your FROM statement
+            </summary>
+            <param name="fromQuery">The subquery to use as your FROM statement</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Union(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Performs a UNION between two statements
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.UnionAll(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Performs a UNION ALL between two statements
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Intersect(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Peforms an INTERSECT between two statements
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Except(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Performs an EXCEPT between two statements
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.As(System.String)">
+            <summary>
+            Provide an Alias for your query or subquery
+            </summary>
+            <param name="subQueryAlias"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Where(System.Object[])">
+            <summary>
+            A query WHERE clause. The default conjunction is "AND".
+            </summary>
+            <example>
+            See <see cref="T:EntitySpaces.DynamicQuery.esConjunction"/> Enumeration.
+            <code>
+            emps.Query.Where
+            (
+            	emps.Query.LastName == "Doe" &amp;&amp; emps.Query.FirstName.Like("J%")
+            );
+            </code>
+            </example>
+            <param name="items">The list of objects to place in the where statement.</param>
+            <returns>An esDynamicQueryTransport containing a where clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.ManualWhere(System.String,System.String,System.Object,System.Object,System.String)">
+            <summary>
+            This is not the preferred way to build a where clause. The preferred way is to use the Where() method. This is typically used when the UI allows for the user to pick any number of filters to operate on.
+            </summary>
+            <param name="column">This is actual the Propery name of the Entity, not the physical column name in the database table, althought they might be the same</param>
+            <param name="operation">"EQUAL", "NOTEQUAL", "GREATERTHAN", "GREATERTHANOREQUAL", "LESSTHAN", "LESSTHANOREQUAL", "LIKE", "ISNULL", "ISNOTNULL", "BETWEEN", "IN", "NOTIN", "NOTLIKE", "CONTAINS"</param>
+            <param name="criteria">The value the operation is to act upon</param>
+            <param name="criteria2">the 2nd value of the "BETWEEN" operation</param>
+            <param name="conjuction">Either "AND" or "OR"</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Having(System.Object[])">
+            <summary>
+            A query WHERE clause. The default conjunction is "AND".
+            </summary>
+            <example>
+            See <see cref="T:EntitySpaces.DynamicQuery.esConjunction"/> Enumeration.
+            <code>
+            emps.Query.Where
+            (
+            	emps.Query.LastName == "Doe" &amp;&amp; emps.Query.FirstName.Like("J%")
+            );
+            </code>
+            </example>
+            <param name="items">The list of objects to place in the where statement.</param>
+            <returns>An esDynamicQueryTransport containing a where clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Exists(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Pass in a subquery to use in an EXISTS statement
+            </summary>
+            <param name="query"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.NotExists(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Pass in a subquery to use in an NOT EXISTS statement
+            </summary>
+            <param name="query"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.And(System.Object[])">
+            <summary>
+            A query WHERE clause joined by "AND". Natural language alternative, C# = &amp;&amp; operator, VB.NET = AND Keyword
+            </summary>
+            <example>
+            See <see cref="T:EntitySpaces.DynamicQuery.esConjunction"/> Enumeration.
+            <code>
+            emps.Query.Where
+            (
+            	emps.Query.And
+            	(
+            		emps.Query.LastName == "Doe",
+            		emps.Query.FirstName.Like("J%")
+            	),
+            	emps.Query.Age.LessThen(50)
+            );
+            </code>
+            </example>
+            <param name="items">The list of objects to place in the where statement.</param>
+            <returns>An esDynamicQueryTransport containing a where clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.AndNot(System.Object[])">
+            <summary>
+            A query WHERE clause joined by "AND NOT". Natural language alternative, C# = &amp;&amp; ! operator, VB.NET = AND NOT Keyword
+            </summary>
+            <example>
+            See <see cref="T:EntitySpaces.DynamicQuery.esConjunction"/> Enumeration.
+            <code>
+            emps.Query.Where
+            (
+            	emps.Query.And
+            	(
+            		emps.Query.LastName == "Doe",
+            		emps.Query.FirstName.Like("J%")
+            	),
+            	emps.Query.Age.LessThen(50)
+            );
+            </code>
+            </example>
+            <param name="items">The list of objects to place in the where statement.</param>
+            <returns>An esDynamicQueryTransport containing a where clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.Or(System.Object[])">
+            <summary>
+            A query WHERE clause joined by "OR". Natural language alternative, C# = || operator, VB.NET = OR Keyword
+            </summary>
+            <example>
+            See <see cref="T:EntitySpaces.DynamicQuery.esConjunction"/> Enumeration.
+            <code>
+            emps.Query.Where
+            (
+            	emps.Query.Or
+            	(
+            		emps.Query.LastName == "Doe",
+            		emps.Query.FirstName.Like("J%")
+            	),
+            	emps.Query.Age.LessThen(50)
+            );
+            </code>
+            </example>
+            <param name="items">The list of objects to place in the where statement.</param>
+            <returns>An esDynamicQueryTransport containing a where clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.OrNot(System.Object[])">
+            <summary>
+            A query WHERE clause joined by "OR NOT". Natural language alternative, C# = || ! operator, VB.NET = OR NOT Keyword
+            </summary>
+            <example>
+            See <see cref="T:EntitySpaces.DynamicQuery.esConjunction"/> Enumeration.
+            <code>
+            emps.Query.Where
+            (
+            	emps.Query.Or
+            	(
+            		emps.Query.LastName == "Doe",
+            		emps.Query.FirstName.Like("J%")
+            	),
+            	emps.Query.Age.LessThen(50)
+            );
+            </code>
+            </example>
+            <param name="items">The list of objects to place in the where statement.</param>
+            <returns>An esDynamicQueryTransport containing a where clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.OrderBy(EntitySpaces.DynamicQuery.esOrderByItem[])">
+            <summary>
+            Your ORDER BY statement.
+            </summary>
+            <example>
+            <code>
+            emps.Query.OrderBy
+            (
+            	emps.Query.LastName.Descending
+            );
+            </code>
+            </example>
+            <param name="orderByItems">The list of objects to place in the OrderBy statement.</param>
+            <returns>An esDynamicQueryTransport containing a OrderBy clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.OrderBy(System.String,EntitySpaces.DynamicQuery.esOrderByDirection)">
+            <summary>
+            Your ORDER BY statement
+            </summary>
+            <example>
+            You can order by an aggregate by passing the aggregate alias.
+            See <see cref="T:EntitySpaces.DynamicQuery.esOrderByDirection"/> Enumeration.
+            <code>
+            emps.Query.OrderBy
+            (
+            	emps.Query.LastName.Descending
+            );
+            </code>
+            </example>
+            <param name="columnName">The column to place in the OrderBy statement.</param>
+            <param name="direction">Sort direction.</param>
+            <returns>An esDynamicQueryTransport containing a OrderBy clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.GroupBy(EntitySpaces.DynamicQuery.esQueryItem[])">
+            <summary>
+            Your GROUP BY statement
+            </summary>
+            <example>
+            <code>
+            emps.Query.es.CountAll = true;
+            emps.Query.Select
+            (
+            	emps.Query.LastName,
+            	emps.Query.FirstName
+            )
+            .GroupBy
+            (
+            	emps.Query.LastName,
+            	emps.Query.FirstName
+            );
+            </code>
+            </example>
+            <param name="columns">The columns to place in the OrderBy statement.</param>
+            <returns>An esDynamicQueryTransport containing a GroupBy clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.GroupBy(System.String[])">
+            <summary>
+            Your GROUP BY statement
+            </summary>
+            <example>
+            <code>
+            emps.Query.es.CountAll = true;
+            emps.Query.Select
+            (
+            	emps.Query.LastName,
+            	emps.Query.FirstName
+            )
+            .GroupBy
+            (
+            	emps.Query.LastName,
+            	emps.Query.FirstName
+            );
+            </code>
+            </example>
+            <param name="columns">The columns to place in the OrderBy statement.</param>
+            <returns>An esDynamicQueryTransport containing a GroupBy clause.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.GetQuery``1">
+            <summary>
+            Allows you to pull a SubQuery out of this Query
+            </summary>
+            <typeparam name="T">The Type of the desired Query</typeparam>
+            <returns>The Query if found, otherwise null</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.es">
+            <summary>
+            This is to help hide some details from Intellisense.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps">
+            <summary>
+            The Dynamic Query properties.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.#ctor(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            The Dynamic Query properties.
+            </summary>
+            <param name="query">The esDynamicQueryTransport's properties.</param>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.QuerySource">
+            <summary>
+            string QuerySource.
+            </summary>
+            <returns>string QuerySource.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.JoinAlias">
+            <summary>
+            string JoinAlias.
+            </summary>
+            <returns>string JoinAlias.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.DefaultConjunction">
+            <summary>
+            esConjunction DefaultConjunction.
+            </summary>
+            <returns>esConjunction DefaultConjunction.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.Top">
+            <summary>
+            This will limit the number of rows returned, after sorting.
+            Setting Top to 10 will return the top ten rows after sorting.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.WithNoLock">
+            <summary>
+            This will use the WITH (NOLOCK) syntax on all tables joined in the query. Currently
+            only implemented for Microsoft SQL Server.
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.Any" -->
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.All">
+            <summary>
+            Used in SubQueries. Used like 'Any' except for one key exception - any operator applied must be true for
+            ALL the values returned in our subquery.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.Some">
+            <summary>
+            Used in SubQueries. The word SOME is an alias for ANY, and may be used anywhere that ANY is used. 
+            The SQL standard defines these two words with the same meaning to overcome a limitation in the English language, 
+            particularly for inequality comparisons.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.PageNumber">
+            <summary>
+            This will retrieve a specific row number from a select.
+            This is useful when paging large sets of data
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.PageSize">
+            <summary>
+            This will retrieve a specific row number from a select.
+            This is useful when paging large sets of data
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.Distinct">
+            <summary>
+            Setting Distinct = True will elimate duplicate rows from the data.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.CountAll">
+            <summary>
+            If true, add a COUNT(*) Aggregate to the selected columns list.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.CountAllAlias">
+            <summary>
+            If CountAll is set to true, use this to add a user-friendly column name.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.WithRollup">
+            <summary>
+            If true, add WITH ROLLUP to the GROUP BY clause.
+            </summary>
+            <example>
+            <code>
+            emps.Query.es.WithRollup = true;
+            </code>
+            </example>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.LastQuery">
+            <summary>
+            Returns a string containing the Sql from the last Query.Load().
+            Useful for testing and debugging query syntax.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.DynamicQueryProps.dynamicQuery">
+            <summary>
+            esConnection Connection.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.SerializeHelper">
+            <summary>
+            This class will allow you to serialize via the DataContract manaually, but normally you won't have to use this class
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.distinct">
+            <summary>
+            Used by derived classes
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.subquerySearchCondition">
+            <summary>
+            Used by derived classes
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.top">
+            <summary>
+            Used by derived classes
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.withNoLock">
+            <summary>
+            Used by derived classes
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.pageNumber">
+            <summary>
+            Used by derived classes
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.pageSize">
+            <summary>
+            Used by derived classes
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.countAll">
+            <summary>
+            Used by derived classes
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.countAllAlias">
+            <summary>
+            Used by derived classes
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.withRollup">
+            <summary>
+            Used by derived classes
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.joinAlias">
+            <summary>
+            Must be supplied when using JOIN's
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.EntitySpaces#DynamicQuery#IDynamicQuerySerializableInternal#ProviderMetadata">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.EntitySpaces#DynamicQuery#IDynamicQuerySerializableInternal#Columns">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.EntitySpaces#DynamicQuery#IDynamicQuerySerializableInternal#HookupProviderMetadata(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.EntitySpaces#DynamicQuery#IDynamicQuerySerializableInternal#queries">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.EntitySpaces#DynamicQuery#IDynamicQuerySerializableInternal#Skip">
+            <summary>
+            The number of rows to skip in the result set (starting from the beginning)
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esDynamicQuerySerializable.EntitySpaces#DynamicQuery#IDynamicQuerySerializableInternal#Take">
+            <summary>
+            The number of rows to take from the result set (starting from the Skip)
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esExtraPropertyBinder.Convert(System.Object,System.Type,System.Object,System.Globalization.CultureInfo)">
+            <summary>
+            Converts values on their way to the UI for display
+            </summary>
+            <param name="value">The value to be formatted</param>
+            <param name="targetType">The target type of the conversion</param>
+            <param name="parameter">A format string to be used in the 
+            formatting of the value</param>
+            <param name="culture">The culture to use for formatting</param>
+            <returns>The converted or formatted object</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esExtraPropertyBinder.ConvertBack(System.Object,System.Type,System.Object,System.Globalization.CultureInfo)">
+            <summary>
+            Converts values on their way back from the UI to the backend.
+            </summary>
+            <param name="value">The value to be formatted</param>
+            <param name="targetType">The target type of the conversion</param>
+            <param name="parameter">A format string to be used in the 
+            formatting of the value</param>
+            <param name="culture">The culture to use for formatting</param>
+            <returns>The converted or formatted object</returns>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esMathmaticalExpression">
+            <summary>
+            Used when arithmetic expressions are used in the DynamicQuery syntax.
+            See <see cref="T:EntitySpaces.DynamicQuery.esArithmeticOperator"/>
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esMathmaticalExpression.SelectItem1">
+            <summary>
+            The item on the left side of the operation
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esMathmaticalExpression.SelectItem2">
+            <summary>
+            The item on the right side of the operation
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esMathmaticalExpression.Operator">
+            <summary>
+            The esArithmeticOperator applied to SelectItem1 and SelectItem2
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esMathmaticalExpression.Literal">
+            <summary>
+            When the right hand side is a literal value this holds its value.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esMathmaticalExpression.LiteralType">
+            <summary>
+            When the right hand side is a literal value this describes its data type.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esMathmaticalExpression.ItemFirst">
+            <summary>
+            Whether the esQueryItem goes first in the expression
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esGroupByItem">
+            <summary>
+            Created when Query.GroupBy() is called, contains an esColumnItem in order
+            to describe the column.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esGroupByItem.#ctor">
+            <summary>
+            The Constructor
+            </summary>
+            <param name="query"></param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esGroupByItem.op_Implicit(System.String)~EntitySpaces.DynamicQuery.esGroupByItem">
+            <summary>
+            This allows the user to pass in a string to the Query.GroupBy() method
+            directly and we convert it to an instance of an esGroupByItem class for
+            them
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esGroupByItem.Expression">
+            <summary>
+            The Expression for the OrderBy statement
+            </summary>  
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esJoinItem">
+            <summary>
+            Created when Query.InnerJoin (LeftJoin, RightJoin, FullJoin) is called.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esJoinItem.#ctor">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esJoinItem.#ctor(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esJoinItem.On(System.Object[])">
+            <summary>
+            Used to describe the "where" conditions of the join itself
+            </summary>
+            <param name="items"></param>
+            <returns></returns>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esJoinItem.esJoinItemData">
+            <summary>
+            Used internally by EntitySpaces to make the <see cref="T:EntitySpaces.DynamicQuery.esJoinItem"/> classes data available to the
+            EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esJoinItem.esJoinItemData.Query">
+            <summary>
+            The Query that makes up the join
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esJoinItem.esJoinItemData.JoinType">
+            <summary>
+            The join type, InnerJoin, LeftJoin, ...
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esJoinItem.esJoinItemData.WhereItems">
+            <summary>
+            The where conditions for the subquery
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esJoinItem.op_Explicit(EntitySpaces.DynamicQuery.esJoinItem)~EntitySpaces.DynamicQuery.esJoinItem.esJoinItemData">
+            <summary>
+            The data is hidden from intellisense, however, the providers, can typecast
+            the esJoinItem and get to the real data without properties having to 
+            be exposed thereby cluttering up the intellisense.
+            </summary>
+            <param name="join"></param>
+            <returns></returns>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esOrderByItem">
+            <summary>
+            The esOrderByItem class is dynamically created by your BusinessEntity's
+            DynamicQuery mechanism.
+            This class is mostly used by the EntitySpaces architecture, not the programmer.
+            </summary>
+            <example>
+            You will not call esOrderByItem directly, but will be limited to use as
+            in the example below, or to the many uses posted here:
+            <code>
+            http://www.entityspaces.net/portal/QueryAPISamples/tabid/80/Default.aspx
+            </code>
+            This will be the extent of your use of the esOrderByItem class:
+            <code>
+            .OrderBy
+            (
+            	emps.Query.LastName.Descending,
+            	emps.Query.FirstName.Ascending
+            );
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esOrderByItem.#ctor">
+            <summary>
+            The esOrderByItem class is dynamically created by your
+            BusinessEntity's DynamicQuery mechanism.
+            See <see cref="T:EntitySpaces.DynamicQuery.esOrderByDirection"/> Enumeration.
+            </summary>
+            <param name="query">The associated DynamicQuery</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esOrderByItem.op_Implicit(System.String)~EntitySpaces.DynamicQuery.esOrderByItem">
+            <summary>
+            This allows the user to pass in a string to the Query.OrderBy() method
+            directly and we convert it to an instance of an esOrderByItem class for
+            them
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esOrderByItem.Direction">
+            <summary>
+            esOrderByDirection Direction.
+            See <see cref="T:EntitySpaces.DynamicQuery.esOrderByDirection"/> Enumeration.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esOrderByItem.Expression">
+            <summary>
+            The Expression for the OrderBy statement
+            </summary>  
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esQueryItem">
+            <summary>
+            The esQueryItem class is dynamically created by your BusinessEntity's
+            DynamicQuery mechanism.
+            This class is mostly used by the EntitySpaces architecture, not the programmer.
+            </summary>
+            <example>
+            You will not call esQueryItem directly, but will be limited to use as
+            in the example below, or to the many uses posted here:
+            <code>
+            http://www.entityspaces.net/portal/QueryAPISamples/tabid/80/Default.aspx
+            </code>
+            This will be the extent of your use of the esQueryItem class:
+            <code>
+            .Where
+            (
+            	emps.Query.Or
+            	(
+            		emps.Query.LastName.Like("%A%"),
+            		emps.Query.LastName.Like("%O%")
+            	),
+            	emps.Query.BirthDate.Between("1940-01-01", "2006-12-31")
+            )
+            .GroupBy
+            (
+            	emps.Query.LastName
+            )
+            .OrderBy
+            (
+            	emps.Query.LastName.Descending,
+            	emps.Query.FirstName.Ascending
+            );
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.#ctor(EntitySpaces.DynamicQuery.esDynamicQuerySerializable,System.String,EntitySpaces.DynamicQuery.esSystemType)">
+            <summary>
+            The esQueryItem class is dynamically created by your
+            BusinessEntity's DynamicQuery mechanism.
+            </summary>
+            <param name="query">The esDynamicQueryTransport passed in via DynamicQuery</param>
+            <param name="columnName">The columnName passed in via DynamicQuery</param>
+            <param name="datatype">The esSystemType</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.op_GreaterThan(EntitySpaces.DynamicQuery.esQueryItem,EntitySpaces.DynamicQuery.esQueryItem)">
+            <summary>
+            Greater Than &gt; (to use in Where clauses).
+            </summary>
+            <example>
+            The operators provide an alternative, natural syntax for DynamicQueries.
+            <code>
+            emps.Query.Where(emps.Query.BirthDate &gt; "2000-01-01");
+            </code>
+            </example>
+            <param name="item">Passed in via DynamicQuery</param>
+            <param name="value">Passed in via DynamicQuery</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.op_LessThan(EntitySpaces.DynamicQuery.esQueryItem,EntitySpaces.DynamicQuery.esQueryItem)">
+            <summary>
+            Less Than &lt; (to use in Where clauses).
+            </summary>
+            <example>
+            The operators provide an alternative, natural syntax for DynamicQueries.
+            <code>
+            emps.Query.Where(emps.Query.BirthDate &lt; "2000-01-01");
+            </code>
+            </example>
+            <param name="item">Passed in via DynamicQuery</param>
+            <param name="value">Passed in via DynamicQuery</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.op_LessThanOrEqual(EntitySpaces.DynamicQuery.esQueryItem,EntitySpaces.DynamicQuery.esQueryItem)">
+            <summary>
+            Less Than or Equal &lt;= (to use in Where clauses).
+            </summary>
+            <example>
+            The operators provide an alternative, natural syntax for DynamicQueries.
+            <code>
+            emps.Query.Where(emps.Query.BirthDate &lt;= "2000-01-01");
+            </code>
+            </example>
+            <param name="item">Passed in via DynamicQuery</param>
+            <param name="value">Passed in via DynamicQuery</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.op_GreaterThanOrEqual(EntitySpaces.DynamicQuery.esQueryItem,EntitySpaces.DynamicQuery.esQueryItem)">
+            <summary>
+            Greater Than or Equal &gt;= (to use in Where clauses).
+            </summary>
+            <example>
+            The operators provide an alternative, natural syntax for DynamicQueries.
+            <code>
+            emps.Query.Where(emps.Query.BirthDate &gt;= "2000-01-01");
+            </code>
+            </example>
+            <param name="item">Passed in via DynamicQuery</param>
+            <param name="value">Passed in via DynamicQuery</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.OP(EntitySpaces.DynamicQuery.esComparisonOperand)">
+            <summary>
+            Where parameter operand creation is called by DynamicQuery.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <param name="op">E.g., esComparisonOperand.IsNotNull</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.OP(EntitySpaces.DynamicQuery.esComparisonOperand,System.Object)">
+            <summary>
+            Where parameter operand creation is called by DynamicQuery.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <param name="op">E.g., esComparisonOperand.IsNotNull</param>
+            <param name="value">The value for this comparison</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.OP(EntitySpaces.DynamicQuery.esComparisonOperand,System.Object,System.Object)">
+            <summary>
+            Where parameter operand creation is called by DynamicQuery.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <param name="op">E.g., esComparisonOperand.Between</param>
+            <param name="value1">The first value for this comparison</param>
+            <param name="value2">The second value for this comparison</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Equal(System.Object)">
+            <summary>
+            Comparison ensuring that the value passed in is EQUAL to this column.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(Age.Equal(24))
+            </code>
+            or try the natural syntax
+            <code>
+            Where(Age == 24)
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.NotEqual(System.Object)">
+            <summary>
+            Comparison ensuring that the value passed in is NOT EQUAL to this column.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(Age.NotEqual(24))
+            </code>
+            or try the natural syntax
+            <code>
+            Where(Age != 24)
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.GreaterThan(System.Object)">
+            <summary>
+            Comparison ensuring that this column is GREATER THAN the value passed in.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(Age.GreaterThan(24))
+            </code>
+            or try the natural syntax
+            <code>
+            Where(Age &gt; 24)
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.GreaterThanOrEqual(System.Object)">
+            <summary>
+            Comparison ensuring that this column is GREATER THAN OR EQUAL
+            to the value passed in.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(Age.GreaterThanOrEqual(24))
+            </code>
+            or try the natural syntax
+            <code>
+            Where(Age &gt;= 24)
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.LessThan(System.Object)">
+            <summary>
+            Comparison ensuring that this column is LESS THAN the value passed in.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(Age.LessThan(24))
+            </code>
+            or try the natural syntax
+            <code>
+            Where(Age &lt; 24)
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.LessThanOrEqual(System.Object)">
+            <summary>
+            Comparison ensuring that this column is LESS THAN OR EQUAL
+            to the value passed in.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(Age.LessThanOrEqual(24))
+            </code>
+            or try the natural syntax
+            <code>
+            Where(Age &lt;= 24)
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Like(System.Object)">
+            <summary>
+            Comparison ensuring that the value passed in is LIKE this column.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(LastName.Like("D%"))
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>        
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Like(System.Object,System.Char)">
+            <summary>
+            Comparison ensuring that the value passed in is LIKE this column.
+            This overload takes a single escape character.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            The optional escape character is used if the search phrase
+            contains one of the LIKE wildcards. For example,
+            the following will match "30%" anywhere in the column.
+            <code>
+            Where(Discount.Like("%30!//", '!'))
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <param name="escapeCharacter">The single escape character.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.NotLike(System.Object)">
+            <summary>
+            Comparison ensuring that the value passed in is NOT LIKE this column.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(LastName.NotLike("D%"))
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.NotLike(System.Object,System.Char)">
+            <summary>
+            Comparison ensuring that the value passed in is NOT LIKE this column.
+            This overload takes a single escape character.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            The optional escape character is used if the search phrase
+            contains one of the LIKE wildcards. For example,
+            the following will exclude columns with "30%" anywhere in them.
+            <code>
+            Where(Discount.NotLike("%30!//", '!'))
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <param name="escapeCharacter">The single escape character.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Contains(System.Object)">
+            <summary>
+            Contains is used to search columns containing
+            character-based data types for precise or
+            fuzzy (less precise) matches to single words and phrases.
+            The column must have a Full Text index.
+            </summary>
+            <remarks>
+            See CONTAINS in the SQL server MSDN docs
+            for a full explanation of supported search terms
+            and how to enable Full Text searching at the
+            database, table, and column levels.
+            </remarks>
+            <example>
+            The company name contains both "Acme" and
+            "Company" in close approximation, AND
+            the address contains "Road", but no form of
+            "St", "Street", "Ave", or "Avenue".
+            <code>
+            string nameTerm =
+                "Acme NEAR Company";
+            string addressTerm =
+                "Road AND NOT (\"St*\" OR \"Ave*\")";
+            
+            cust.Query.Where(
+                cust.Query.CompanyName.Contains(nameTerm));
+            cust.Query.Where(
+                cust.Query.Address.Contains(addressTerm));
+            cust.Query.Load();
+            </code>
+            </example>
+            <param name="value">The value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.IsNull">
+            <summary>
+            Comparison ensuring that this column is NULL.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(LastName.IsNull())
+            </code>
+            </example>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.IsNotNull">
+            <summary>
+            Comparison ensuring that this column is NOT NULL.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(LastName.IsNotNull())
+            </code>
+            </example>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Between(System.Object,System.Object)">
+            <summary>
+            Comparison ensuring that this column is BETWEEN two values.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(BirthDate.Between("2000-01-01", "2000-12-31"))
+            </code>
+            </example>
+            <param name="start">The starting value for comparison.</param>
+            <param name="end">The ending value for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.In(System.Object[])">
+            <summary>
+            Comparison ensuring that this column is IN a list of values.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(LastName.In("Doe", "Smith", "Johnson"))
+            </code>
+            </example>
+            <param name="value">The list of values for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.In(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Comparison ensuring that this column is IN a list of values.
+            </summary>
+            <param name="value">The Query to provide the matching values for the IN comparison</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.NotIn(System.Object[])">
+            <summary>
+            Comparison ensuring that this column is NOT IN a list of values.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            Where(LastName.NotIn("Doe", "Smith", "Johnson"))
+            </code>
+            </example>
+            <param name="value">The list of values for comparison.</param>
+            <returns>The esComparison returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.NotIn(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            Comparison ensuring that this column is NOT IN a list of values.
+            </summary>
+            <param name="value">The Query to provide the matching values for the NOT IN comparison</param>
+            <returns></returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esQueryItem.Descending">
+            <summary>
+            Sort in descending order.
+            See <see cref="T:EntitySpaces.DynamicQuery.esOrderByDirection"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            emps.Query.OrderBy(emps.Query.LastName.Descending);
+            </code>
+            </example>
+            <returns>The esOrderByItem returned to DynamicQuery.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esQueryItem.Ascending">
+            <summary>
+            Sort in ascending order.
+            See <see cref="T:EntitySpaces.DynamicQuery.esOrderByDirection"/> Enumeration.
+            </summary>
+            <example>
+            <code>
+            emps.Query.OrderBy(emps.Query.LastName.Ascending);
+            </code>
+            </example>
+            <returns>The esOrderByItem returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Cast(EntitySpaces.DynamicQuery.esCastType)">
+            <summary>
+            Cast informs the DataProviders that a SQL CAST operation is needed.
+            </summary>
+            <remarks>
+            In C# you can cast with the overloaded cast operators, like this: (esString)query.Age
+            </remarks>
+            <param name="castType">The type of cast needed</param>
+            <returns>The very same esQueryItem now with Cast instructions</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Cast(EntitySpaces.DynamicQuery.esCastType,System.Int32)">
+            <summary>
+            Cast informs the DataProviders that a SQL CAST operation is needed. This overloaded version
+            of Cast is useful for Casting variable length character columns
+            </summary>
+            <remarks>
+            In C# you can cast with the overloaded cast operators, like this: (esString)query.Age
+            </remarks>
+            <param name="castType">The type of cast needed</param>
+            <returns>The very same esQueryItem now with Cast instructions</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Cast(EntitySpaces.DynamicQuery.esCastType,System.Int32,System.Int32)">
+            <summary>
+            Cast informs the DataProviders that a SQL CAST operation is needed. This overloaded version
+            of Cast is useful for Casting decimal types
+            </summary>
+            <remarks>
+            In C# you can cast with the overloaded cast operators, like this: (esString)query.Age
+            </remarks>
+            <param name="castType">The type of cast needed</param>
+            <returns>The very same esQueryItem now with Cast instructions</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.As(System.String)">
+            <summary>
+            Privides the Ability to Alias a column name
+            </summary>
+            <param name="alias">The Alias Name</param>
+            <returns>esQueryItem</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.ToUpper">
+            <summary>
+            Returns the column in UPPER CASE
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.ToLower">
+            <summary>
+            Returns the column in LOWER CASE
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.LTrim">
+            <summary>
+            Performs a Left Trim (remove blanks) on the column
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.RTrim">
+            <summary>
+            Performs a Right Trim (remove blanks) on the column
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Trim">
+            <summary>
+            Removes blanks from the beginning and end of the column
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Substring(System.Int64,System.Int64)">
+            <summary>
+            Returns a portion of the string column
+            </summary>
+            <param name="start">The starting character</param>
+            <param name="length">How many characters to return</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Substring(System.Int64)">
+            <summary>
+            Returns a portion of the string column
+            </summary>
+            <param name="length">How many characters to return</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Substring(System.Int32,System.Int32)">
+            <summary>
+            Returns a portion of the string column
+            </summary>
+            <param name="start">The starting character</param>
+            <param name="length">How many characters to return</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Substring(System.Int32)">
+            <summary>
+            Returns a portion of the string column
+            </summary>
+            <param name="length">How many characters to return</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Coalesce(System.String)">
+            <summary>
+            This can be used to return the first non null parameter.
+            </summary>
+            <remarks>
+            The code below will return "Smith" is the LastName column in the database is null.
+            <code>
+            MyCollection coll = new MyCollection();
+            coll.Query.Select(coll.Query.LastName.Coalesce("'Smith'"));
+            coll.Query.Load();
+            </code>
+            </remarks>
+            <param name="expresssions">The value to return if null</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Date">
+            <summary>
+            Returns the Date only portion of a date columm
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Length">
+            <summary>
+            Returns the length of a character based column
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Round(System.Int32)">
+            <summary>
+            Performs a round on the column
+            </summary>
+            <param name="significantDigits">Round to the number of significant digits</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.DatePart(System.String)">
+            <summary>
+            Returns a particular date part of a date column
+            </summary>
+            <param name="datePart"></param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Sum">
+            <summary>
+            Aggregate Sum.
+            See <see cref="T:EntitySpaces.DynamicQuery.esQuerySubOperatorType"/> Enumeration.
+            </summary>
+            <example>
+            Aggregate Sum with the column name as the default Alias.
+            <code>
+            emps.Query.Select(emps.Query.Age.Sum());
+            </code>
+            </example>
+            <returns>The esAggregateItem returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Avg">
+            <summary>
+            Aggregate Avg.
+            See <see cref="T:EntitySpaces.DynamicQuery.esQuerySubOperatorType"/> Enumeration.
+            </summary>
+            <example>
+            Aggregate Avg with the column name as the default Alias.
+            <code>
+            emps.Query.Select(emps.Query.Age.Avg());
+            </code>
+            </example>
+            <returns>The esAggregateItem returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Max">
+            <summary>
+            Aggregate Max.
+            See <see cref="T:EntitySpaces.DynamicQuery.esQuerySubOperatorType"/> Enumeration.
+            </summary>
+            <example>
+            Aggregate Max with the column name as the default Alias.
+            <code>
+            emps.Query.Select(emps.Query.Age.Max());
+            </code>
+            </example>
+            <returns>The esAggregateItem returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Min">
+            <summary>
+            Aggregate Min.
+            See <see cref="T:EntitySpaces.DynamicQuery.esQuerySubOperatorType"/> Enumeration.
+            </summary>
+            <example>
+            Aggregate Min with the column name as the default Alias.
+            <code>
+            emps.Query.Select(emps.Query.Age.Min());
+            </code>
+            </example>
+            <returns>The esAggregateItem returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.StdDev">
+            <summary>
+            Aggregate StdDev.
+            See <see cref="T:EntitySpaces.DynamicQuery.esQuerySubOperatorType"/> Enumeration.
+            </summary>
+            <example>
+            Aggregate StdDev with the column name as the default Alias.
+            <code>
+            emps.Query.Select(emps.Query.Age.StdDev());
+            </code>
+            </example>
+            <returns>The esAggregateItem returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Var">
+            <summary>
+            Aggregate Var.
+            See <see cref="T:EntitySpaces.DynamicQuery.esQuerySubOperatorType"/> Enumeration.
+            </summary>
+            <example>
+            Aggregate Var with the column name as the default Alias.
+            <code>
+            emps.Query.Select(emps.Query.Age.Var());
+            </code>
+            </example>
+            <returns>The esAggregateItem returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Count">
+            <summary>
+            Aggregate Count.
+            See <see cref="T:EntitySpaces.DynamicQuery.esQuerySubOperatorType"/> Enumeration.
+            </summary>
+            <example>
+            Aggregate Count with the column name as the default Alias.
+            <code>
+            emps.Query.Select(emps.Query.Age.Count());
+            </code>
+            </example>
+            <returns>The esAggregateItem returned to DynamicQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Distinct">
+            <summary>
+            Set to true for (DISTINCT columnName).
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.Equals(System.Object)">
+            <summary>
+            Required due to operator overloading. Use 'Equal' not 'Equals'
+            for DynamicQueries.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.GetHashCode">
+            <summary>
+            Required due to operator overloading.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.ToString">
+            <summary>
+            ToString() (to use in GroupBy/OrderBy and such ....)
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.op_Implicit(EntitySpaces.DynamicQuery.esQueryItem)~System.String">
+            <summary>
+            ToString() (to use in GroupBy/OrderBy and such ....)
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.op_Implicit(EntitySpaces.DynamicQuery.esQueryItem)~EntitySpaces.DynamicQuery.esColumnItem">
+            <summary>
+            ToString() (to use in GroupBy/OrderBy and such ....)
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esQueryItem.op_Implicit(EntitySpaces.DynamicQuery.esQueryItem)~EntitySpaces.DynamicQuery.esExpression">
+            <summary>
+            ToString() (to use in GroupBy/OrderBy and such ....)
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esQueryItem.HasExpression">
+            <summary>
+            Used Internally by EntitySpaces
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esQuerySubOperator">
+            <summary>
+            Describes a SubOperator such as ToLower, ToUpper that can be applied
+            to an <seealso cref="T:EntitySpaces.DynamicQuery.esComparison"/> or <seealso cref="T:EntitySpaces.DynamicQuery.esExpression"/>. This
+            class is used internally by EntitySpaces.
+            </summary>
+            <remarks>
+            SubOperator Feature Support by DBMS:
+            <code>
+                            MS    MS    My    SQ    Vista Fire  Post
+            Feature         SQL   Acces SQL   Lite  DB    bird  gre   Oracle  Ads
+            --------------- ----- ----- ----- ----- ----- ----- ----- ------ -----
+            Coalesce         Y     N     Y     -     Y     -     -     Y       Y
+            Date             Y     N     Y     -     Y     -     -     Y       -
+            LTrim            Y     Y     Y     -     Y     -     -     Y       Y
+            RTrim            Y     Y     Y     -     Y     -     -     Y       Y
+            SubString        Y     Y     Y     -     Y     -     -     Y       Y
+            ToLower          Y     Y     Y     -     Y     -     -     Y       Y
+            ToUpper          Y     Y     Y     -     Y     -     -     Y       -
+            Trim             Y     Y     Y     -     Y     -     -     Y       Y
+            
+            Notes:
+              (1) - xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+                    xxxxxxxxxxxxxxx.
+              (2) - xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+                    xxxxxxxxxxxx.
+              (3) - xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+                    xxxxxxxxxxxxxxxxxxxxx.  
+              (4) - xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+              
+            </code>
+            </remarks>
+            <example>
+            You will not call esQuerySubOperator directly, but will be limited to use as
+            in the example below, or to the many uses posted here:
+            <code>
+            http://www.entityspaces.net/portal/QueryAPISamples/tabid/80/Default.aspx
+            </code>
+            This will be the extent of your use of the esQuerySubOperator class:
+            <code>
+            .Select
+            (
+            	emps.Query.ReportsTo.ToUpper(),
+            	emps.Query.Age.Avg("Average")
+            .Where
+            (
+            	emps.Query.ReportsTo.ToUpper() == "TED",
+                emps.Query.BirthDate.ToShortDate() == "05/06/1948"
+            );
+            </code>
+            </example>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esQuerySubOperator.SubOperator">
+            <summary>
+            The type of the suboperator
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esQuerySubOperator.Parameters">
+            <summary>
+            Any parameters that this SubOperator may need. For instance Substring requires
+            parameters
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esExpression">
+            <summary>
+            Used to house the parameters to Query.Select()
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esExpression.Query">
+            <summary>
+            Back Pointer to the Parent Query
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esExpression.Column">
+            <summary>
+            Contains the necessary information to describe this column
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esExpression.SubOperators">
+            <summary>
+            A collection of SubOperators such as ToLower to apply to the select column
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esExpression.CaseWhen">
+            <summary>
+            Case / When / Then / End
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esExpression.MathmaticalExpression">
+            <summary>
+            The data behind the expression. This ends up looking like a tree in the end as 
+            more arithmetic expressions are applied
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esExpression.LiteralValue">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esExpression.HasMathmaticalExpression">
+            <summary>
+            True if this esExpression has an expression formed by the arithmetic operators +,-,*,/,%
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esExpression.IsLiteralValue">
+            <summary>
+            True if this esExpression merely represents a literal value
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esComparison">
+            <summary>
+            The esComparison class is dynamically created by your BusinessEntity's
+            DynamicQuery mechanism.
+            This class is mostly used by the EntitySpaces architecture, not the programmer.
+            </summary>
+            <example>
+            You will not call esComparison directly, but will be limited to use as
+            in the example below, or to the many uses posted here:
+            <code>
+            http://www.entityspaces.net/portal/QueryAPISamples/tabid/80/Default.aspx
+            </code>
+            This will be the extent of your use of the esComparison class:
+            <code>
+            .Where
+            (
+            	emps.Query.LastName.Like("D%"),
+            	emps.Query.Age == 30
+            );
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esComparison.#ctor(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            The esComparison class is dynamically created by your
+            BusinessEntity's DynamicQuery mechanism.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esComparison.#ctor(EntitySpaces.DynamicQuery.esParenthesis)">
+            <summary>
+            The esComparison class is dynamically created by your
+            BusinessEntity's DynamicQuery mechanism.
+            See <see cref="T:EntitySpaces.DynamicQuery.esParenthesis"/> Enumeration.
+            </summary>
+            <param name="paren">The esParenthesis passed in via DynamicQuery</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esComparison.#ctor(EntitySpaces.DynamicQuery.esConjunction)">
+            <summary>
+            The esComparison class is dynamically created by your
+            BusinessEntity's DynamicQuery mechanism.
+            See <see cref="T:EntitySpaces.DynamicQuery.esConjunction"/> Enumeration.
+            </summary>
+            <param name="conj">The esConjunction passed in via DynamicQuery</param>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esComparison.op_BitwiseOr(EntitySpaces.DynamicQuery.esComparison,EntitySpaces.DynamicQuery.esComparison)">
+            <summary>
+            Or | (to use in Where clauses).
+            </summary>
+            <example>
+            The operators provide an alternative, natural syntax for DynamicQueries.
+            <code>
+            emps.Query.Where
+            (
+            	emps.Query.LastName == "Doe" |
+            	emps.Query.LastName == "Smith"
+            );
+            </code>
+            </example>
+            <param name="c1">First esComparison passed in via DynamicQuery</param>
+            <param name="c2">Second esComparison passed in via DynamicQuery</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esComparison.op_BitwiseAnd(EntitySpaces.DynamicQuery.esComparison,EntitySpaces.DynamicQuery.esComparison)">
+            <summary>
+            And &amp; (to use in Where clauses).
+            </summary>
+            <example>
+            The operators provide an alternative, natural syntax for DynamicQueries.
+            <code>
+            emps.Query.Where
+            (
+            	emps.Query.LastName == "Doe" &amp;
+            	emps.Query.FirstName == "Jane"
+            );
+            </code>
+            </example>
+            <param name="c1">First esComparison passed in via DynamicQuery</param>
+            <param name="c2">Second esComparison passed in via DynamicQuery</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esComparison.op_LogicalNot(EntitySpaces.DynamicQuery.esComparison)">
+            <summary>
+            NOT ! (to use in Where clauses).
+            </summary>
+            <example>
+            The operators provide an alternative, natural syntax for DynamicQueries.
+            <code>
+            emps.Query.Where
+            (
+            	emps.Query.LastName == "Doe" &amp;
+            	emps.Query.FirstName == "Jane"
+            );
+            </code>
+            </example>
+            <param name="c1">The esComparison to negate</param>
+            <returns>The esComparison returned to DynamicQuery</returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esComparison.HandleOperator(EntitySpaces.DynamicQuery.esComparison,EntitySpaces.DynamicQuery.esComparison,EntitySpaces.DynamicQuery.esConjunction)">
+            <summary>
+            
+            </summary>
+            <param name="c1"></param>
+            <param name="c2"></param>
+            <param name="op"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esComparison.op_True(EntitySpaces.DynamicQuery.esComparison)">
+            <summary>
+            Force true (to use in Where clauses).
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.ColumnName">
+            <summary>
+            string ColumnName.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.IsLiteral">
+            <summary>
+            bool IsLiteral.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.Value">
+            <summary>
+            object value.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.Values">
+            <summary>
+            Used for In() and NotIn()
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.ComparisonColumn">
+            <summary>
+            Used whenever a value is needed on the right hand side of an operator in a Where clause.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.ComparisonColumn2">
+            <summary>
+            Used only when <see cref="F:EntitySpaces.DynamicQuery.esComparisonOperand.Between"/> and the 2nd date is another column in the database.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.Operand">
+            <summary>
+            esComparisonOperand Operand.
+            See <see cref="T:EntitySpaces.DynamicQuery.esComparisonOperand"/> Enumeration.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.SubOperators">
+            <summary>
+            esQuerySubOperator
+            See <see cref="T:EntitySpaces.DynamicQuery.esQuerySubOperator"/> Enumeration.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.Conjunction">
+            <summary>
+            esConjunction Conjunction.
+            See <see cref="T:EntitySpaces.DynamicQuery.esConjunction"/> Enumeration.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.Parenthesis">
+            <summary>
+            esParenthesis Parenthesis.
+            See <see cref="T:EntitySpaces.DynamicQuery.esParenthesis"/> Enumeration.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.BetweenBegin">
+            <summary>
+            The first date when <see cref="F:EntitySpaces.DynamicQuery.esComparisonOperand.Between"/> is used and the value is 
+            not another column in the table but a literal value being passed in.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.BetweenEnd">
+            <summary>
+            The second date when <see cref="F:EntitySpaces.DynamicQuery.esComparisonOperand.Between"/> is used and the value is 
+            not another column in the table but a literal value being passed in.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.LikeEscape">
+            <summary>
+            char LikeEscape.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.ItemFirst">
+            <summary>
+            Whether the esComparison goes first in the expression
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esComparison.esComparisonData">
+            <summary>
+            Used internally by EntitySpaces to make the <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> classes data available to the
+            EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.esComparisonData.IsConjunction">
+            <summary>
+            bool IsConjunction.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.esComparisonData.IsParenthesis">
+            <summary>
+            bool IsParenthesis.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.esComparisonData.HasComparisonColumn">
+            <summary>
+            bool HasComparisonColumn.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.esComparison.esComparisonData.HasExpression">
+            <summary>
+            bool HasExpression.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.Query">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.Column">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.IsLiteral">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.ComparisonColumn">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.ComparisonColumn2">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.Expression">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.Value">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.Values">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.Operand">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.Conjunction">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.Parenthesis">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.BetweenBegin">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.BetweenEnd">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.LikeEscape">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.SubOperators">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.WhereExpression">
+            <summary>
+            Internal data used by <see cref="T:EntitySpaces.DynamicQuery.esComparison"/> and accessed by the EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esComparison.esComparisonData.ItemFirst">
+            <summary>
+            Whether the esQueryItem goes first in the expression
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esComparison.op_Explicit(EntitySpaces.DynamicQuery.esComparison)~EntitySpaces.DynamicQuery.esComparison.esComparisonData">
+            <summary>
+            The data is hidden from intellisense, however, the providers, can typecast
+            the esComparison and get to the real data without properties having to 
+            be exposed thereby cluttering up the intellisense
+            </summary>
+            <param name="where">The esComparison to cast</param>
+            <returns>The esComparisonData interface</returns>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esSetOperation">
+            <summary>
+            Created when Query.Union (UnionAll, Intersect, Except) is called.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esSetOperation.#ctor">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esSetOperation.#ctor(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSetOperation.Query">
+            <summary>
+            The Query to form the Set with
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.DynamicQuery.esSetOperation.SetOperationType">
+            <summary>
+            The Set Type, Union/Unionall/Intersect/Except
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esCase.#ctor(EntitySpaces.DynamicQuery.esDynamicQuerySerializable,EntitySpaces.DynamicQuery.esQueryItem)">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.esCase.#ctor(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.DynamicQuery.esCase.esSimpleCaseData">
+            <summary>
+            Used internally by EntitySpaces to make the <see cref="T:EntitySpaces.DynamicQuery.esJoinItem"/> classes data available to the
+            EntitySpaces data providers.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.DataID">
+            <summary>
+            Guid DataID.
+            </summary>
+            <returns>Guid DataID.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.Catalog">
+            <summary>
+            Taken from the Connection just before the request is made
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.Schema">
+            <summary>
+            Taken from the Connection just before the request is made
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.IsInSubQuery">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.HasSetOperation">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.SubQueryAlias">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.JoinAlias">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.LastQuery">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.QuerySource">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.SelectAll">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.SelectAllExcept">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.SubquerySearchCondition">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.InternalSelectColumns">
+            <summary>
+            List&lt;esJoinItem&gt; InternalSelectColumns.
+            </summary>
+            <returns>List&lt;esExpression&gt; InternalSelectColumns.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.InternalFromQuery">
+            <summary>
+            The From SubQuery
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.InternalJoinItems">
+            <summary>
+            List&lt;esJoinItem&gt; InternalJoinItems.
+            </summary>
+            <returns>List&lt;esJoinItem&gt; InternalJoinItems.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.InternalWhereItems">
+            <summary>
+            List&lt;esComparison&gt; InternalWhereItems.
+            </summary>
+            <returns>List&lt;esComparison&gt; InternalWhereItems.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.InternalOrderByItems">
+            <summary>
+            List&lt;esJoinItem&gt; InternalOrderByItems.
+            </summary>
+            <returns>List&lt;esOrderByItem&gt; InternalOrderByItems.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.InternalHavingItems">
+            <summary>
+            List&lt;esComparison&gt; InternalHavingItems.
+            </summary>
+            <returns>List&lt;esComparison&gt; InternalHavingItems.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.InternalGroupByItems">
+            <summary>
+            List&lt;esComparison&gt; InternalGroupByItems.
+            </summary>
+            <returns>List&lt;esGroupByItem&gt; InternalGroupByItems.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.InternalSetOperations">
+            <summary>
+            The Set Operation, if any, Union, UnionAll, Intersect, Except
+            </summary>
+            <returns>List&lt;esGroupByItem&gt; InternalGroupByItems.</returns>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.ProviderMetadata">
+            <summary>
+            This is of type object because this library cannot link with other 
+            assemblies and this is in the EntitySpaces.Interfaces assembly. This
+            is filled in just before being sent to the EntitySpaces DataProvider
+            and is used only when building the SQL i the provider itself
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.Columns">
+            <summary>
+            This is of type object because this library cannot link with other 
+            assemblies and this is in the EntitySpaces.Interfaces assembly. This
+            is filled in just before being sent to the EntitySpaces DataProvider
+            and is used only when building the SQL i the provider itself
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.HookupProviderMetadata(EntitySpaces.DynamicQuery.esDynamicQuerySerializable)">
+            <summary>
+            This is used because esDynamicQuerySerializable.AssignProviderMetadata is
+            not public and esJoinItem needs to be able to execute it
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.queries">
+            <summary>
+            This is used internally
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.Skip">
+            <summary>
+            The number of rows to skip in the result set (starting from the beginning)
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.DynamicQuery.IDynamicQuerySerializableInternal.Take">
+            <summary>
+            The number of rows to take from the result set (starting from the Skip)
+            </summary>
+        </member>
+    </members>
+</doc>

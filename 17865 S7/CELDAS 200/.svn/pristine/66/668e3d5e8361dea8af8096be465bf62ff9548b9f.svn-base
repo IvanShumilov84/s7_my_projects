@@ -1,0 +1,26 @@
+<SOAP-ENV:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:clr="http://schemas.microsoft.com/soap/encoding/clr/1.0" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<SOAP-ENV:Body>
+<a1:ChannelCollection id="ref-1" xmlns:a1="http://schemas.microsoft.com/clr/nsassem/KineticaRT/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Enabled>true</Enabled>
+<AlternateNames xsi:type="xsd:anyType" xsi:null="1"/>
+<Log_Perf_OperatingTime href="#ref-3"/>
+<LRUFaultDescription href="#ref-4"/>
+<PERF_REMARK_TEXT href="#ref-5"/>
+</a1:ChannelCollection>
+<a3:TextChannel id="ref-3" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-6">Log_Perf_OperatingTime</Name>
+<Description id="ref-7">Total operating time during test</Description>
+<ToolTip id="ref-8"></ToolTip>
+</a3:TextChannel>
+<a3:TextChannel id="ref-4" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-9">LRUFaultDescription</Name>
+<Description id="ref-10">LRU Fault Description</Description>
+<ToolTip href="#ref-8"/>
+</a3:TextChannel>
+<a3:TextChannel id="ref-5" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-11">PERF_REMARK_TEXT</Name>
+<Description href="#ref-8"/>
+<ToolTip href="#ref-8"/>
+</a3:TextChannel>
+</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

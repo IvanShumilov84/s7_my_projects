@@ -1,0 +1,3 @@
+<Window BackColor="Black" Font="Trebuchet MS, 12pt, style=Bold" ForeColor="White" RightToLeft="0" TabIndex="0" BorderColor="Blue" BorderStyle="1" BorderWidth="0.1" Name="tab" Shape="1" ToolTipText="" UpdateSpeed="1" HorizontalGrid.Size="8" HorizontalGrid.Spacing="2" VerticalGrid.Size="8" VerticalGrid.Spacing="2" TitleEnabled="false" Title="GTCP331-500B" WindowState="0" Left="0" Top="0" Width="3840" Height="1048" CurrentPanelIndex="0">
+  <Panel File="GTCP331_500\GTCP331_500_Panel.dll" Text="GTCP331-500B" />
+</Window>

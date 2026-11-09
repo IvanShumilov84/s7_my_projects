@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>KineticaRT.Studio.Controls.RadioButton</name>
+    </assembly>
+    <members>
+        <member name="T:KineticaRT.Studio.Controls.RadioButton">
+            <summary>
+            KineticaRT Studio Radio Button control.
+            Displays a boolean Value from a source channel,
+            together with an optional description
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.RadioButton.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.RadioButton.#ctor">
+            <summary>
+            Initialises a new instance of the RadioButton class
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.RadioButton.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.RadioButton.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify 
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.RadioButton.SourceChannel">
+            <summary>
+            Gets or sets the Source channel to which this object is connected
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.RadioButton.DescriptionOnLeft">
+            <summary>
+            Gets or sets whether the description is to the left of the radio button
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.RadioButton.CustomDescription">
+            <summary>
+            Gets or sets a Custom Description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.RadioButton.DescriptionSource">
+            <summary>
+            Gets or sets where to get the Description from
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.RadioButton.InputEnabled">
+            <summary>
+            Gets or sets whether input is enabled
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.RadioButton.UpdateLayout">
+            <summary>
+            Updates the sizes of all sections
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.RadioButton.NewToolTip(System.String)">
+            <summary>
+            A new tool tip is being set
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.RadioButton.OnSourcePropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)">
+            <summary>
+            A property in the Source channel has changed
+            </summary>
+            <param name="Sender">Object generating the event</param>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="E:KineticaRT.Studio.Controls.RadioButton.ValueChanged">
+            <summary>Occurs when the value of the Value property changes.</summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.RadioButton.SetButtonState(System.Boolean)">
+            <summary>Sets the value of the button to Pressed or Unpressed</summary>
+            <param name="Pressed">True to set the Value to Pressed; False to set the Value to Unpressed</param>
+        </member>
+    </members>
+</doc>

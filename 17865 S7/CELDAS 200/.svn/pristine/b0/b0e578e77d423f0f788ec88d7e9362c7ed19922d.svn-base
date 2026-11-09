@@ -1,0 +1,2508 @@
+Imports System
+Imports System.Collections
+Imports System.Reflection
+Imports System.Text
+Imports System.Threading
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Windows.Forms
+Imports KineticaRT
+Imports KineticaRT.Channels
+Imports KineticaRT.Sequence
+Imports KineticaRT.Values
+Imports KineticaRT.Controls.Frame
+Imports Microsoft.Office.Interop 'Excel
+Imports System.Data
+Imports System.Data.OleDb
+Imports Microsoft.VisualBasic
+
+Imports CEL.HMI
+Imports CEL.Library
+
+Namespace StudioDemonstration
+
+    Public Class HTS900_Sequence
+        Inherits PropellerDynoSequence
+
+        Private Const MaxNumberOfTInletProbe As Integer = 18
+        Private Const MaxNumberOfTEgtProbe As Integer = 2
+
+        Protected Overrides Function CreateCustomHeaderLogFile(ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Date Time:"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+            RowIndex += 1
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Cond#:"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+            RowIndex += 1
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Comment:"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            ExcelWorksheet.Rows(RowIndex).RowHeight = 65.25
+            ExcelWorksheet.Rows(RowIndex).VerticalAlignment = Excel.XlVAlign.xlVAlignTop
+            ExcelWorksheet.Rows(RowIndex).WrapText = True
+
+            Return True
+        End Function
+
+        Protected Overrides Function UpdateCustomHeaderLogFile(ByVal AppendOption As Boolean, ByVal IsPerfEntry As Boolean, ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+            Dim Log_Condition As Integer
+
+            If AppendOption = False Then
+                Log_Condition = 1
+            Else
+                Log_Condition = ExcelWorksheet.Cells(RowIndex + 1, ExcelWorksheet.Columns.Count).End(Excel.XlDirection.xlToLeft).Column - 1
+                Log_Condition = Log_Condition + 1
+
+            End If
+
+            If ((Log_Condition > 1) And ((Log_Condition Mod 5) = 1)) Then
+                With ExcelWorksheet
+                    .Range(.Cells(2, 2), .Cells(RowIndex - 2, 6)).Copy(.Cells(2, Log_Condition + 1))
+                End With
+            End If
+
+            ColumnIndex = 1 + Log_Condition
+
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Format(Now, "yyyy/MM/dd HH:mm:ss")
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 1
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Log_Condition.ToString()
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 1
+            If IsPerfEntry = False Then
+                Dim CommentText As String = ""
+                Dim InputObject As New InputCommentForm
+                InputObject.ShowDialog("Log Report", "Comment:", "", CommentText)
+
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = CommentText
+            End If
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 2
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Values"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter
+
+            Return True
+        End Function
+
+
+        Protected Overrides Sub Init_Engine_Channels_Value()
+
+            CELProject.PERF_TEST_STEP_NB.Value = Values.Zero
+
+            ''Initial Value for Dynamometer in Speed mode at 1200 RPM
+            'DYNO_SPEED_DEMAND.Value = New KineticaRT.Values.Double(DYNO_SPEED_100_PCT_RPM.Value.ToDouble)
+            'DYNO_SPEED_MODE_BTN.Value = Values.True
+
+            ''Default value for power law mode
+            'If DYNO_POWERLAW_DEFAULT_TDEMAND IsNot Nothing Then
+            '    DYNO_POWLAW_DEMAND.Value = New KineticaRT.Values.Double(DYNO_POWERLAW_DEFAULT_TDEMAND.Value.ToDouble)
+            'Else
+            '    DYNO_POWLAW_DEMAND.Value = New KineticaRT.Values.Double(-4700)
+            'End If
+
+        End Sub
+
+        Protected Overrides Sub OnEngineWorkingThread()
+
+            '' Time to Idle and StartTime are the same here
+            'TimeToIdleTimerCtrl.Timer()
+            'TimeToLightTimerCtrl.Timer()
+            'CrankTimerCtrl.Timer()
+            'StarterTimerCtrl.Timer()
+            'If CELProject.HierarchyType = CELDAS.eHierarchyType.Master Then
+            '    AccelCheckTimerCtrl.Timer()
+            '    DecelCheckTimerCtrl.Timer()
+            'End If
+
+            'Persistent Values Save Check
+            PersistentValuesCtrl.SavePersistentValues(False)
+        End Sub
+
+        Private Sub OnTRANSIENT_CHECK_OPEN_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsTrue(newVal) Then
+                CELProject.ActivateForm("HTS900_TransientCheck_Screen", CELProject.DefaultParentWindow, True, False)
+                'Reset Button
+                TRANSIENT_CHECK_OPEN_WINDOW_BTN.Value = Values.False
+            End If
+        End Sub
+
+        Private Sub OnTRANSIENT_CHECK_CLOSE_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsTrue(newVal) Then
+                CELProject.ActivateForm("HTS900_TransientCheck_Screen", CELProject.DefaultParentWindow, False, False)
+                'Reset Button
+                TRANSIENT_CHECK_CLOSE_WINDOW_BTN.Value = Values.False
+            End If
+        End Sub
+
+        Private Sub OnECU_PANEL_OPEN_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsTrue(newVal) Then
+                CELProject.ActivateForm("HTS900_ECU_Screen", CELProject.DefaultParentWindow, True, False)
+                'Reset Button
+                ECU_PANEL_OPEN_WINDOW_BTN.Value = Values.False
+            End If
+        End Sub
+
+        Private Sub OnECU_PANEL_CLOSE_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsTrue(newVal) Then
+                CELProject.ActivateForm("HTS900_ECU_Screen", CELProject.DefaultParentWindow, False, False)
+                'Reset Button
+                ECU_PANEL_CLOSE_WINDOW_BTN.Value = Values.False
+            End If
+        End Sub
+
+        Protected Overrides Sub OnDYNO_DEMAND_VALIDATE(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If sender.Name = "DYNO_POS_DEMAND" Then
+                    If DYNO_POS_DEMAND.Value.ToDouble() > 100 Then
+                        DYNO_POS_DEMAND.Value = New KineticaRT.Values.Double(100)
+                    ElseIf DYNO_POS_DEMAND.Value.ToDouble() < 0 Then
+                        DYNO_POS_DEMAND.Value = Values.Zero
+                    End If
+                ElseIf sender.Name = "DYNO_SPEED_DEMAND" Then
+                    If DYNO_SPEED_DEMAND.Value.ToDouble() > 1325 Then
+                        DYNO_SPEED_DEMAND.Value = New KineticaRT.Values.Double(1325)
+                    ElseIf DYNO_SPEED_DEMAND.Value.ToDouble() < 0 Then
+                        DYNO_SPEED_DEMAND.Value = Values.Zero
+                    End If
+                ElseIf sender.Name = "DYNO_TORQUE_DEMAND" Then
+                    If DYNO_TORQUE_DEMAND.Value.ToDouble() > 26113 Then
+                        DYNO_TORQUE_DEMAND.Value = New KineticaRT.Values.Double(26113)
+                    ElseIf DYNO_TORQUE_DEMAND.Value.ToDouble() < 0 Then
+                        DYNO_TORQUE_DEMAND.Value = Values.Zero
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("HTS900_Sequence: OnDYNO_DEMAND_VALIDATE: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnDYNO_INLET_VALIDATE(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If DYNO_SET_INLET_PCT.Value.ToDouble() > 100 Then
+                    DYNO_SET_INLET_PCT.Value = New KineticaRT.Values.Double(100)
+                ElseIf DYNO_SET_INLET_PCT.Value.ToDouble() < 0 Then
+                    DYNO_SET_INLET_PCT.Value = Values.Zero
+                End If
+            Catch ex As Exception
+                MessageBox.Show("HTS900_Sequence: OnDYNO_INLET_VALIDATE: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Private Sub OnCRANK_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    ARCHIVE_RECORD.Value = Values.True
+                    T_MGT_CURRENT_DEGF.Value = T_MGT_DEGF.Value
+                    CRANK_BTN_PRESSED.Value = Values.True
+                Else
+                    CRANK_BTN_PRESSED.Value = Values.False
+                End If
+            Catch ex As Exception
+                MessageBox.Show("HTS900_Sequence: OnCRANK_BTN: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Private Sub OnENGINE_AT_REST(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    'Automatically stop the archive when engine at rest becomes true.
+                    'Crank_btn_pressed condition is to check if the engine is starting or stopping.
+                    If ARCHIVE_RECORD.Value = Values.True And CRANK_BTN_PRESSED.Value = Values.False Then
+                        ARCHIVE_STOP.Value = Values.True
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("HTS900_Sequence: OnENGINE_AT_REST: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+
+        End Sub
+
+        Private Sub OnNUMBER_OF_STARTS_CONDITION(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value) Then
+
+                If (CELProject.IsTrue(newVal)) Then
+
+                    Try
+                        NUMBER_OF_STARTS.Value = New KineticaRT.Values.Double(NUMBER_OF_STARTS.Value.ToDouble + 1)
+                    Catch ex As System.Exception
+                        MessageBox.Show("OnNUMBER_OF_STARTS_START_CONDITION: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End Try
+
+                End If
+
+            End If
+
+        End Sub
+
+        Protected Overrides Sub OnLOG_TAKE_POINT_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            If CELProject.IsTrue(newVal) Then
+
+                'Update the Log/Perf channel set
+                CELProject.LogPerfSynch.UpdateValues()
+                FlowmeterCtrl.ComputeFlow(True)
+                ''Synchronize data for Log and Performance. TODO : Needs to be implemented for Bleed Flow calculations.
+                'Compute_HTS900(True)
+                CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, False, CELProject.EngineModel, True)
+                CELProject.LOG_TAKE_POINT_BTN.Value = Values.False
+            End If
+        End Sub
+
+        Private Sub OnPERF_TAKE_POINT_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Dim SearchPath As String
+            Dim excelWorkbook As Excel.Workbook = Nothing
+
+            Try
+                If CELProject.IsTrue(CELProject.ARCHIVE_PLAY.Value) Then
+                    Return
+                End If
+
+                If CELProject.IsFalse(newVal) Then
+                    Return
+                End If
+
+                'Synchronize data for Log and Performance
+                'Compute(True)
+
+                SearchPath = CELProject.EngineSession.PerfFolder
+
+                Dim NewFileCreated As Boolean
+                Dim TemplateReportFullFileName As String = EngineConfiguration.PerformanceReportTemplateFile
+
+                NewFileCreated = CELProject.ProcessPerformanceReport(SearchPath, TemplateReportFullFileName, AddressOf CreatePerformance)
+
+                CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, True, CELProject.EngineModel, NewFileCreated)
+
+                CELProject.PERF_TAKE_POINT_BTN.Value = Values.False
+
+
+            Catch ex As Exception
+                MessageBox.Show("OnPERF_TAKE_POINT_BTN: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+
+            End Try
+        End Sub
+
+        Private Sub OnPERF_CLOSE_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value) Then
+
+                If (CELProject.IsTrue(newVal)) Then
+
+                    CELProject.ActivateForm("HTS900_Performance_Screen", CELProject.EngineFamily.Replace("-", "_") + "_Slave_Screen", False, False)
+                    'Reset Button
+                    CELProject.PERF_CLOSE_WINDOW_BTN.Value = Values.False
+                End If
+
+            End If
+
+        End Sub
+
+        Private Sub OnPERF_OPEN_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value) Then
+
+                If (CELProject.IsTrue(newVal)) Then
+
+                    CELProject.ActivateForm("HTS900_Performance_Screen", CELProject.EngineFamily.Replace("-", "_") + "_Slave_Screen", True, False)
+                    'Reset Button
+                    CELProject.PERF_OPEN_WINDOW_BTN.Value = Values.False
+                End If
+
+            End If
+
+        End Sub
+
+        Private Sub OnLOG_PERF_CAPTURE(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value) Then
+                    If CELProject.IsTrue(newVal) Then
+
+                        'Sync the Log Perf channels
+                        CELProject.LogPerfSynch.UpdateValues()
+
+                        '3. Preparation for test
+                        If sender.Name = "CAPTURE_DIGITAL_OFFSET_TIME" Then
+                            LOG_PERF_PREPARATION_FOR_TEST.Value = New KineticaRT.Values.Text(Format(Now, "HH:mm:ss"))
+                        End If
+
+                        '4.2 Motoring Checks
+                        If sender.Name = "CAPTURE_START_MOTORING_CHECKS" Then
+                            LOG_PERF_MOTORING_CHECKS.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '4.3 Initial Start to G.i.
+                        If sender.Name = "CAPTURE_START_INITIAL_START_TO_GI" Then
+                            LOG_PERF_INITIAL_START_TO_GI_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '4.4 F.I check
+                        If sender.Name = "CAPTURE_FI_CHECKS" Then
+                            LOG_PERF_FI_NG_PCT.Value = LOG_PERF_NG_PCT.Value
+                            LOG_PERF_FI_WF_PPH.Value = LOG_PERF_WF_AVG_PPH.Value
+                            LOG_PERF_FI_SHP_HP.Value = LOG_PERF_SHP_DYNO_HP.Value
+                            LOG_PERF_FI_ORBT_DEGF.Value = LOG_PERF_T_OIL_BULB_DEGF.Value
+                            LOG_PERF_FI_RUNTIME.Value = New Global.KineticaRT.Values.Text(Format(DateAdd("s", OPERATING_TIME_CURRENT_SEC.Value.ToDouble(), "00:00:00"), "HH:mm:ss"))
+                        End If
+
+                        If sender.Name = "CAPTURE_START_FI_CHECK" Then
+                            LOG_PERF_FI_CHECK_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '4.5 Gas Producer 
+
+                        If sender.Name = "CAPTURE_START_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE" Then
+                            LOG_PERF_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '4.6 TO Power Setting
+
+                        If sender.Name = "CAPTURE_TO_POWER_SETTING_AT_MCP" Then
+                            LOG_PERF_TO_POWER_SETTING_AT_MCP_POFO_PSIG.Value = LOG_PERF_P_OIL_FILTER_DISCHARGE_PSIG.Value
+                            LOG_PERF_TO_POWER_SETTING_AT_MCP_MGTB_DEGF.Value = LOG_PERF_T_MGTB_DEGF.Value
+                            LOG_PERF_TO_POWER_SETTING_AT_MCP_WOIL_PPH.Value = LOG_PERF_WO_PPH.Value
+                            LOG_PERF_TO_POWER_SETTING_AT_MCP_WF_PPH.Value = LOG_PERF_WF_AVG_PPH.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_TO_POWER_SETTING_HEAT_REJECTION" Then
+                            LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOSP_DEGF.Value = LOG_PERF_T_OIL_SCAVENGE_PUMP_OUTLET_DEGF.Value
+                            LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOPI_DEGF.Value = LOG_PERF_T_OIL_PUMP_INLET_DEGF.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_TO_POWER_SETTING_AT_TO" Then
+                            LOG_PERF_TO_POWER_SETTING_AT_TO_POFO_PSIG.Value = LOG_PERF_P_OIL_FILTER_DISCHARGE_PSIG.Value
+                            LOG_PERF_TO_POWER_SETTING_AT_TO_MGTB_DEGF.Value = LOG_PERF_T_MGTB_DEGF.Value
+                            LOG_PERF_TO_POWER_SETTING_AT_TO_WOIL_PPH.Value = LOG_PERF_WO_PPH.Value
+                            LOG_PERF_TO_POWER_SETTING_AT_TO_WF_PPH.Value = LOG_PERF_WF_AVG_PPH.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_TO_POWER_SETTING_TQ_CHECK" Then
+                            LOG_PERF_TO_POWER_SETTING_TQ_CHECK_PTQM_PSIG.Value = LOG_PERF_P_TORQUE_OIL_PRESSURE_PSIG.Value
+                            LOG_PERF_TO_POWER_SETTING_TQ_CHECK_TORQUE_LBSFT.Value = LOG_PERF_DYNO_TORQUE_LBSFT.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_START_TO_POWER_SETTING" Then
+                            LOG_PERF_TO_POWER_SETTING_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '4.8 Torquemeter Calibration
+
+                        If sender.Name = "CAPTURE_START_TORQUEMETER_CALIBRATION" Then
+                            LOG_PERF_TORQUEMETER_CALIBRATION_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '5.1 Control System Checks
+                        If sender.Name = "CAPTURE_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF" Then
+                            LOG_PERF_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF.Value = LOG_PERF_T_MGTB_DEGF.Value
+                        End If
+                        If sender.Name = "CAPTURE_AI_VALVE_CK_VALVE_ON_MGTB_DEGF" Then
+                            LOG_PERF_AI_VALVE_CK_VALVE_ON_MGTB_DEGF.Value = LOG_PERF_T_MGTB_DEGF.Value
+                        End If
+                        If sender.Name = "CAPTURE_MANUAL_MODE_CK_CHAN_A_WF_PPH" Then
+                            LOG_PERF_MANUAL_MODE_CK_CHAN_A_WF_PPH.Value = LOG_PERF_WF_AVG_PPH.Value
+                        End If
+                        If sender.Name = "CAPTURE_MANUAL_MODE_CK_CHAN_B_WF_PPH" Then
+                            LOG_PERF_MANUAL_MODE_CK_CHAN_B_WF_PPH.Value = LOG_PERF_WF_AVG_PPH.Value
+                        End If
+                        If sender.Name = "CAPTURE_MANUAL_MODE_WF_PPH" Then
+                            LOG_PERF_MANUAL_MODE_WF_PPH.Value = LOG_PERF_WF_AVG_PPH.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_START_CONTROL_SYSTEM_CHECKS" Then
+                            LOG_PERF_CONTROL_SYSTEM_CHECKS_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '5.2 Transient time check (reference DS-A1470)
+
+                        If sender.Name = "CAPTURE_TRANSIENT_FADEC_CHA_DECEL_TIME" Then
+                            LOG_PERF_CHAN_A_DECEL_TIME_SEC.Value = TRANSIENT_CHECK_DECEL_TIME_SEC.Value
+                        End If
+                        If sender.Name = "CAPTURE_TRANSIENT_FADEC_CHB_ACCEL_TIME" Then
+                            LOG_PERF_CHAN_B_ACCEL_TIME_SEC.Value = TRANSIENT_CHECK_ACCEL_TIME_SEC.Value
+                        End If
+                        If sender.Name = "CAPTURE_TRANSIENT_FADEC_CHA_ACCEL_TIME" Then
+                            LOG_PERF_CHAN_A_DECEL_TIME_SEC.Value = TRANSIENT_CHECK_ACCEL_TIME_SEC.Value
+                        End If
+                        If sender.Name = "CAPTURE_TRANSIENT_FADEC_CHB_DECEL_TIME" Then
+                            LOG_PERF_CHAN_B_ACCEL_TIME_SEC.Value = TRANSIENT_CHECK_DECEL_TIME_SEC.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_START_TRANSIENT_TIME_CHECK" Then
+                            LOG_PERF_TRANSIENT_TIME_CHECK_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '5.3 Performance and Sensor Correlation
+
+                        If sender.Name = "CAPTURE_START_PERFORMANCE_AND_SENSOR_CORRELATION" Then
+                            LOG_PERF_PERFORMANCE_AND_SENSOR_CORRELATION_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '5.4 Vibration Survey
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_100NP_70NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_70NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_70NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_70NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_70NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_100NP_70NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_70NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_100NP_80NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_80NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_80NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_80NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_80NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_100NP_80NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_80NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_100NP_90NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_90NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_90NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_90NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_90NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_100NP_90NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_90NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_100NP_95NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_95NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_95NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_95NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_95NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_100NP_95NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_95NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_100NP_100NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_100NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_100NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_100NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_100NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_100NP_100NG" Then
+                            LOG_PERF_VIB_SURVEY_100NP_100NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_100NP_TO" Then
+                            LOG_PERF_VIB_SURVEY_100NP_TO_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_TO_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_TO_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_100NP_TO_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_100NP_TO" Then
+                            LOG_PERF_VIB_SURVEY_100NP_TO_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_90NP_70NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_70NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_70NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_70NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_70NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_90NP_70NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_70NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_90NP_80NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_80NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_80NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_80NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_80NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_90NP_80NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_80NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_90NP_90NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_90NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_90NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_90NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_90NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_90NP_90NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_90NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_90NP_95NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_95NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_95NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_95NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_95NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_90NP_95NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_95NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_90NP_100NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_100NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_100NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_100NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_100NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_90NP_100NG" Then
+                            LOG_PERF_VIB_SURVEY_90NP_100NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_90NP_TO" Then
+                            LOG_PERF_VIB_SURVEY_90NP_TO_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_TO_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_TO_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_90NP_TO_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_90NP_TO" Then
+                            LOG_PERF_VIB_SURVEY_90NP_TO_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_105NP_70NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_70NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_70NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_70NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_70NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_105NP_70NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_70NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_105NP_80NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_80NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_80NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_80NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_80NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_105NP_80NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_80NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_105NP_90NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_90NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_90NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_90NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_90NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_105NP_90NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_90NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_105NP_95NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_95NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_95NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_95NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_95NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_105NP_95NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_95NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_105NP_100NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_100NG_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_100NG_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_100NG_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_100NG_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_105NP_100NG" Then
+                            LOG_PERF_VIB_SURVEY_105NP_100NG_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        If sender.Name = "CAPTURE_VIB_SURVEY_105NP_TO" Then
+                            LOG_PERF_VIB_SURVEY_105NP_TO_VGBR_IPS.Value = LOG_PERF_VIB_GEARBOX_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_TO_VADA_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_TO_VADR_IPS.Value = LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS.Value
+                            LOG_PERF_VIB_SURVEY_105NP_TO_VCHR_IPS.Value = LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS.Value
+                        End If
+                        If sender.Name = "CAPTURE_START_VIB_SURVEY_105NP_TO" Then
+                            LOG_PERF_VIB_SURVEY_105NP_TO_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '5.5 Final oil level marking
+                        If sender.Name = "CAPTURE_FINAL_OIL_LEVEL_MARKING" Then
+                            LOG_PERF_FINAL_OIL_LEVEL_ORBT_DEGF.Value = LOG_PERF_T_OIL_BULB_DEGF.Value
+                            LOG_PERF_FINAL_OIL_LEVEL_RUNTIME.Value = New Global.KineticaRT.Values.Text(Format(DateAdd("s", OPERATING_TIME_CURRENT_SEC.Value.ToDouble(), "00:00:00"), "HH:mm:ss"))
+                        End If
+
+                        If sender.Name = "CAPTURE_START_FINAL_OIL_LEVEL_MARKING" Then
+                            LOG_PERF_FINAL_OIL_LEVEL_MARKING_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '5.6 Final Inspections
+                        If sender.Name = "CAPTURE_START_FINAL_INSPECTIONS" Then
+                            LOG_PERF_FINAL_INSPECTIONS_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        '5.7 Leak and seal drain check
+                        If sender.Name = "CAPTURE_START_LEAK_AND_SEAL_DRAIN_CHECK" Then
+                            LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK_START.Value = NUMBER_OF_STARTS.Value
+                        End If
+
+                        'Transient Test Setup
+                        If sender.Name = "CAPTURE_TRANSIENT_AMBIENT_TEMPERATURE" Then
+                            LOG_PERF_TRANSIENT_AMBIENT_TEMP_DEGF.Value = LOG_PERF_T_CELL_DEGF.Value
+                        End If
+                        If sender.Name = "CAPTURE_TRANSIENT_AMBIENT_PRESSURE" Then
+                            LOG_PERF_TRANSIENT_AMBIENT_PRESSURE_PSIA.Value = LOG_PERF_P_BARO_PSIA.Value
+                        End If
+                        If sender.Name = "CAPTURE_TRANSIENT_MAXIMUM_RATE_NG" Then
+                            LOG_PERF_TRANSIENT_MAX_RATE_NG_RPM.Value = LOG_PERF_NG_MAX_RATE_RPM.Value
+                        End If
+                        If sender.Name = "CAPTURE_TRANSIENT_NG_MAX_TAKEOFF" Then
+                            LOG_PERF_TRANSIENT_NG_MAX_TAKEOFF_RPM.Value = LOG_PERF_NG_RPM.Value
+                        End If
+                        If sender.Name = "CAPTURE_TRANSIENT_ACCEL_TEST_TARGET_SPEED" Then
+                            LOG_PERF_TRANSIENT_ACCEL_TEST_TARGET_SPEED_RPM.Value = LOG_PERF_TRANSIENT_CHECK_ACCEL_NG_ENDPOINT_RPM.Value
+                        End If
+                        If sender.Name = "CAPTURE_TRANSIENT_DECEL_TEST_TARGET_SPEED" Then
+                            LOG_PERF_TRANSIENT_DECEL_TEST_TARGET_SPEED_RPM.Value = LOG_PERF_TRANSIENT_CHECK_DECEL_NG_ENDPOINT_RPM.Value
+                        End If
+
+                    End If
+                End If
+
+            Catch ex As System.Exception
+                MessageBox.Show("OnLOG_PERF_CAPTURE: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+
+        End Sub
+
+        Private Function CreatePerformance(ByVal AppendOption As Boolean, ByVal TestStepNumber As Integer, ByVal ProtectPassword As String, ByVal UnProtectPassword As String, ByRef excelWorkbook As Excel.Workbook) As Boolean
+
+            'Declaration
+            Dim currentSheet As String
+            Dim excelSheets As Excel.Sheets
+            Dim excelWorksheet As Excel.Worksheet
+            Dim SelectString As String = String.Empty
+            Dim Cmd As OleDbCommand
+            Dim Reader As OleDbDataReader
+
+            CreatePerformance = True
+
+            Try
+
+                ' The following gets the Worksheets collection
+                excelSheets = excelWorkbook.Worksheets
+                'Unlock Sheets
+                excelWorkbook.Worksheets(1).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(2).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(3).Unprotect(UnProtectPassword)
+
+                If AppendOption = False Then
+
+                    currentSheet = "TESTS"
+                    excelWorksheet = excelSheets.Item(currentSheet)
+
+                    Dim row As Integer = 5
+                    Dim column As Integer = 3
+
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = Format(Now, "yyyy/MM/dd")
+
+                    column += 2
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = Format(Now, "HH:mm:ss")
+
+                    row += 1
+                    column -= 3
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = CELProject.Project.Description
+                    row += 1
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.TestInstructions
+
+                    column += 3
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.TestInstructionsRev
+
+                    row += 1
+                    column -= 3
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.OperatorName
+                    row += 1
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.InspectorName
+
+                    row = 5
+                    column = 7
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.EngineSerialNumber
+
+                    column += 2
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.Build
+
+                    row += 1
+                    column -= 2
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.PartNumber
+
+                    row += 1
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.WorkOrder
+
+                    row += 1
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.FADECPartNumber
+
+                    row += 1
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.FADECSerialNumber
+
+                End If
+
+                currentSheet = "TESTS"
+                excelWorksheet = excelSheets.Item(currentSheet)
+
+                '3. Preparation for test
+                excelWorksheet.Cells(14, 5).Value = LOG_PERF_PREPARATION_FOR_TEST.Value.ToString
+
+                '4.2 Motoring Checks
+                excelWorksheet.Cells(14, 8).Value = LOG_PERF_MOTORING_CHECKS.Value.ToString(LOG_PERF_MOTORING_CHECKS.Format, Nothing)
+
+                '4.2 Motoring Start
+                excelWorksheet.Cells(14, 10).Value = LOG_PERF_MOTORING_CHECKS_START.Value.ToString(LOG_PERF_MOTORING_CHECKS_START.Format, Nothing)
+
+                '4.3 Initial Start to G.I Start
+                excelWorksheet.Cells(15, 10).Value = LOG_PERF_INITIAL_START_TO_GI_START.Value.ToString(LOG_PERF_INITIAL_START_TO_GI_START.Format, Nothing)
+
+                '4.4 F.I. check
+                excelWorksheet.Cells(16, 4).Value = LOG_PERF_FI_NG_PCT.Value.ToString(LOG_PERF_FI_NG_PCT.Format, Nothing)
+                excelWorksheet.Cells(16, 6).Value = LOG_PERF_FI_WF_PPH.Value.ToString(LOG_PERF_FI_WF_PPH.Format, Nothing)
+                excelWorksheet.Cells(16, 8).Value = LOG_PERF_FI_SHP_HP.Value.ToString(LOG_PERF_FI_SHP_HP.Format, Nothing)
+                excelWorksheet.Cells(17, 4).Value = LOG_PERF_FI_OIL_LEVEL.Value.ToString(LOG_PERF_FI_OIL_LEVEL.Format, Nothing)
+                excelWorksheet.Cells(17, 6).Value = LOG_PERF_FI_ORBT_DEGF.Value.ToString(LOG_PERF_FI_ORBT_DEGF.Format, Nothing)
+                excelWorksheet.Cells(17, 8).Value = LOG_PERF_FI_RUNTIME.Value.ToString
+
+                '4.4 F.I. check Start
+                excelWorksheet.Cells(16, 10).Value = LOG_PERF_FI_CHECK_START.Value.ToString(LOG_PERF_FI_CHECK_START.Format, Nothing)
+
+                '4.5 Gas Producer seal Break-in procedure Start
+                excelWorksheet.Cells(18, 10).Value = LOG_PERF_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE_START.Value.ToString(LOG_PERF_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE_START.Format, Nothing)
+
+                '4.6 TO Power Setting
+
+                excelWorksheet.Cells(20, 6).Value = LOG_PERF_TO_POWER_SETTING_AT_MCP_POFO_PSIG.Value.ToString(LOG_PERF_TO_POWER_SETTING_AT_MCP_POFO_PSIG.Format, Nothing)
+                excelWorksheet.Cells(20, 8).Value = LOG_PERF_TO_POWER_SETTING_AT_MCP_WOIL_PPH.Value.ToString(LOG_PERF_TO_POWER_SETTING_AT_MCP_WOIL_PPH.Format, Nothing)
+                excelWorksheet.Cells(21, 6).Value = LOG_PERF_TO_POWER_SETTING_AT_MCP_MGTB_DEGF.Value.ToString(LOG_PERF_TO_POWER_SETTING_AT_MCP_MGTB_DEGF.Format, Nothing)
+                excelWorksheet.Cells(21, 8).Value = LOG_PERF_TO_POWER_SETTING_AT_MCP_WF_PPH.Value.ToString(LOG_PERF_TO_POWER_SETTING_AT_MCP_WF_PPH.Format, Nothing)
+                excelWorksheet.Cells(22, 6).Value = LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOSP_DEGF.Value.ToString(LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOSP_DEGF.Format, Nothing)
+                excelWorksheet.Cells(22, 8).Value = LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOPI_DEGF.Value.ToString(LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOPI_DEGF.Format, Nothing)
+                excelWorksheet.Cells(23, 6).Value = LOG_PERF_TO_POWER_SETTING_AT_TO_POFO_PSIG.Value.ToString(LOG_PERF_TO_POWER_SETTING_AT_TO_POFO_PSIG.Format, Nothing)
+                excelWorksheet.Cells(23, 8).Value = LOG_PERF_TO_POWER_SETTING_AT_TO_WOIL_PPH.Value.ToString(LOG_PERF_TO_POWER_SETTING_AT_TO_WOIL_PPH.Format, Nothing)
+                excelWorksheet.Cells(24, 6).Value = LOG_PERF_TO_POWER_SETTING_AT_TO_MGTB_DEGF.Value.ToString(LOG_PERF_TO_POWER_SETTING_AT_TO_MGTB_DEGF.Format, Nothing)
+                excelWorksheet.Cells(24, 8).Value = LOG_PERF_TO_POWER_SETTING_AT_TO_WF_PPH.Value.ToString(LOG_PERF_TO_POWER_SETTING_AT_TO_WF_PPH.Format, Nothing)
+                excelWorksheet.Cells(25, 6).Value = LOG_PERF_TO_POWER_SETTING_TQ_CHECK_PTQM_PSIG.Value.ToString(LOG_PERF_TO_POWER_SETTING_TQ_CHECK_PTQM_PSIG.Format, Nothing)
+                excelWorksheet.Cells(25, 8).Value = LOG_PERF_TO_POWER_SETTING_TQ_CHECK_TORQUE_LBSFT.Value.ToString(LOG_PERF_TO_POWER_SETTING_TQ_CHECK_TORQUE_LBSFT.Format, Nothing)
+
+                '4.6 TO Power Setting Start
+                excelWorksheet.Cells(19, 10).Value = LOG_PERF_TO_POWER_SETTING_START.Value.ToString(LOG_PERF_TO_POWER_SETTING_START.Format, Nothing)
+
+                '4.8 Torquemeter Calibration
+
+                excelWorksheet.Cells(26, 6).Value = LOG_PERF_Q_HIGH.Value.ToString(LOG_PERF_Q_HIGH.Format, Nothing)
+                excelWorksheet.Cells(26, 8).Value = LOG_PERF_PTQM_H.Value.ToString(LOG_PERF_PTQM_H.Format, Nothing)
+                excelWorksheet.Cells(27, 6).Value = LOG_PERF_Q_LOW.Value.ToString(LOG_PERF_Q_LOW.Format, Nothing)
+                excelWorksheet.Cells(27, 8).Value = LOG_PERF_PTQM_L.Value.ToString(LOG_PERF_PTQM_L.Format, Nothing)
+                excelWorksheet.Cells(28, 6).Value = LOG_PERF_CHAN_A_GAIN.Value.ToString(LOG_PERF_CHAN_A_GAIN.Format, Nothing)
+                excelWorksheet.Cells(28, 8).Value = LOG_PERF_CHAN_A_OFFSET.Value.ToString(LOG_PERF_CHAN_A_OFFSET.Format, Nothing)
+                excelWorksheet.Cells(29, 6).Value = LOG_PERF_CHAN_B_GAIN.Value.ToString(LOG_PERF_CHAN_B_GAIN.Format, Nothing)
+                excelWorksheet.Cells(29, 8).Value = LOG_PERF_CHAN_B_OFFSET.Value.ToString(LOG_PERF_CHAN_B_OFFSET.Format, Nothing)
+
+                '4.8 Torquemeter Calibration Start
+                excelWorksheet.Cells(26, 10).Value = LOG_PERF_TORQUEMETER_CALIBRATION_START.Value.ToString(LOG_PERF_TORQUEMETER_CALIBRATION_START.Format, Nothing)
+
+                '5.1 Control System Checks
+
+                excelWorksheet.Cells(30, 6).Value = LOG_PERF_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF.Value.ToString(LOG_PERF_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF.Format, Nothing)
+                excelWorksheet.Cells(30, 8).Value = LOG_PERF_AI_VALVE_CK_VALVE_ON_MGTB_DEGF.Value.ToString(LOG_PERF_AI_VALVE_CK_VALVE_ON_MGTB_DEGF.Format, Nothing)
+                excelWorksheet.Cells(31, 6).Value = LOG_PERF_MANUAL_MODE_CK_CHAN_A_WF_PPH.Value.ToString(LOG_PERF_MANUAL_MODE_CK_CHAN_A_WF_PPH.Format, Nothing)
+                excelWorksheet.Cells(31, 8).Value = LOG_PERF_MANUAL_MODE_CK_CHAN_B_WF_PPH.Value.ToString(LOG_PERF_MANUAL_MODE_CK_CHAN_B_WF_PPH.Format, Nothing)
+                excelWorksheet.Cells(32, 6).Value = LOG_PERF_MANUAL_MODE_WF_PPH.Value.ToString(LOG_PERF_MANUAL_MODE_WF_PPH.Format, Nothing)
+                If CELProject.IsTrue(LOG_PERF_PRIMARY_MODE_CHAN_B_TRANSFERS.Value) Then
+                    excelWorksheet.Cells(32, 8).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(32, 8).Value = "FAILED"
+                End If
+
+                '5.1 Control System Checks Start
+                excelWorksheet.Cells(30, 10).Value = LOG_PERF_CONTROL_SYSTEM_CHECKS_START.Value.ToString(LOG_PERF_CONTROL_SYSTEM_CHECKS_START.Format, Nothing)
+
+                '5.2 Transient time check (reference DS-A1470)
+
+                If CELProject.IsTrue(LOG_PERF_VERIFY_NP_IS_SET_TO_110PCT.Value) Then
+                    excelWorksheet.Cells(33, 6).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(33, 6).Value = "FAILED"
+                End If
+                excelWorksheet.Cells(33, 8).Value = LOG_PERF_CHAN_A_ACCEL_TIME_SEC.Value.ToString(LOG_PERF_CHAN_A_ACCEL_TIME_SEC.Format, Nothing)
+                excelWorksheet.Cells(34, 6).Value = LOG_PERF_CHAN_A_DECEL_TIME_SEC.Value.ToString(LOG_PERF_CHAN_A_DECEL_TIME_SEC.Format, Nothing)
+                excelWorksheet.Cells(35, 6).Value = LOG_PERF_CHAN_B_ACCEL_TIME_SEC.Value.ToString(LOG_PERF_CHAN_B_ACCEL_TIME_SEC.Format, Nothing)
+                excelWorksheet.Cells(35, 8).Value = LOG_PERF_CHAN_B_DECEL_TIME_SEC.Value.ToString(LOG_PERF_CHAN_B_DECEL_TIME_SEC.Format, Nothing)
+                excelWorksheet.Cells(36, 6).Value = LOG_PERF_RECORD_FADEC_FAULTS.Value.ToString(LOG_PERF_RECORD_FADEC_FAULTS.Format, Nothing)
+                If CELProject.IsTrue(LOG_PERF_VERIFY_NP_IS_RESET_TO_100PCT.Value) Then
+                    excelWorksheet.Cells(36, 8).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(36, 8).Value = "FAILED"
+                End If
+
+                '5.2 Transient time check (reference DS-A1470) Start
+                excelWorksheet.Cells(33, 10).Value = LOG_PERF_TRANSIENT_TIME_CHECK_START.Value.ToString(LOG_PERF_TRANSIENT_TIME_CHECK_START.Format, Nothing)
+
+                '5.3 Performance and sensor correlation
+
+                If CELProject.IsTrue(LOG_PERF_OIL_PRESSURE_FLOW_RECHECK.Value) Then
+                    excelWorksheet.Cells(37, 8).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(37, 8).Value = "FAILED"
+                End If
+
+                If CELProject.IsTrue(LOG_PERF_PERFORMANCE_ACCEPTABLE.Value) Then
+                    excelWorksheet.Cells(38, 8).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(38, 8).Value = "FAILED"
+                End If
+
+                If CELProject.IsTrue(LOG_PERF_SENSOR_CORRELATION_ACCEPTABLE.Value) Then
+                    excelWorksheet.Cells(39, 8).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(39, 8).Value = "FAILED"
+                End If
+
+                '5.3 Performance and sensor correlation Start
+                excelWorksheet.Cells(37, 10).Value = LOG_PERF_PERFORMANCE_AND_SENSOR_CORRELATION_START.Value.ToString(LOG_PERF_PERFORMANCE_AND_SENSOR_CORRELATION_START.Format, Nothing)
+
+                currentSheet = "VIBRATION SURVEY AND TESTS"
+                excelWorksheet = excelSheets.Item(currentSheet)
+
+                'VIBRATION SURVEY
+
+                excelWorksheet.Cells(14, 4).Value = LOG_PERF_VIB_SURVEY_100NP_70NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_70NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(14, 6).Value = LOG_PERF_VIB_SURVEY_100NP_70NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_70NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(14, 8).Value = LOG_PERF_VIB_SURVEY_100NP_70NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_70NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(14, 10).Value = LOG_PERF_VIB_SURVEY_100NP_70NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_70NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(14, 11).Value = LOG_PERF_VIB_SURVEY_100NP_70NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_70NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(15, 4).Value = LOG_PERF_VIB_SURVEY_100NP_80NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_80NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(15, 6).Value = LOG_PERF_VIB_SURVEY_100NP_80NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_80NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(15, 8).Value = LOG_PERF_VIB_SURVEY_100NP_80NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_80NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(15, 10).Value = LOG_PERF_VIB_SURVEY_100NP_80NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_80NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(15, 11).Value = LOG_PERF_VIB_SURVEY_100NP_80NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_80NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(16, 4).Value = LOG_PERF_VIB_SURVEY_100NP_90NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_90NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(16, 6).Value = LOG_PERF_VIB_SURVEY_100NP_90NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_90NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(16, 8).Value = LOG_PERF_VIB_SURVEY_100NP_90NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_90NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(16, 10).Value = LOG_PERF_VIB_SURVEY_100NP_90NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_90NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(16, 11).Value = LOG_PERF_VIB_SURVEY_100NP_90NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_90NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(17, 4).Value = LOG_PERF_VIB_SURVEY_100NP_95NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_95NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(17, 6).Value = LOG_PERF_VIB_SURVEY_100NP_95NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_95NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(17, 8).Value = LOG_PERF_VIB_SURVEY_100NP_95NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_95NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(17, 10).Value = LOG_PERF_VIB_SURVEY_100NP_95NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_95NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(17, 11).Value = LOG_PERF_VIB_SURVEY_100NP_95NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_95NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(18, 4).Value = LOG_PERF_VIB_SURVEY_100NP_100NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_100NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(18, 6).Value = LOG_PERF_VIB_SURVEY_100NP_100NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_100NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(18, 8).Value = LOG_PERF_VIB_SURVEY_100NP_100NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_100NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(18, 10).Value = LOG_PERF_VIB_SURVEY_100NP_100NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_100NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(18, 11).Value = LOG_PERF_VIB_SURVEY_100NP_100NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_100NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(19, 4).Value = LOG_PERF_VIB_SURVEY_100NP_TO_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_TO_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(19, 6).Value = LOG_PERF_VIB_SURVEY_100NP_TO_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_TO_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(19, 8).Value = LOG_PERF_VIB_SURVEY_100NP_TO_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_TO_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(19, 10).Value = LOG_PERF_VIB_SURVEY_100NP_TO_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_TO_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(19, 11).Value = LOG_PERF_VIB_SURVEY_100NP_TO_START.Value.ToString(LOG_PERF_VIB_SURVEY_100NP_TO_START.Format, Nothing)
+
+                excelWorksheet.Cells(20, 4).Value = LOG_PERF_VIB_SURVEY_90NP_70NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_70NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(20, 6).Value = LOG_PERF_VIB_SURVEY_90NP_70NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_70NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(20, 8).Value = LOG_PERF_VIB_SURVEY_90NP_70NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_70NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(20, 10).Value = LOG_PERF_VIB_SURVEY_90NP_70NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_70NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(20, 11).Value = LOG_PERF_VIB_SURVEY_90NP_70NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_70NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(21, 4).Value = LOG_PERF_VIB_SURVEY_90NP_80NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_80NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(21, 6).Value = LOG_PERF_VIB_SURVEY_90NP_80NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_80NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(21, 8).Value = LOG_PERF_VIB_SURVEY_90NP_80NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_80NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(21, 10).Value = LOG_PERF_VIB_SURVEY_90NP_80NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_80NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(21, 11).Value = LOG_PERF_VIB_SURVEY_90NP_80NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_80NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(22, 4).Value = LOG_PERF_VIB_SURVEY_90NP_90NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_90NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(22, 6).Value = LOG_PERF_VIB_SURVEY_90NP_90NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_90NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(22, 8).Value = LOG_PERF_VIB_SURVEY_90NP_90NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_90NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(22, 10).Value = LOG_PERF_VIB_SURVEY_90NP_90NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_90NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(22, 11).Value = LOG_PERF_VIB_SURVEY_90NP_90NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_90NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(23, 4).Value = LOG_PERF_VIB_SURVEY_90NP_95NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_95NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(23, 6).Value = LOG_PERF_VIB_SURVEY_90NP_95NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_95NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(23, 8).Value = LOG_PERF_VIB_SURVEY_90NP_95NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_95NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(23, 10).Value = LOG_PERF_VIB_SURVEY_90NP_95NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_95NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(23, 11).Value = LOG_PERF_VIB_SURVEY_90NP_95NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_95NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(24, 4).Value = LOG_PERF_VIB_SURVEY_90NP_100NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_100NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(24, 6).Value = LOG_PERF_VIB_SURVEY_90NP_100NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_100NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(24, 8).Value = LOG_PERF_VIB_SURVEY_90NP_100NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_100NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(24, 10).Value = LOG_PERF_VIB_SURVEY_90NP_100NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_100NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(24, 11).Value = LOG_PERF_VIB_SURVEY_90NP_100NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_100NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(25, 4).Value = LOG_PERF_VIB_SURVEY_90NP_TO_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_TO_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(25, 6).Value = LOG_PERF_VIB_SURVEY_90NP_TO_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_TO_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(25, 8).Value = LOG_PERF_VIB_SURVEY_90NP_TO_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_TO_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(25, 10).Value = LOG_PERF_VIB_SURVEY_90NP_TO_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_TO_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(25, 11).Value = LOG_PERF_VIB_SURVEY_90NP_TO_START.Value.ToString(LOG_PERF_VIB_SURVEY_90NP_TO_START.Format, Nothing)
+
+                excelWorksheet.Cells(26, 4).Value = LOG_PERF_VIB_SURVEY_105NP_70NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_70NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(26, 6).Value = LOG_PERF_VIB_SURVEY_105NP_70NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_70NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(26, 8).Value = LOG_PERF_VIB_SURVEY_105NP_70NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_70NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(26, 10).Value = LOG_PERF_VIB_SURVEY_105NP_70NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_70NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(26, 11).Value = LOG_PERF_VIB_SURVEY_105NP_70NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_70NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(27, 4).Value = LOG_PERF_VIB_SURVEY_105NP_80NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_80NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(27, 6).Value = LOG_PERF_VIB_SURVEY_105NP_80NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_80NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(27, 8).Value = LOG_PERF_VIB_SURVEY_105NP_80NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_80NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(27, 10).Value = LOG_PERF_VIB_SURVEY_105NP_80NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_80NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(27, 11).Value = LOG_PERF_VIB_SURVEY_105NP_80NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_80NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(28, 4).Value = LOG_PERF_VIB_SURVEY_105NP_90NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_90NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(28, 6).Value = LOG_PERF_VIB_SURVEY_105NP_90NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_90NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(28, 8).Value = LOG_PERF_VIB_SURVEY_105NP_90NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_90NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(28, 10).Value = LOG_PERF_VIB_SURVEY_105NP_90NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_90NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(28, 11).Value = LOG_PERF_VIB_SURVEY_105NP_90NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_90NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(29, 4).Value = LOG_PERF_VIB_SURVEY_105NP_95NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_95NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(29, 6).Value = LOG_PERF_VIB_SURVEY_105NP_95NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_95NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(29, 8).Value = LOG_PERF_VIB_SURVEY_105NP_95NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_95NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(29, 10).Value = LOG_PERF_VIB_SURVEY_105NP_95NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_95NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(29, 11).Value = LOG_PERF_VIB_SURVEY_105NP_95NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_95NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(30, 4).Value = LOG_PERF_VIB_SURVEY_105NP_100NG_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_100NG_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(30, 6).Value = LOG_PERF_VIB_SURVEY_105NP_100NG_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_100NG_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(30, 8).Value = LOG_PERF_VIB_SURVEY_105NP_100NG_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_100NG_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(30, 10).Value = LOG_PERF_VIB_SURVEY_105NP_100NG_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_100NG_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(30, 11).Value = LOG_PERF_VIB_SURVEY_105NP_100NG_START.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_100NG_START.Format, Nothing)
+
+                excelWorksheet.Cells(31, 4).Value = LOG_PERF_VIB_SURVEY_105NP_TO_VGBR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_TO_VGBR_IPS.Format, Nothing)
+                excelWorksheet.Cells(31, 6).Value = LOG_PERF_VIB_SURVEY_105NP_TO_VADA_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_TO_VADA_IPS.Format, Nothing)
+                excelWorksheet.Cells(31, 8).Value = LOG_PERF_VIB_SURVEY_105NP_TO_VADR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_TO_VADR_IPS.Format, Nothing)
+                excelWorksheet.Cells(31, 10).Value = LOG_PERF_VIB_SURVEY_105NP_TO_VCHR_IPS.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_TO_VCHR_IPS.Format, Nothing)
+
+                excelWorksheet.Cells(31, 11).Value = LOG_PERF_VIB_SURVEY_105NP_TO_START.Value.ToString(LOG_PERF_VIB_SURVEY_105NP_TO_START.Format, Nothing)
+
+                '5.5 Final oil level marking
+
+                excelWorksheet.Cells(33, 6).Value = LOG_PERF_FINAL_OIL_LEVEL_OIL_LEVEL.Value.ToString(LOG_PERF_FINAL_OIL_LEVEL_OIL_LEVEL.Format, Nothing)
+                excelWorksheet.Cells(33, 8).Value = LOG_PERF_FINAL_OIL_LEVEL_ORBT_DEGF.Value.ToString(LOG_PERF_FINAL_OIL_LEVEL_ORBT_DEGF.Format, Nothing)
+                excelWorksheet.Cells(33, 10).Value = LOG_PERF_FINAL_OIL_LEVEL_RUNTIME.Value.ToString
+                excelWorksheet.Cells(34, 6).Value = LOG_PERF_FINAL_OIL_LEVEL_COAST_DOWN_TIME.Value.ToString(LOG_PERF_FINAL_OIL_LEVEL_COAST_DOWN_TIME.Format, Nothing)
+                excelWorksheet.Cells(34, 10).Value = LOG_PERF_FINAL_OIL_LEVEL_CONSUMPTION_PPH.Value.ToString(LOG_PERF_FINAL_OIL_LEVEL_CONSUMPTION_PPH.Format, Nothing)
+
+                excelWorksheet.Cells(33, 11).Value = LOG_PERF_FINAL_OIL_LEVEL_MARKING_START.Value.ToString(LOG_PERF_FINAL_OIL_LEVEL_MARKING_START.Format, Nothing)
+
+                '5.6 Final Inspections
+
+                If CELProject.IsTrue(LOG_PERF_FINAL_INSPECTIONS_CHIP_DETECTORS.Value) Then
+                    excelWorksheet.Cells(35, 6).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(35, 6).Value = "FAILED"
+                End If
+
+                If CELProject.IsTrue(LOG_PERF_FINAL_INSPECTIONS_OIL_FILTER.Value) Then
+                    excelWorksheet.Cells(35, 8).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(35, 8).Value = "FAILED"
+                End If
+
+                If CELProject.IsTrue(LOG_PERF_FINAL_INSPECTIONS_PTPD.Value) Then
+                    excelWorksheet.Cells(35, 10).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(35, 10).Value = "FAILED"
+                End If
+
+                excelWorksheet.Cells(35, 11).Value = LOG_PERF_FINAL_INSPECTIONS_START.Value.ToString(LOG_PERF_FINAL_INSPECTIONS_START.Format, Nothing)
+
+                '5.7 Leak and seal drain check
+
+                If CELProject.IsTrue(LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK.Value) Then
+                    excelWorksheet.Cells(36, 4).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(36, 4).Value = "FAILED"
+                End If
+
+                excelWorksheet.Cells(36, 11).Value = LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK_START.Value.ToString(LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK_START.Format, Nothing)
+
+                '5.8 Data Review
+
+                If CELProject.IsTrue(LOG_PERF_DATA_REVIEW.Value) Then
+                    excelWorksheet.Cells(37, 4).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(37, 4).Value = "FAILED"
+                End If
+
+                '5.9 Preservation Completed.
+
+                If CELProject.IsTrue(LOG_PERF_PRESERVATION_COMPLETED.Value) Then
+                    excelWorksheet.Cells(38, 4).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(38, 4).Value = "FAILED"
+                End If
+
+                If CELProject.IsTrue(LOG_PERF_DEVIATION_REQUIRED.Value) Then
+                    excelWorksheet.Cells(38, 10).Value = "PASSED"
+                Else
+                    excelWorksheet.Cells(38, 10).Value = "FAILED"
+                End If
+
+                currentSheet = "TRANSIENT TESTS"
+                excelWorksheet = excelSheets.Item(currentSheet)
+
+                excelWorksheet.Cells(14, 3).Value = LOG_PERF_TRANSIENT_AMBIENT_TEMP_DEGF.Value.ToString(LOG_PERF_TRANSIENT_AMBIENT_TEMP_DEGF.Format, Nothing)
+                excelWorksheet.Cells(15, 3).Value = LOG_PERF_TRANSIENT_AMBIENT_PRESSURE_PSIA.Value.ToString(LOG_PERF_TRANSIENT_AMBIENT_PRESSURE_PSIA.Format, Nothing)
+                excelWorksheet.Cells(17, 3).Value = LOG_PERF_TRANSIENT_MAX_RATE_NG_RPM.Value.ToString(LOG_PERF_TRANSIENT_MAX_RATE_NG_RPM.Format, Nothing)
+                excelWorksheet.Cells(20, 3).Value = LOG_PERF_TRANSIENT_NG_MAX_TAKEOFF_RPM.Value.ToString(LOG_PERF_TRANSIENT_NG_MAX_TAKEOFF_RPM.Format, Nothing)
+                excelWorksheet.Cells(23, 3).Value = LOG_PERF_TRANSIENT_ACCEL_TEST_TARGET_SPEED_RPM.Value.ToString(LOG_PERF_TRANSIENT_ACCEL_TEST_TARGET_SPEED_RPM.Format, Nothing)
+                excelWorksheet.Cells(24, 3).Value = LOG_PERF_TRANSIENT_DECEL_TEST_TARGET_SPEED_RPM.Value.ToString(LOG_PERF_TRANSIENT_DECEL_TEST_TARGET_SPEED_RPM.Format, Nothing)
+                excelWorksheet.Cells(27, 3).Value = LOG_PERF_CHAN_A_ACCEL_TIME_SEC.Value.ToString(LOG_PERF_CHAN_A_ACCEL_TIME_SEC.Format, Nothing)
+                excelWorksheet.Cells(28, 3).Value = LOG_PERF_CHAN_A_DECEL_TIME_SEC.Value.ToString(LOG_PERF_CHAN_A_DECEL_TIME_SEC.Format, Nothing)
+                excelWorksheet.Cells(30, 3).Value = LOG_PERF_CHAN_B_ACCEL_TIME_SEC.Value.ToString(LOG_PERF_CHAN_B_ACCEL_TIME_SEC.Format, Nothing)
+                excelWorksheet.Cells(31, 3).Value = LOG_PERF_CHAN_B_DECEL_TIME_SEC.Value.ToString(LOG_PERF_CHAN_B_DECEL_TIME_SEC.Format, Nothing)
+
+            Catch ex As Exception
+                System.Diagnostics.Trace.WriteLine("CreatePerformanceFile: " + ex.Message)
+                MessageBox.Show(ex.ToString)
+                CreatePerformance = False
+
+            Finally
+                'Lock Sheets
+                excelWorkbook.Worksheets(1).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(2).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(3).Protect(ProtectPassword)
+            End Try
+
+        End Function
+
+        Protected Overrides Sub OnTestSessionInitialized(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionInitialized(newStatus)
+
+                If CELProject.EngineFamily = "HTS900" Then
+
+                    UserInputs.MapUserInputsParameters(CELProject)
+
+                    CELProject.EngineSession.WorkingFolder = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + UserInputs.EngineSerialNumber + "\" + UserInputs.WorkOrder
+                    CELProject.CreateLogFile(AddressOf CreateCustomHeaderLogFile, CELProject.EngineModel, CELProject.EngineModel)
+
+                End If
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionInitialized: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionOpened(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionOpened(newStatus)
+            Catch ex As Exception
+                MessageBox.Show("PWC100_Sequence.OnTestSessionOpened: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionRunning(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionRunning(newStatus)
+                If CELProject.EngineFamily = "HTS900" Then
+                    Init_Engine_Controls()
+                    Init_Engine_Channels()
+                    Init_Engine_Channels_Value()
+                    Init_Engine_Controllers()
+                    AddHandlers()
+                    MyBase.StartWorkingThread()
+                End If
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionRunning: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub AddHandlers()
+
+            AddHandler TRANSIENT_CHECK_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnTRANSIENT_CHECK_CLOSE_WINDOW_BTN
+            AddHandler TRANSIENT_CHECK_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnTRANSIENT_CHECK_OPEN_WINDOW_BTN
+            AddHandler ECU_PANEL_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnECU_PANEL_CLOSE_WINDOW_BTN
+            AddHandler ECU_PANEL_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnECU_PANEL_OPEN_WINDOW_BTN
+            AddHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+            AddHandler CELProject.PERF_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnPERF_CLOSE_WINDOW_BTN
+            AddHandler CELProject.PERF_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnPERF_OPEN_WINDOW_BTN
+            AddHandler CELProject.PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnPERF_TAKE_POINT_BTN
+            AddHandler CRANK_START_DEMAND_OPC.ValueChanged, AddressOf OnCRANK_BTN
+            AddHandler ENGINE_AT_REST.ValueChanged, AddressOf OnENGINE_AT_REST
+            AddHandler CLOSE_TEST_BTN_OPC.ValueChanged, AddressOf OnCLOSE_TEST_BTN
+            AddHandler CELProject.NEW_TEST_BTN.ValueChanged, AddressOf OnNEW_TEST_BTN
+            AddHandler NUMBER_OF_STARTS_CONDITION_LATCH.ValueChanged, AddressOf OnNUMBER_OF_STARTS_CONDITION
+
+            'Performance Capture
+
+            AddHandler CAPTURE_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_AI_VALVE_CK_VALVE_ON_MGTB_DEGF.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_DIGITAL_OFFSET_TIME.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_FI_CHECKS.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_FINAL_OIL_LEVEL_MARKING.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_MANUAL_MODE_CK_CHAN_A_WF_PPH.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_MANUAL_MODE_CK_CHAN_B_WF_PPH.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_MANUAL_MODE_WF_PPH.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_MOTORING_CHECKS.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_TRANSIENT_ACCEL_TEST_TARGET_SPEED.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_TRANSIENT_AMBIENT_PRESSURE.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_TRANSIENT_AMBIENT_TEMPERATURE.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_TRANSIENT_DECEL_TEST_TARGET_SPEED.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_TRANSIENT_MAXIMUM_RATE_NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_TRANSIENT_NG_MAX_TAKEOFF.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_100NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_100NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_100NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_100NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_100NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_100NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_105NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_105NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_105NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_105NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_105NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_105NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_90NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_90NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_90NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_90NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_90NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_VIB_SURVEY_90NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+
+            AddHandler CAPTURE_START_VIB_SURVEY_100NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_100NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_100NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_100NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_100NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_100NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_90NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_90NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_90NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_90NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_90NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_90NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_105NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_105NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_105NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_105NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_105NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_VIB_SURVEY_105NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_FINAL_OIL_LEVEL_MARKING.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_FINAL_INSPECTIONS.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_LEAK_AND_SEAL_DRAIN_CHECK.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            AddHandler CAPTURE_START_MOTORING_CHECKS.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+
+        End Sub
+
+        Protected Overrides Sub RemoveHandlers()
+            If Not (TRANSIENT_CHECK_CLOSE_WINDOW_BTN Is Nothing) Then
+                RemoveHandler TRANSIENT_CHECK_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnTRANSIENT_CHECK_CLOSE_WINDOW_BTN
+            End If
+            If Not (TRANSIENT_CHECK_OPEN_WINDOW_BTN Is Nothing) Then
+                RemoveHandler TRANSIENT_CHECK_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnTRANSIENT_CHECK_OPEN_WINDOW_BTN
+            End If
+            If Not (ECU_PANEL_CLOSE_WINDOW_BTN Is Nothing) Then
+                RemoveHandler ECU_PANEL_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnECU_PANEL_CLOSE_WINDOW_BTN
+            End If
+            If Not (ECU_PANEL_OPEN_WINDOW_BTN Is Nothing) Then
+                RemoveHandler ECU_PANEL_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnECU_PANEL_OPEN_WINDOW_BTN
+            End If
+            If Not (CELProject.LOG_TAKE_POINT_BTN Is Nothing) Then
+                RemoveHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+            End If
+            If Not (CELProject.PERF_CLOSE_WINDOW_BTN Is Nothing) Then
+                RemoveHandler CELProject.PERF_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnPERF_CLOSE_WINDOW_BTN
+            End If
+            If Not (CELProject.PERF_OPEN_WINDOW_BTN Is Nothing) Then
+                RemoveHandler CELProject.PERF_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnPERF_OPEN_WINDOW_BTN
+            End If
+            If Not (CELProject.PERF_TAKE_POINT_BTN Is Nothing) Then
+                RemoveHandler CELProject.PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnPERF_TAKE_POINT_BTN
+            End If
+            If Not (CRANK_START_DEMAND_OPC Is Nothing) Then
+                RemoveHandler CRANK_START_DEMAND_OPC.ValueChanged, AddressOf OnCRANK_BTN
+            End If
+            If Not (DYNO_SET_INLET_PCT Is Nothing) Then
+                RemoveHandler DYNO_SET_INLET_PCT.ValueChanged, AddressOf OnDYNO_INLET_VALIDATE
+            End If
+            If Not (DYNO_POS_DEMAND Is Nothing) Then
+                RemoveHandler DYNO_POS_DEMAND.ValueChanged, AddressOf OnDYNO_DEMAND_VALIDATE
+            End If
+            If Not (DYNO_SPEED_DEMAND Is Nothing) Then
+                RemoveHandler DYNO_SPEED_DEMAND.ValueChanged, AddressOf OnDYNO_DEMAND_VALIDATE
+            End If
+            If Not (DYNO_TORQUE_DEMAND Is Nothing) Then
+                RemoveHandler DYNO_TORQUE_DEMAND.ValueChanged, AddressOf OnDYNO_DEMAND_VALIDATE
+            End If
+            If Not (CELProject.NEW_TEST_BTN Is Nothing) Then
+                RemoveHandler CELProject.NEW_TEST_BTN.ValueChanged, AddressOf OnNEW_TEST_BTN
+            End If
+            If Not (ENGINE_AT_REST Is Nothing) Then
+                RemoveHandler ENGINE_AT_REST.ValueChanged, AddressOf OnENGINE_AT_REST
+            End If
+            If Not (CLOSE_TEST_BTN_OPC Is Nothing) Then
+                RemoveHandler CLOSE_TEST_BTN_OPC.ValueChanged, AddressOf OnCLOSE_TEST_BTN
+            End If
+            If Not (NUMBER_OF_STARTS_CONDITION_LATCH Is Nothing) Then
+                RemoveHandler NUMBER_OF_STARTS_CONDITION_LATCH.ValueChanged, AddressOf OnNUMBER_OF_STARTS_CONDITION
+            End If
+
+            'Performance Capture
+            If Not (CAPTURE_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF Is Nothing) Then
+                RemoveHandler CAPTURE_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_AI_VALVE_CK_VALVE_ON_MGTB_DEGF Is Nothing) Then
+                RemoveHandler CAPTURE_AI_VALVE_CK_VALVE_ON_MGTB_DEGF.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_FI_CHECKS Is Nothing) Then
+                RemoveHandler CAPTURE_FI_CHECKS.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_DIGITAL_OFFSET_TIME Is Nothing) Then
+                RemoveHandler CAPTURE_DIGITAL_OFFSET_TIME.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_FINAL_OIL_LEVEL_MARKING Is Nothing) Then
+                RemoveHandler CAPTURE_FINAL_OIL_LEVEL_MARKING.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_MANUAL_MODE_CK_CHAN_A_WF_PPH Is Nothing) Then
+                RemoveHandler CAPTURE_MANUAL_MODE_CK_CHAN_A_WF_PPH.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_MANUAL_MODE_CK_CHAN_B_WF_PPH Is Nothing) Then
+                RemoveHandler CAPTURE_MANUAL_MODE_CK_CHAN_B_WF_PPH.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_MANUAL_MODE_WF_PPH Is Nothing) Then
+                RemoveHandler CAPTURE_MANUAL_MODE_WF_PPH.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_MOTORING_CHECKS Is Nothing) Then
+                RemoveHandler CAPTURE_MOTORING_CHECKS.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_TRANSIENT_ACCEL_TEST_TARGET_SPEED Is Nothing) Then
+                RemoveHandler CAPTURE_TRANSIENT_ACCEL_TEST_TARGET_SPEED.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_TRANSIENT_AMBIENT_PRESSURE Is Nothing) Then
+                RemoveHandler CAPTURE_TRANSIENT_AMBIENT_PRESSURE.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_TRANSIENT_AMBIENT_TEMPERATURE Is Nothing) Then
+                RemoveHandler CAPTURE_TRANSIENT_AMBIENT_TEMPERATURE.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_TRANSIENT_DECEL_TEST_TARGET_SPEED Is Nothing) Then
+                RemoveHandler CAPTURE_TRANSIENT_DECEL_TEST_TARGET_SPEED.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_TRANSIENT_MAXIMUM_RATE_NG Is Nothing) Then
+                RemoveHandler CAPTURE_TRANSIENT_MAXIMUM_RATE_NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_TRANSIENT_NG_MAX_TAKEOFF Is Nothing) Then
+                RemoveHandler CAPTURE_TRANSIENT_NG_MAX_TAKEOFF.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_100NP_100NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_100NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_100NP_70NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_100NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_100NP_80NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_100NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_100NP_90NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_100NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_100NP_95NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_100NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_100NP_TO Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_100NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_105NP_100NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_105NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_105NP_70NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_105NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_105NP_80NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_105NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_105NP_90NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_105NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_105NP_95NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_105NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_105NP_TO Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_105NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_90NP_100NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_90NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_90NP_70NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_90NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_90NP_80NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_90NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_90NP_90NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_90NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_90NP_95NG Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_90NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_VIB_SURVEY_90NP_TO Is Nothing) Then
+                RemoveHandler CAPTURE_VIB_SURVEY_90NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_100NP_70NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_100NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_100NP_80NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_100NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_100NP_90NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_100NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_100NP_95NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_100NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_100NP_100NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_100NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_100NP_TO Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_100NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_90NP_70NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_90NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_90NP_80NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_90NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_90NP_90NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_90NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_90NP_95NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_90NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_90NP_100NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_90NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_90NP_TO Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_90NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_105NP_70NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_105NP_70NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_105NP_80NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_105NP_80NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_105NP_90NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_105NP_90NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_105NP_95NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_105NP_95NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_105NP_100NG Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_105NP_100NG.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_VIB_SURVEY_105NP_TO Is Nothing) Then
+                RemoveHandler CAPTURE_START_VIB_SURVEY_105NP_TO.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_FINAL_OIL_LEVEL_MARKING Is Nothing) Then
+                RemoveHandler CAPTURE_START_FINAL_OIL_LEVEL_MARKING.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_FINAL_INSPECTIONS Is Nothing) Then
+                RemoveHandler CAPTURE_START_FINAL_INSPECTIONS.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_LEAK_AND_SEAL_DRAIN_CHECK Is Nothing) Then
+                RemoveHandler CAPTURE_START_LEAK_AND_SEAL_DRAIN_CHECK.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+            If Not (CAPTURE_START_MOTORING_CHECKS Is Nothing) Then
+                RemoveHandler CAPTURE_START_MOTORING_CHECKS.ValueChanged, AddressOf OnLOG_PERF_CAPTURE
+            End If
+
+        End Sub
+
+        Protected Overrides Sub Init_Engine_Controllers()
+
+            Dim PersistentValuesChannels() As String = {"LOG_PERF_PREPARATION_FOR_TEST",
+            "LOG_PERF_MOTORING_CHECKS",
+            "LOG_PERF_MOTORING_CHECKS_START",
+            "LOG_PERF_INITIAL_START_TO_GI_START",
+            "LOG_PERF_FI_NG_PCT",
+            "LOG_PERF_FI_WF_PPH",
+            "LOG_PERF_FI_SHP_HP",
+            "LOG_PERF_FI_OIL_LEVEL",
+            "LOG_PERF_FI_ORBT_DEGF",
+            "LOG_PERF_FI_RUNTIME",
+            "LOG_PERF_FI_CHECK_START",
+            "LOG_PERF_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE_START",
+            "LOG_PERF_TO_POWER_SETTING_AT_MCP_POFO_PSIG",
+            "LOG_PERF_TO_POWER_SETTING_AT_MCP_WOIL_PPH",
+            "LOG_PERF_TO_POWER_SETTING_AT_MCP_MGTB_DEGF",
+            "LOG_PERF_TO_POWER_SETTING_AT_MCP_WF_PPH",
+            "LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOSP_DEGF",
+            "LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOPI_DEGF",
+            "LOG_PERF_TO_POWER_SETTING_AT_TO_POFO_PSIG",
+            "LOG_PERF_TO_POWER_SETTING_AT_TO_WOIL_PPH",
+            "LOG_PERF_TO_POWER_SETTING_AT_TO_MGTB_DEGF",
+            "LOG_PERF_TO_POWER_SETTING_AT_TO_WF_PPH",
+            "LOG_PERF_TO_POWER_SETTING_TQ_CHECK_PTQM_PSIG",
+            "LOG_PERF_TO_POWER_SETTING_TQ_CHECK_TORQUE_LBSFT",
+            "LOG_PERF_TO_POWER_SETTING_START",
+            "LOG_PERF_Q_HIGH",
+            "LOG_PERF_PTQM_H",
+            "LOG_PERF_Q_LOW",
+            "LOG_PERF_PTQM_L",
+            "LOG_PERF_CHAN_A_GAIN",
+            "LOG_PERF_CHAN_A_OFFSET",
+            "LOG_PERF_CHAN_B_GAIN",
+            "LOG_PERF_CHAN_B_OFFSET",
+            "LOG_PERF_TORQUEMETER_CALIBRATION_START",
+            "LOG_PERF_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF",
+            "LOG_PERF_AI_VALVE_CK_VALVE_ON_MGTB_DEGF",
+            "LOG_PERF_MANUAL_MODE_CK_CHAN_B_WF_PPH",
+            "LOG_PERF_MANUAL_MODE_WF_PPH",
+            "LOG_PERF_PRIMARY_MODE_CHAN_B_TRANSFERS",
+            "LOG_PERF_CONTROL_SYSTEM_CHECKS_START",
+            "LOG_PERF_VERIFY_NP_IS_SET_TO_110PCT",
+            "LOG_PERF_CHAN_A_ACCEL_TIME_SEC",
+            "LOG_PERF_CHAN_A_DECEL_TIME_SEC",
+            "LOG_PERF_CHAN_B_ACCEL_TIME_SEC",
+            "LOG_PERF_CHAN_B_DECEL_TIME_SEC",
+            "LOG_PERF_RECORD_FADEC_FAULTS",
+            "LOG_PERF_VERIFY_NP_IS_RESET_TO_100PCT",
+            "LOG_PERF_TRANSIENT_TIME_CHECK_START",
+            "LOG_PERF_OIL_PRESSURE_FLOW_RECHECK",
+            "LOG_PERF_PERFORMANCE_ACCEPTABLE",
+            "LOG_PERF_SENSOR_CORRELATION_ACCEPTABLE",
+            "LOG_PERF_PERFORMANCE_AND_SENSOR_CORRELATION_START",
+            "LOG_PERF_VIB_SURVEY_100NP_70NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_70NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_70NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_70NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_70NG_START",
+            "LOG_PERF_VIB_SURVEY_100NP_80NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_80NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_80NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_80NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_80NG_START",
+            "LOG_PERF_VIB_SURVEY_100NP_90NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_90NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_90NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_90NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_90NG_START",
+            "LOG_PERF_VIB_SURVEY_100NP_95NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_95NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_95NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_95NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_95NG_START",
+            "LOG_PERF_VIB_SURVEY_100NP_100NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_100NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_100NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_100NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_100NG_START",
+            "LOG_PERF_VIB_SURVEY_100NP_TO_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_TO_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_TO_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_TO_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_100NP_TO_START",
+            "LOG_PERF_VIB_SURVEY_90NP_70NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_70NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_70NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_70NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_70NG_START",
+            "LOG_PERF_VIB_SURVEY_90NP_80NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_80NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_80NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_80NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_80NG_START",
+            "LOG_PERF_VIB_SURVEY_90NP_90NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_90NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_90NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_90NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_90NG_START",
+            "LOG_PERF_VIB_SURVEY_90NP_95NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_95NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_95NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_95NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_95NG_START",
+            "LOG_PERF_VIB_SURVEY_90NP_100NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_100NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_100NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_100NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_100NG_START",
+            "LOG_PERF_VIB_SURVEY_90NP_TO_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_TO_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_TO_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_TO_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_90NP_TO_START",
+            "LOG_PERF_VIB_SURVEY_105NP_70NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_70NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_70NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_70NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_70NG_START",
+            "LOG_PERF_VIB_SURVEY_105NP_80NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_80NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_80NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_80NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_80NG_START",
+            "LOG_PERF_VIB_SURVEY_105NP_90NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_90NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_90NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_90NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_90NG_START",
+            "LOG_PERF_VIB_SURVEY_105NP_95NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_95NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_95NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_95NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_95NG_START",
+            "LOG_PERF_VIB_SURVEY_105NP_100NG_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_100NG_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_100NG_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_100NG_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_100NG_START",
+            "LOG_PERF_VIB_SURVEY_105NP_TO_VGBR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_TO_VADA_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_TO_VADR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_TO_VCHR_IPS",
+            "LOG_PERF_VIB_SURVEY_105NP_TO_START",
+            "LOG_PERF_FINAL_OIL_LEVEL_OIL_LEVEL",
+            "LOG_PERF_FINAL_OIL_LEVEL_ORBT_DEGF",
+            "LOG_PERF_FINAL_OIL_LEVEL_RUNTIME",
+            "LOG_PERF_FINAL_OIL_LEVEL_COAST_DOWN_TIME",
+            "LOG_PERF_FINAL_OIL_LEVEL_CONSUMPTION_PPH",
+            "LOG_PERF_FINAL_OIL_LEVEL_MARKING_START",
+            "LOG_PERF_FINAL_INSPECTIONS_CHIP_DETECTORS",
+            "LOG_PERF_FINAL_INSPECTIONS_OIL_FILTER",
+            "LOG_PERF_FINAL_INSPECTIONS_PTPD",
+            "LOG_PERF_FINAL_INSPECTIONS_START",
+            "LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK",
+            "LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK_START",
+            "LOG_PERF_DATA_REVIEW",
+            "LOG_PERF_PRESERVATION_COMPLETED",
+            "LOG_PERF_DEVIATION_REQUIRED",
+            "LOG_PERF_TRANSIENT_AMBIENT_TEMP_DEGF",
+            "LOG_PERF_TRANSIENT_AMBIENT_PRESSURE_PSIA",
+            "LOG_PERF_TRANSIENT_MAX_RATE_NG_RPM",
+            "LOG_PERF_TRANSIENT_NG_MAX_TAKEOFF_RPM",
+            "LOG_PERF_TRANSIENT_ACCEL_TEST_TARGET_SPEED_RPM",
+            "LOG_PERF_TRANSIENT_DECEL_TEST_TARGET_SPEED_RPM",
+             "OPERATING_TIME_CURRENT_SEC",
+             "FUEL_USED_INITIAL_LITERS",
+             "FUEL_USED_TOTAL_LITERS"}
+
+
+            Dim PersistentValuesFileName = "C:\CELDAS DATA\" & CELProject.EngineModel & "\" & UserInputs.EngineSerialNumber & "\" & UserInputs.WorkOrder & "\Log\PersistentValues.xml"
+            PersistentValuesCtrl = New PersistentValuesController(Me, PersistentValuesChannels, 1, PersistentValuesFileName)
+            If Double.IsNaN(FUEL_USED_TOTAL_LITERS.Value.ToDouble()) Then
+                FUEL_USED_INITIAL_LITERS.Value = Values.Zero
+                FUEL_USED_TOTAL_LITERS.Value = Values.Zero
+            Else
+                FUEL_USED_INITIAL_LITERS.Value = New KineticaRT.Values.Double(FUEL_USED_TOTAL_LITERS.Value.ToDouble())
+            End If
+
+            'Use Default value if not overridden by the project
+            Dim RealNumberOfTEgtProbe As Integer = MaxNumberOfTEgtProbe
+            Dim RealNumberOfTInletProbe As Integer = MaxNumberOfTInletProbe
+
+            Select Case CELProject.Project.Number
+                Case 15208
+                    'Dim ConfigPrefix As String = "//ConfigurationSettings/" & CELProject.EngineFamily & "/" & CELProject.EngineModel & "/"
+                    Dim ConfigPrefix As String = "//ConfigurationSettings/" & CELProject.EngineModel & "/"
+                    RealNumberOfTInletProbe = CELProject.Project.ReadOneIntegerConfigItem(ConfigPrefix & "T_INLET_NUMBER_PROBE", 0)
+                    RealNumberOfTEgtProbe = CELProject.Project.ReadOneIntegerConfigItem(ConfigPrefix & "T_EGT_NUMBER_PROBE", 0)
+                    Debug.Assert(RealNumberOfTInletProbe <> 0 And RealNumberOfTEgtProbe <> 0)
+                Case Else
+                    Debug.Assert(False, "OnTestSessionRunning: Code Missing for this project")
+            End Select
+
+            FlowmeterCtrl = New FlowmeterController(Me)
+            DeletableTInletChCtrl = New DeletableChannelController(Me, RealNumberOfTInletProbe, MaxNumberOfTInletProbe, MaxNumberOfTInletProbe, "T_INLET_", "_DEGF", "_DELETE_BTN", "T_INLET_AVG_DEGF", "T_INLET_MIN_DEGF", "T_INLET_MAX_DEGF", "T_INLET_SPREAD_DEGF")
+            DeletableTEgtChCtrl = New DeletableChannelController(Me, RealNumberOfTEgtProbe, MaxNumberOfTEgtProbe, MaxNumberOfTEgtProbe, "T_EGT_", "_DEGF", "_DELETE_BTN", "T_EGT_AVG_DEGF", "T_EGT_MIN_DEGF", "T_EGT_MAX_DEGF", "T_EGT_SPREAD_DEGF")
+            'IgnitionMaxCurrentRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "IGNITION_CURRENT_AMP", "IGNITION_CURRENT_AMP_MAX", "CRANK_START_DEMAND_OPC")
+            'IgnitionMaxVoltageRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "IGNITION_VOLTAGE_VDC", "IGNITION_VOLTAGE_VDC_MAX", "CRANK_START_DEMAND_OPC")
+            'StarterMaxCurrentRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_CURRENT_AMP", "STARTER_CURRENT_AMP_MAX", "CRANK_START_DEMAND_OPC")
+            'StarterMaxVoltageRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_VOLTAGE_VDC", "STARTER_VOLTAGE_VDC_MAX", "CRANK_START_DEMAND_OPC")
+            'TimeToIdleTimerCtrl = New TimerController(Me, "TTI_TIME_START_CONDITION_LATCH", "TTI_TIME_STOP_CONDITION_LATCH", "TTI_TIME_CONDITION_RESET", "TTI_TIME_SEC", Nothing, 0, "NONE")
+            'TimeToLightTimerCtrl = New TimerController(Me, "TTL_TIME_START_CONDITION_LATCH", "TTL_TIME_STOP_CONDITION_LATCH", "TTL_TIME_CONDITION_RESET", "TTL_TIME_SEC", Nothing, 0, "NONE")
+            'CrankTimerCtrl = New TimerController(Me, "CRANK_TIME_START_CONDITION_LATCH", "CRANK_TIME_STOP_CONDITION_LATCH", "CRANK_TIME_CONDITION_RESET", "CRANK_TIME_SEC", Nothing, 45, "CRANK_TIME_MAX_VALUE_REACHED")
+            'StarterTimerCtrl = New TimerController(Me, "STARTER_OVERCURRENT_START_CONDITION", "STARTER_OVERCURRENT_STOP_CONDITION", "STARTER_OVERCURRENT_CONDITION_RESET", "STARTER_OVERCURRENT_TIME_SEC", Nothing, 10, "STARTER_OVERCURRENT_MAX_VALUE_REACHED")
+
+            If CELProject.HierarchyType = CELDAS.eHierarchyType.Master Then
+                VibVADAMaxRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "VIB_AIR_DIFFUSER_AXIAL_IPS", "VIB_AIR_DIFFUSER_AXIAL_IPS_PEAK", "VIB_AIR_DIFFUSER_AXIAL_IPS_PEAK_RESET")
+                VibVADRMaxRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "VIB_AIR_DIFFUSER_RADIAL_IPS", "VIB_AIR_DIFFUSER_RADIAL_IPS_PEAK", "VIB_AIR_DIFFUSER_RADIAL_IPS_PEAK_RESET")
+                VibVCHRMaxRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "VIB_COMBUSTOR_HOUSING_RADIAL_IPS", "VIB_COMBUSTOR_HOUSING_RADIAL_IPS_PEAK", "VIB_COMBUSTOR_HOUSING_RADIAL_IPS_PEAK_RESET")
+                VibVGBRMaxRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "VIB_GEARBOX_RADIAL_IPS", "VIB_GEARBOX_RADIAL_IPS_PEAK", "VIB_GEARBOX_RADIAL_IPS_PEAK_RESET")
+                NGMaxRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "NG_RPM", "NG_RPM_PEAK", "NG_RPM_PEAK_RESET")
+                NPTMaxRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "NPT_RPM", "NPT_RPM_PEAK", "NPT_RPM_PEAK_RESET")
+                MGTMaxTemperatureRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "T_MGT_DEGF", "T_MGT_DEGF_PEAK", "T_MGT_DEGF_PEAK_RESET")
+            End If
+
+            If CELProject.HierarchyType = CELDAS.eHierarchyType.Master Then
+                AccelCheckTimerCtrl = New TimerController(Me, "TRANSIENT_CHECK_ACCEL_TIMER_START_CONDITION_LATCH", "TRANSIENT_CHECK_ACCEL_TIMER_STOP_CONDITION_LATCH", "TRANSIENT_CHECK_ACCEL_TIMER_RESET_CONDITION", "TRANSIENT_CHECK_ACCEL_TIME_SEC", Nothing, 0, "NONE")
+                DecelCheckTimerCtrl = New TimerController(Me, "TRANSIENT_CHECK_DECEL_TIMER_START_CONDITION_LATCH", "TRANSIENT_CHECK_DECEL_TIMER_STOP_CONDITION_LATCH", "TRANSIENT_CHECK_DECEL_TIMER_RESET_CONDITION", "TRANSIENT_CHECK_DECEL_TIME_SEC", Nothing, 0, "NONE")
+            End If
+        End Sub
+
+        Protected Overrides Sub Dispose_Engine_Controllers()
+            If Not (DeletableTInletChCtrl Is Nothing) Then
+                DeletableTInletChCtrl.Dispose()
+            End If
+            If Not (DeletableTEgtChCtrl Is Nothing) Then
+                DeletableTEgtChCtrl.Dispose()
+            End If
+            If Not (UnitronCtrl Is Nothing) Then
+                UnitronCtrl.Dispose()
+            End If
+            If Not (IgnitionMaxCurrentRecordCtrl Is Nothing) Then
+                IgnitionMaxCurrentRecordCtrl.Dispose()
+            End If
+            If Not (IgnitionMaxVoltageRecordCtrl Is Nothing) Then
+                IgnitionMaxVoltageRecordCtrl.Dispose()
+            End If
+            If Not (StarterMaxCurrentRecordCtrl Is Nothing) Then
+                StarterMaxCurrentRecordCtrl.Dispose()
+            End If
+            If Not (StarterMaxVoltageRecordCtrl Is Nothing) Then
+                StarterMaxVoltageRecordCtrl.Dispose()
+            End If
+            If Not (MGTMaxTemperatureRecordCtrl Is Nothing) Then
+                MGTMaxTemperatureRecordCtrl.Dispose()
+            End If
+            If Not (VibVADAMaxRecordCtrl Is Nothing) Then
+                VibVADAMaxRecordCtrl.Dispose()
+            End If
+            If Not (VibVADRMaxRecordCtrl Is Nothing) Then
+                VibVADRMaxRecordCtrl.Dispose()
+            End If
+            If Not (VibVCHRMaxRecordCtrl Is Nothing) Then
+                VibVCHRMaxRecordCtrl.Dispose()
+            End If
+            If Not (VibVGBRMaxRecordCtrl Is Nothing) Then
+                VibVGBRMaxRecordCtrl.Dispose()
+            End If
+            If Not (NPTMaxRecordCtrl Is Nothing) Then
+                NPTMaxRecordCtrl.Dispose()
+            End If
+            If Not (NGMaxRecordCtrl Is Nothing) Then
+                NGMaxRecordCtrl.Dispose()
+            End If
+            If Not (TimeToIdleTimerCtrl Is Nothing) Then
+                TimeToIdleTimerCtrl.Dispose()
+            End If
+            If Not (TimeToLightTimerCtrl Is Nothing) Then
+                TimeToLightTimerCtrl.Dispose()
+            End If
+            If Not (CrankTimerCtrl Is Nothing) Then
+                CrankTimerCtrl.Dispose()
+            End If
+            If Not (StarterTimerCtrl Is Nothing) Then
+                StarterTimerCtrl.Dispose()
+            End If
+            If Not (AccelCheckTimerCtrl Is Nothing) Then
+                AccelCheckTimerCtrl.Dispose()
+            End If
+            If Not (DecelCheckTimerCtrl Is Nothing) Then
+                DecelCheckTimerCtrl.Dispose()
+            End If
+            If Not (PersistentValuesCtrl Is Nothing) Then
+                PersistentValuesCtrl.Dispose()
+            End If
+            If Not (TransientControl Is Nothing) Then
+                TransientControl.ClearPresets()
+            End If
+            If Not (FlowmeterCtrl Is Nothing) Then
+                FlowmeterCtrl.Dispose()
+            End If
+        End Sub
+
+        Protected Overrides Sub Init_Engine_Controls()
+            'MyBase.InitializeObject(TransientControl, "HTS900_Slave_Screen.HTS900_Performance.transientControl")
+            'Me.TransientControl.SetEngineModel(CELProject.EngineModel)
+        End Sub
+
+        Protected Overrides Sub OnNEW_TEST_BTN(sender As IChannel, newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    If DialogResult.Yes = MessageBox.Show("Do you want to reset the fuel used?", "CELDAS200", MessageBoxButtons.YesNo, MessageBoxIcon.Question) Then
+                        FUEL_USED_INITIAL_LITERS.Value = Values.Zero
+                        WF_TOT1.Value = Values.Zero
+                        WF_TOT2.Value = Values.Zero
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("HTS900_Sequence: OnNewTest: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnCLOSE_TEST_BTN(sender As IChannel, newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    If CELProject.EngineFamily = "HTS900" Then
+                        CELProject.EngineWindowCollection.Item(0).EngineWindow.BeginInvoke(New MethodInvoker(AddressOf Me.OnCLOSE_TEST_BTN_DISPOSE))
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("OnCLOSE_TEST_BTN: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnCLOSE_TEST_BTN_DISPOSE()
+            Try
+                MyBase.StopWorkingThread()
+                PersistentValuesCtrl.SavePersistentValues(True)
+                RemoveHandlers()
+                Dispose_Engine_Controllers()
+            Catch ex As Exception
+                MessageBox.Show("OnCLOSE_TEST_BTN_DISPOSE: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionClosing(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionClosing(newStatus)
+                If CELProject.EngineFamily = "HTS900" Then
+                    MyBase.StopWorkingThread()
+                End If
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionClosing: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Function Init_Engine_Channels() As Boolean
+            Dim Return_Value As New ArrayList()
+            Return_Value.Clear()
+            Try
+                Return_Value.Add(MyBase.InitializeChannel(TRANSIENT_CHECK_CLOSE_WINDOW_BTN, "TRANSIENT_CHECK_CLOSE_WINDOW_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(TRANSIENT_CHECK_OPEN_WINDOW_BTN, "TRANSIENT_CHECK_OPEN_WINDOW_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(ECU_PANEL_CLOSE_WINDOW_BTN, "ECU_PANEL_CLOSE_WINDOW_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(ECU_PANEL_OPEN_WINDOW_BTN, "ECU_PANEL_OPEN_WINDOW_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(ARCHIVE_RECORD, "ARCHIVE_RECORD_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(ARCHIVE_STOP, "ARCHIVE_STOP_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CRANK_START_DEMAND_OPC, "CRANK_START_DEMAND_OPC"))
+                Return_Value.Add(MyBase.InitializeChannel(CRANK_BTN_PRESSED, "CRANK_BTN_PRESSED"))
+                Return_Value.Add(MyBase.InitializeChannel(FACILITY_CLOSE_WINDOW_BTN, "FACILITY_CLOSE_WINDOW_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(FACILITY_OPEN_WINDOW_BTN, "FACILITY_OPEN_WINDOW_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_INITIAL_LITERS, "FUEL_USED_INITIAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_TOTAL_LITERS, "FUEL_USED_TOTAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(OPERATING_TIME_CURRENT_SEC, "OPERATING_TIME_CURRENT_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(T_MGT_DEGF, "T_MGT_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(T_MGT_CURRENT_DEGF, "T_MGT_CURRENT_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(CLOSE_TEST_BTN_OPC, "CLOSE_TEST_BTN_OPC"))
+                Return_Value.Add(MyBase.InitializeChannel(ENGINE_AT_REST, "ENGINE_AT_REST"))
+                Return_Value.Add(MyBase.InitializeChannel(NUMBER_OF_STARTS, "NUMBER_OF_STARTS"))
+                Return_Value.Add(MyBase.InitializeChannel(NUMBER_OF_STARTS_CONDITION_LATCH, "NUMBER_OF_STARTS_CONDITION_LATCH"))
+                Return_Value.Add(MyBase.InitializeChannel(TRANSIENT_CHECK_ACCEL_TIME_SEC, "TRANSIENT_CHECK_ACCEL_TIME_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(TRANSIENT_CHECK_DECEL_TIME_SEC, "TRANSIENT_CHECK_DECEL_TIME_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(WF_TOT1, "WF_TOT1"))
+                Return_Value.Add(MyBase.InitializeChannel(WF_TOT2, "WF_TOT2"))
+
+                'LOGPERF Channels
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DYNO_TORQUE_LBSFT, "LOG_PERF_DYNO_TORQUE_LBSFT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_PCT, "LOG_PERF_NG_PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_RPM, "LOG_PERF_NG_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_MAX_RATE_RPM, "LOG_PERF_NG_MAX_RATE_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BARO_PSIA, "LOG_PERF_P_BARO_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_OIL_FILTER_DISCHARGE_PSIG, "LOG_PERF_P_OIL_FILTER_DISCHARGE_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_TORQUE_OIL_PRESSURE_PSIG, "LOG_PERF_P_TORQUE_OIL_PRESSURE_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_CELL_DEGF, "LOG_PERF_T_CELL_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_OIL_BULB_DEGF, "LOG_PERF_T_OIL_BULB_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_OIL_PUMP_INLET_DEGF, "LOG_PERF_T_OIL_PUMP_INLET_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_OIL_SCAVENGE_PUMP_OUTLET_DEGF, "LOG_PERF_T_OIL_SCAVENGE_PUMP_OUTLET_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_MGTB_DEGF, "LOG_PERF_T_MGTB_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_SHP_DYNO_HP, "LOG_PERF_SHP_DYNO_HP"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS, "LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS, "LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS, "LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_GEARBOX_RADIAL_IPS, "LOG_PERF_VIB_GEARBOX_RADIAL_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF_AVG_PPH, "LOG_PERF_WF_AVG_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TRANSIENT_CHECK_ACCEL_NG_ENDPOINT_RPM, "LOG_PERF_TRANSIENT_CHECK_ACCEL_NG_ENDPOINT_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TRANSIENT_CHECK_DECEL_NG_ENDPOINT_RPM, "LOG_PERF_TRANSIENT_CHECK_DECEL_NG_ENDPOINT_RPM"))
+
+                'Performance
+                'Value Holding Channels
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PREPARATION_FOR_TEST, "LOG_PERF_PREPARATION_FOR_TEST"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_MOTORING_CHECKS, "LOG_PERF_MOTORING_CHECKS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FI_NG_PCT, "LOG_PERF_FI_NG_PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FI_WF_PPH, "LOG_PERF_FI_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FI_SHP_HP, "LOG_PERF_FI_SHP_HP"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FI_OIL_LEVEL, "LOG_PERF_FI_OIL_LEVEL"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FI_ORBT_DEGF, "LOG_PERF_FI_ORBT_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FI_RUNTIME, "LOG_PERF_FI_RUNTIME"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_Q_HIGH, "LOG_PERF_Q_HIGH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_Q_LOW, "LOG_PERF_Q_LOW"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PTQM_H, "LOG_PERF_PTQM_H"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PTQM_L, "LOG_PERF_PTQM_L"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_CHAN_A_GAIN, "LOG_PERF_CHAN_A_GAIN"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_CHAN_A_OFFSET, "LOG_PERF_CHAN_A_OFFSET"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_CHAN_B_GAIN, "LOG_PERF_CHAN_B_GAIN"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_CHAN_B_OFFSET, "LOG_PERF_CHAN_B_OFFSET"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF, "LOG_PERF_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_AI_VALVE_CK_VALVE_ON_MGTB_DEGF, "LOG_PERF_AI_VALVE_CK_VALVE_ON_MGTB_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_MANUAL_MODE_CK_CHAN_A_WF_PPH, "LOG_PERF_MANUAL_MODE_CK_CHAN_A_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_MANUAL_MODE_CK_CHAN_B_WF_PPH, "LOG_PERF_MANUAL_MODE_CK_CHAN_B_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_MANUAL_MODE_WF_PPH, "LOG_PERF_MANUAL_MODE_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PRIMARY_MODE_CHAN_B_TRANSFERS, "LOG_PERF_PRIMARY_MODE_CHAN_B_TRANSFERS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VERIFY_NP_IS_SET_TO_110PCT, "LOG_PERF_VERIFY_NP_IS_SET_TO_110PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_CHAN_A_DECEL_TIME_SEC, "LOG_PERF_CHAN_A_DECEL_TIME_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_CHAN_B_ACCEL_TIME_SEC, "LOG_PERF_CHAN_B_ACCEL_TIME_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_RECORD_FADEC_FAULTS, "LOG_PERF_RECORD_FADEC_FAULTS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_CHAN_A_ACCEL_TIME_SEC, "LOG_PERF_CHAN_A_ACCEL_TIME_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_CHAN_B_DECEL_TIME_SEC, "LOG_PERF_CHAN_B_DECEL_TIME_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VERIFY_NP_IS_RESET_TO_100PCT, "LOG_PERF_VERIFY_NP_IS_RESET_TO_100PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_OIL_PRESSURE_FLOW_RECHECK, "LOG_PERF_OIL_PRESSURE_FLOW_RECHECK"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PERFORMANCE_ACCEPTABLE, "LOG_PERF_PERFORMANCE_ACCEPTABLE"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_SENSOR_CORRELATION_ACCEPTABLE, "LOG_PERF_SENSOR_CORRELATION_ACCEPTABLE"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_70NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_100NP_70NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_70NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_100NP_70NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_70NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_100NP_70NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_70NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_100NP_70NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_80NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_100NP_80NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_80NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_100NP_80NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_80NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_100NP_80NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_80NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_100NP_80NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_90NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_100NP_90NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_90NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_100NP_90NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_90NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_100NP_90NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_90NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_100NP_90NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_95NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_100NP_95NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_95NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_100NP_95NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_95NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_100NP_95NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_95NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_100NP_95NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_100NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_100NP_100NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_100NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_100NP_100NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_100NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_100NP_100NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_100NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_100NP_100NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_TO_VGBR_IPS, "LOG_PERF_VIB_SURVEY_100NP_TO_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_TO_VADA_IPS, "LOG_PERF_VIB_SURVEY_100NP_TO_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_TO_VADR_IPS, "LOG_PERF_VIB_SURVEY_100NP_TO_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_TO_VCHR_IPS, "LOG_PERF_VIB_SURVEY_100NP_TO_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_70NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_90NP_70NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_70NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_90NP_70NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_70NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_90NP_70NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_70NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_90NP_70NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_80NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_90NP_80NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_80NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_90NP_80NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_80NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_90NP_80NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_80NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_90NP_80NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_90NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_90NP_90NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_90NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_90NP_90NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_90NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_90NP_90NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_90NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_90NP_90NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_95NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_90NP_95NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_95NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_90NP_95NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_95NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_90NP_95NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_95NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_90NP_95NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_100NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_90NP_100NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_100NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_90NP_100NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_100NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_90NP_100NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_100NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_90NP_100NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_TO_VGBR_IPS, "LOG_PERF_VIB_SURVEY_90NP_TO_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_TO_VADA_IPS, "LOG_PERF_VIB_SURVEY_90NP_TO_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_TO_VADR_IPS, "LOG_PERF_VIB_SURVEY_90NP_TO_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_TO_VCHR_IPS, "LOG_PERF_VIB_SURVEY_90NP_TO_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_70NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_105NP_70NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_70NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_105NP_70NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_70NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_105NP_70NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_70NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_105NP_70NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_80NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_105NP_80NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_80NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_105NP_80NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_80NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_105NP_80NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_80NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_105NP_80NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_90NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_105NP_90NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_90NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_105NP_90NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_90NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_105NP_90NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_90NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_105NP_90NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_95NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_105NP_95NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_95NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_105NP_95NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_95NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_105NP_95NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_95NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_105NP_95NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_100NG_VGBR_IPS, "LOG_PERF_VIB_SURVEY_105NP_100NG_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_100NG_VADA_IPS, "LOG_PERF_VIB_SURVEY_105NP_100NG_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_100NG_VADR_IPS, "LOG_PERF_VIB_SURVEY_105NP_100NG_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_100NG_VCHR_IPS, "LOG_PERF_VIB_SURVEY_105NP_100NG_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_TO_VGBR_IPS, "LOG_PERF_VIB_SURVEY_105NP_TO_VGBR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_TO_VADA_IPS, "LOG_PERF_VIB_SURVEY_105NP_TO_VADA_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_TO_VADR_IPS, "LOG_PERF_VIB_SURVEY_105NP_TO_VADR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_TO_VCHR_IPS, "LOG_PERF_VIB_SURVEY_105NP_TO_VCHR_IPS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_OIL_LEVEL_OIL_LEVEL, "LOG_PERF_FINAL_OIL_LEVEL_OIL_LEVEL"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_OIL_LEVEL_ORBT_DEGF, "LOG_PERF_FINAL_OIL_LEVEL_ORBT_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_OIL_LEVEL_RUNTIME, "LOG_PERF_FINAL_OIL_LEVEL_RUNTIME"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_OIL_LEVEL_COAST_DOWN_TIME, "LOG_PERF_FINAL_OIL_LEVEL_COAST_DOWN_TIME"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_OIL_LEVEL_CONSUMPTION_PPH, "LOG_PERF_FINAL_OIL_LEVEL_CONSUMPTION_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_INSPECTIONS_CHIP_DETECTORS, "LOG_PERF_FINAL_INSPECTIONS_CHIP_DETECTORS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_INSPECTIONS_OIL_FILTER, "LOG_PERF_FINAL_INSPECTIONS_OIL_FILTER"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_INSPECTIONS_PTPD, "LOG_PERF_FINAL_INSPECTIONS_PTPD"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK, "LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DATA_REVIEW, "LOG_PERF_DATA_REVIEW"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PRESERVATION_COMPLETED, "LOG_PERF_PRESERVATION_COMPLETED"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DEVIATION_REQUIRED, "LOG_PERF_DEVIATION_REQUIRED"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_AT_MCP_POFO_PSIG, "LOG_PERF_TO_POWER_SETTING_AT_MCP_POFO_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_AT_MCP_MGTB_DEGF, "LOG_PERF_TO_POWER_SETTING_AT_MCP_MGTB_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_AT_MCP_WOIL_PPH, "LOG_PERF_TO_POWER_SETTING_AT_MCP_WOIL_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_AT_MCP_WF_PPH, "LOG_PERF_TO_POWER_SETTING_AT_MCP_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOSP_DEGF, "LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOSP_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOPI_DEGF, "LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOPI_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_AT_TO_POFO_PSIG, "LOG_PERF_TO_POWER_SETTING_AT_TO_POFO_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_AT_TO_MGTB_DEGF, "LOG_PERF_TO_POWER_SETTING_AT_TO_MGTB_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_AT_TO_WOIL_PPH, "LOG_PERF_TO_POWER_SETTING_AT_TO_WOIL_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_AT_TO_WF_PPH, "LOG_PERF_TO_POWER_SETTING_AT_TO_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_TQ_CHECK_PTQM_PSIG, "LOG_PERF_TO_POWER_SETTING_TQ_CHECK_PTQM_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_TQ_CHECK_TORQUE_LBSFT, "LOG_PERF_TO_POWER_SETTING_TQ_CHECK_TORQUE_LBSFT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TRANSIENT_AMBIENT_TEMP_DEGF, "LOG_PERF_TRANSIENT_AMBIENT_TEMP_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TRANSIENT_AMBIENT_PRESSURE_PSIA, "LOG_PERF_TRANSIENT_AMBIENT_PRESSURE_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TRANSIENT_MAX_RATE_NG_RPM, "LOG_PERF_TRANSIENT_MAX_RATE_NG_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TRANSIENT_NG_MAX_TAKEOFF_RPM, "LOG_PERF_TRANSIENT_NG_MAX_TAKEOFF_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TRANSIENT_ACCEL_TEST_TARGET_SPEED_RPM, "LOG_PERF_TRANSIENT_ACCEL_TEST_TARGET_SPEED_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TRANSIENT_DECEL_TEST_TARGET_SPEED_RPM, "LOG_PERF_TRANSIENT_DECEL_TEST_TARGET_SPEED_RPM"))
+
+                'Performance report capture
+
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF, "CAPTURE_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_AI_VALVE_CK_VALVE_ON_MGTB_DEGF, "CAPTURE_AI_VALVE_CK_VALVE_ON_MGTB_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_DIGITAL_OFFSET_TIME, "CAPTURE_DIGITAL_OFFSET_TIME"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_FI_CHECKS, "CAPTURE_FI_CHECKS"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_FINAL_OIL_LEVEL_MARKING, "CAPTURE_FINAL_OIL_LEVEL_MARKING"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_MANUAL_MODE_CK_CHAN_A_WF_PPH, "CAPTURE_MANUAL_MODE_CK_CHAN_A_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_MANUAL_MODE_CK_CHAN_B_WF_PPH, "CAPTURE_MANUAL_MODE_CK_CHAN_B_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_MANUAL_MODE_WF_PPH, "CAPTURE_MANUAL_MODE_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_MOTORING_CHECKS, "CAPTURE_MOTORING_CHECKS"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_TRANSIENT_ACCEL_TEST_TARGET_SPEED, "CAPTURE_TRANSIENT_ACCEL_TEST_TARGET_SPEED"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_TRANSIENT_AMBIENT_PRESSURE, "CAPTURE_TRANSIENT_AMBIENT_PRESSURE"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_TRANSIENT_AMBIENT_TEMPERATURE, "CAPTURE_TRANSIENT_AMBIENT_TEMPERATURE"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_TRANSIENT_DECEL_TEST_TARGET_SPEED, "CAPTURE_TRANSIENT_DECEL_TEST_TARGET_SPEED"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_TRANSIENT_MAXIMUM_RATE_NG, "CAPTURE_TRANSIENT_MAXIMUM_RATE_NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_TRANSIENT_NG_MAX_TAKEOFF, "CAPTURE_TRANSIENT_NG_MAX_TAKEOFF"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_100NP_100NG, "CAPTURE_VIB_SURVEY_100NP_100NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_100NP_70NG, "CAPTURE_VIB_SURVEY_100NP_70NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_100NP_80NG, "CAPTURE_VIB_SURVEY_100NP_80NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_100NP_90NG, "CAPTURE_VIB_SURVEY_100NP_90NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_100NP_95NG, "CAPTURE_VIB_SURVEY_100NP_95NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_100NP_TO, "CAPTURE_VIB_SURVEY_100NP_TO"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_105NP_100NG, "CAPTURE_VIB_SURVEY_105NP_100NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_105NP_70NG, "CAPTURE_VIB_SURVEY_105NP_70NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_105NP_80NG, "CAPTURE_VIB_SURVEY_105NP_80NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_105NP_90NG, "CAPTURE_VIB_SURVEY_105NP_90NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_105NP_95NG, "CAPTURE_VIB_SURVEY_105NP_95NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_105NP_TO, "CAPTURE_VIB_SURVEY_105NP_TO"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_90NP_100NG, "CAPTURE_VIB_SURVEY_90NP_100NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_90NP_70NG, "CAPTURE_VIB_SURVEY_90NP_70NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_90NP_80NG, "CAPTURE_VIB_SURVEY_90NP_80NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_90NP_90NG, "CAPTURE_VIB_SURVEY_90NP_90NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_90NP_95NG, "CAPTURE_VIB_SURVEY_90NP_95NG"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_VIB_SURVEY_90NP_TO, "CAPTURE_VIB_SURVEY_90NP_TO"))
+
+                'Performance Report Capture Start
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_INITIAL_START_TO_GI, "CAPTURE_START_INITIAL_START_TO_GI"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_INITIAL_START_TO_GI_START, "LOG_PERF_INITIAL_START_TO_GI_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_MOTORING_CHECKS, "CAPTURE_START_MOTORING_CHECKS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_MOTORING_CHECKS_START, "LOG_PERF_MOTORING_CHECKS_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_FI_CHECK, "CAPTURE_START_FI_CHECK"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FI_CHECK_START, "LOG_PERF_FI_CHECK_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE, "CAPTURE_START_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE_START, "LOG_PERF_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_TO_POWER_SETTING, "CAPTURE_START_TO_POWER_SETTING"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TO_POWER_SETTING_START, "LOG_PERF_TO_POWER_SETTING_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_TORQUEMETER_CALIBRATION, "CAPTURE_START_TORQUEMETER_CALIBRATION"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TORQUEMETER_CALIBRATION_START, "LOG_PERF_TORQUEMETER_CALIBRATION_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_CONTROL_SYSTEM_CHECKS, "CAPTURE_START_CONTROL_SYSTEM_CHECKS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_CONTROL_SYSTEM_CHECKS_START, "LOG_PERF_CONTROL_SYSTEM_CHECKS_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_TRANSIENT_TIME_CHECK, "CAPTURE_START_TRANSIENT_TIME_CHECK"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TRANSIENT_TIME_CHECK_START, "LOG_PERF_TRANSIENT_TIME_CHECK_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_PERFORMANCE_AND_SENSOR_CORRELATION, "CAPTURE_START_PERFORMANCE_AND_SENSOR_CORRELATION"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PERFORMANCE_AND_SENSOR_CORRELATION_START, "LOG_PERF_PERFORMANCE_AND_SENSOR_CORRELATION_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_100NP_70NG, "CAPTURE_START_VIB_SURVEY_100NP_70NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_70NG_START, "LOG_PERF_VIB_SURVEY_100NP_70NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_100NP_80NG, "CAPTURE_START_VIB_SURVEY_100NP_80NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_80NG_START, "LOG_PERF_VIB_SURVEY_100NP_80NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_100NP_90NG, "CAPTURE_START_VIB_SURVEY_100NP_90NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_90NG_START, "LOG_PERF_VIB_SURVEY_100NP_90NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_100NP_95NG, "CAPTURE_START_VIB_SURVEY_100NP_95NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_95NG_START, "LOG_PERF_VIB_SURVEY_100NP_95NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_100NP_100NG, "CAPTURE_START_VIB_SURVEY_100NP_100NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_100NG_START, "LOG_PERF_VIB_SURVEY_100NP_100NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_100NP_TO, "CAPTURE_START_VIB_SURVEY_100NP_TO"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_100NP_TO_START, "LOG_PERF_VIB_SURVEY_100NP_TO_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_90NP_70NG, "CAPTURE_START_VIB_SURVEY_90NP_70NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_70NG_START, "LOG_PERF_VIB_SURVEY_90NP_70NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_90NP_80NG, "CAPTURE_START_VIB_SURVEY_90NP_80NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_80NG_START, "LOG_PERF_VIB_SURVEY_90NP_80NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_90NP_90NG, "CAPTURE_START_VIB_SURVEY_90NP_90NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_90NG_START, "LOG_PERF_VIB_SURVEY_90NP_90NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_90NP_95NG, "CAPTURE_START_VIB_SURVEY_90NP_95NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_95NG_START, "LOG_PERF_VIB_SURVEY_90NP_95NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_90NP_100NG, "CAPTURE_START_VIB_SURVEY_90NP_100NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_100NG_START, "LOG_PERF_VIB_SURVEY_90NP_100NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_90NP_TO, "CAPTURE_START_VIB_SURVEY_90NP_TO"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_90NP_TO_START, "LOG_PERF_VIB_SURVEY_90NP_TO_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_105NP_70NG, "CAPTURE_START_VIB_SURVEY_105NP_70NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_70NG_START, "LOG_PERF_VIB_SURVEY_105NP_70NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_105NP_80NG, "CAPTURE_START_VIB_SURVEY_105NP_80NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_80NG_START, "LOG_PERF_VIB_SURVEY_105NP_80NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_105NP_90NG, "CAPTURE_START_VIB_SURVEY_105NP_90NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_90NG_START, "LOG_PERF_VIB_SURVEY_105NP_90NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_105NP_95NG, "CAPTURE_START_VIB_SURVEY_105NP_95NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_95NG_START, "LOG_PERF_VIB_SURVEY_105NP_95NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_105NP_100NG, "CAPTURE_START_VIB_SURVEY_105NP_100NG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_100NG_START, "LOG_PERF_VIB_SURVEY_105NP_100NG_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_VIB_SURVEY_105NP_TO, "CAPTURE_START_VIB_SURVEY_105NP_TO"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_SURVEY_105NP_TO_START, "LOG_PERF_VIB_SURVEY_105NP_TO_START"))
+
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_FINAL_OIL_LEVEL_MARKING, "CAPTURE_START_FINAL_OIL_LEVEL_MARKING"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_OIL_LEVEL_MARKING_START, "LOG_PERF_FINAL_OIL_LEVEL_MARKING_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_FINAL_INSPECTIONS, "CAPTURE_START_FINAL_INSPECTIONS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FINAL_INSPECTIONS_START, "LOG_PERF_FINAL_INSPECTIONS_START"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_START_LEAK_AND_SEAL_DRAIN_CHECK, "CAPTURE_START_LEAK_AND_SEAL_DRAIN_CHECK"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK_START, "LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK_START"))
+
+            Catch ex As Exception
+                MessageBox.Show("Init_Engine_Channels: " & ex.Message)
+                Return_Value.Add(False)
+            End Try
+
+            If Return_Value.Contains(False) Then
+                Init_Engine_Channels = False
+            Else
+                Init_Engine_Channels = True
+            End If
+        End Function
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+
+        '************
+        '* Channels *
+        '************
+
+        Private TRANSIENT_CHECK_CLOSE_WINDOW_BTN As IBooleanChannel
+        Private TRANSIENT_CHECK_OPEN_WINDOW_BTN As IBooleanChannel
+        Private ECU_PANEL_CLOSE_WINDOW_BTN As IBooleanChannel
+        Private ECU_PANEL_OPEN_WINDOW_BTN As IBooleanChannel
+        Private ARCHIVE_RECORD As IBooleanChannel
+        Private ARCHIVE_STOP As IBooleanChannel
+        'Private CRANK_BTN As IBooleanChannel
+        Private CRANK_BTN_PRESSED As IBooleanChannel
+        Private CRANK_START_DEMAND_OPC As IBooleanChannel
+        Private DYNO_POS_DEMAND As INumericChannel
+        Private DYNO_SET_INLET_PCT As INumericChannel
+        Private DYNO_SPEED_MODE_BTN As IBooleanChannel
+        Private DYNO_SPEED_DEMAND As INumericChannel
+        Private DYNO_SPEED_100_PCT_RPM As INumericChannel
+        Private DYNO_POWERLAW_DEFAULT_TDEMAND As INumericChannel
+        Private DYNO_POWLAW_DEMAND As INumericChannel
+        Private DYNO_TORQUE_DEMAND As INumericChannel
+        Private FACILITY_CLOSE_WINDOW_BTN As IBooleanChannel
+        Private FACILITY_OPEN_WINDOW_BTN As IBooleanChannel
+        Private FM_INITIAL_VOLUME_LITERS As INumericChannel
+        Private FM_TOTAL_VOLUME_LITERS As INumericChannel
+        Private FUEL_USED_INITIAL_LITERS As INumericChannel
+        Private FUEL_USED_TOTAL_LITERS As INumericChannel
+        Private NUMBER_OF_STARTS As INumericChannel
+        Private NUMBER_OF_STARTS_CONDITION_LATCH As IBooleanChannel
+        Private OPERATING_TIME_CURRENT_SEC As INumericChannel
+        Private T_MGT_CURRENT_DEGF As INumericChannel
+        Private T_MGT_DEGF As INumericChannel
+        Private TRANSIENT_CHECK_ACCEL_TIME_SEC As INumericChannel
+        Private TRANSIENT_CHECK_DECEL_TIME_SEC As INumericChannel
+        Private ENGINE_AT_REST As BooleanChannel
+        Private CLOSE_TEST_BTN_OPC As IBooleanChannel
+        Private WF_TOT1 As INumericChannel
+        Private WF_TOT2 As INumericChannel
+
+        'LOGPERF Channels
+        Private LOG_PERF_DYNO_TORQUE_LBSFT As INumericChannel
+        Private LOG_PERF_NG_PCT As INumericChannel
+        Private LOG_PERF_NG_RPM As INumericChannel
+        Private LOG_PERF_NG_MAX_RATE_RPM As INumericChannel
+        Private LOG_PERF_P_BARO_PSIA As INumericChannel
+        Private LOG_PERF_P_OIL_FILTER_DISCHARGE_PSIG As INumericChannel
+        Private LOG_PERF_P_TORQUE_OIL_PRESSURE_PSIG As INumericChannel
+        Private LOG_PERF_SHP_DYNO_HP As INumericChannel
+        Private LOG_PERF_T_CELL_DEGF As INumericChannel
+        Private LOG_PERF_T_OIL_BULB_DEGF As INumericChannel
+        Private LOG_PERF_T_OIL_PUMP_INLET_DEGF As INumericChannel
+        Private LOG_PERF_T_OIL_SCAVENGE_PUMP_OUTLET_DEGF As INumericChannel
+        Private LOG_PERF_T_MGTB_DEGF As INumericChannel
+        Private LOG_PERF_VIB_AIR_DIFFUSER_AXIAL_IPS As INumericChannel
+        Private LOG_PERF_VIB_AIR_DIFFUSER_RADIAL_IPS As INumericChannel
+        Private LOG_PERF_VIB_COMBUSTOR_HOUSING_RADIAL_IPS As INumericChannel
+        Private LOG_PERF_VIB_GEARBOX_RADIAL_IPS As INumericChannel
+        Private LOG_PERF_WF_AVG_PPH As INumericChannel
+        Private LOG_PERF_WO_PPH As INumericChannel
+        Private LOG_PERF_TRANSIENT_CHECK_ACCEL_NG_ENDPOINT_RPM As INumericChannel
+        Private LOG_PERF_TRANSIENT_CHECK_DECEL_NG_ENDPOINT_RPM As INumericChannel
+
+        '**********************
+        '* Performance Report *
+        '**********************
+
+        Private LOG_PERF_PREPARATION_FOR_TEST As ITextChannel
+        Private LOG_PERF_MOTORING_CHECKS As INumericChannel
+        Private LOG_PERF_FI_NG_PCT As INumericChannel
+        Private LOG_PERF_FI_WF_PPH As INumericChannel
+        Private LOG_PERF_FI_SHP_HP As INumericChannel
+        Private LOG_PERF_FI_OIL_LEVEL As INumericChannel
+        Private LOG_PERF_FI_ORBT_DEGF As INumericChannel
+        Private LOG_PERF_FI_RUNTIME As ITextChannel
+        Private LOG_PERF_Q_HIGH As INumericChannel
+        Private LOG_PERF_Q_LOW As INumericChannel
+        Private LOG_PERF_PTQM_H As INumericChannel
+        Private LOG_PERF_PTQM_L As INumericChannel
+        Private LOG_PERF_CHAN_A_GAIN As INumericChannel
+        Private LOG_PERF_CHAN_A_OFFSET As INumericChannel
+        Private LOG_PERF_CHAN_B_GAIN As INumericChannel
+        Private LOG_PERF_CHAN_B_OFFSET As INumericChannel
+        Private LOG_PERF_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF As INumericChannel
+        Private LOG_PERF_AI_VALVE_CK_VALVE_ON_MGTB_DEGF As INumericChannel
+        Private LOG_PERF_MANUAL_MODE_CK_CHAN_A_WF_PPH As INumericChannel
+        Private LOG_PERF_MANUAL_MODE_CK_CHAN_B_WF_PPH As INumericChannel
+        Private LOG_PERF_MANUAL_MODE_WF_PPH As INumericChannel
+        Private LOG_PERF_PRIMARY_MODE_CHAN_B_TRANSFERS As IBooleanChannel
+        Private LOG_PERF_VERIFY_NP_IS_SET_TO_110PCT As IBooleanChannel
+        Private LOG_PERF_CHAN_A_DECEL_TIME_SEC As INumericChannel
+        Private LOG_PERF_CHAN_B_ACCEL_TIME_SEC As INumericChannel
+        Private LOG_PERF_RECORD_FADEC_FAULTS As INumericChannel
+        Private LOG_PERF_CHAN_A_ACCEL_TIME_SEC As INumericChannel
+        Private LOG_PERF_CHAN_B_DECEL_TIME_SEC As INumericChannel
+        Private LOG_PERF_VERIFY_NP_IS_RESET_TO_100PCT As IBooleanChannel
+        Private LOG_PERF_OIL_PRESSURE_FLOW_RECHECK As IBooleanChannel
+        Private LOG_PERF_PERFORMANCE_ACCEPTABLE As IBooleanChannel
+        Private LOG_PERF_SENSOR_CORRELATION_ACCEPTABLE As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_70NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_70NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_70NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_70NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_80NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_80NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_80NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_80NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_90NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_90NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_90NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_90NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_95NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_95NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_95NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_95NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_100NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_100NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_100NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_100NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_TO_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_TO_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_TO_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_TO_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_70NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_70NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_70NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_70NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_80NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_80NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_80NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_80NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_90NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_90NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_90NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_90NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_95NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_95NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_95NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_95NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_100NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_100NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_100NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_100NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_TO_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_TO_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_TO_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_TO_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_70NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_70NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_70NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_70NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_80NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_80NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_80NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_80NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_90NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_90NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_90NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_90NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_95NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_95NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_95NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_95NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_100NG_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_100NG_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_100NG_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_100NG_VCHR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_TO_VGBR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_TO_VADA_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_TO_VADR_IPS As INumericChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_TO_VCHR_IPS As INumericChannel
+        Private LOG_PERF_FINAL_OIL_LEVEL_OIL_LEVEL As INumericChannel
+        Private LOG_PERF_FINAL_OIL_LEVEL_ORBT_DEGF As INumericChannel
+        Private LOG_PERF_FINAL_OIL_LEVEL_RUNTIME As ITextChannel
+        Private LOG_PERF_FINAL_OIL_LEVEL_COAST_DOWN_TIME As INumericChannel
+        Private LOG_PERF_FINAL_OIL_LEVEL_CONSUMPTION_PPH As INumericChannel
+        Private LOG_PERF_FINAL_INSPECTIONS_CHIP_DETECTORS As IBooleanChannel
+        Private LOG_PERF_FINAL_INSPECTIONS_OIL_FILTER As IBooleanChannel
+        Private LOG_PERF_FINAL_INSPECTIONS_PTPD As IBooleanChannel
+        Private LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK As IBooleanChannel
+        Private LOG_PERF_DATA_REVIEW As IBooleanChannel
+        Private LOG_PERF_PRESERVATION_COMPLETED As IBooleanChannel
+        Private LOG_PERF_DEVIATION_REQUIRED As IBooleanChannel
+        Private LOG_PERF_TO_POWER_SETTING_AT_MCP_POFO_PSIG As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_AT_MCP_MGTB_DEGF As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_AT_MCP_WOIL_PPH As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_AT_MCP_WF_PPH As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOSP_DEGF As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_HEAT_REJECTION_TOPI_DEGF As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_AT_TO_POFO_PSIG As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_AT_TO_MGTB_DEGF As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_AT_TO_WOIL_PPH As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_AT_TO_WF_PPH As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_TQ_CHECK_PTQM_PSIG As INumericChannel
+        Private LOG_PERF_TO_POWER_SETTING_TQ_CHECK_TORQUE_LBSFT As INumericChannel
+        Private LOG_PERF_TRANSIENT_AMBIENT_TEMP_DEGF As INumericChannel
+        Private LOG_PERF_TRANSIENT_AMBIENT_PRESSURE_PSIA As INumericChannel
+        Private LOG_PERF_TRANSIENT_MAX_RATE_NG_RPM As INumericChannel
+        Private LOG_PERF_TRANSIENT_NG_MAX_TAKEOFF_RPM As INumericChannel
+        Private LOG_PERF_TRANSIENT_ACCEL_TEST_TARGET_SPEED_RPM As INumericChannel
+        Private LOG_PERF_TRANSIENT_DECEL_TEST_TARGET_SPEED_RPM As INumericChannel
+
+        'Performance Report Capture
+        Private CAPTURE_AI_VALVE_CK_VALVE_OFF_MGTB_DEGF As IBooleanChannel
+        Private CAPTURE_AI_VALVE_CK_VALVE_ON_MGTB_DEGF As IBooleanChannel
+        Private CAPTURE_DIGITAL_OFFSET_TIME As IBooleanChannel
+        Private CAPTURE_FI_CHECKS As IBooleanChannel
+        Private CAPTURE_FINAL_OIL_LEVEL_MARKING As IBooleanChannel
+        Private CAPTURE_MANUAL_MODE_CK_CHAN_A_WF_PPH As IBooleanChannel
+        Private CAPTURE_MANUAL_MODE_CK_CHAN_B_WF_PPH As IBooleanChannel
+        Private CAPTURE_MANUAL_MODE_WF_PPH As IBooleanChannel
+        Private CAPTURE_MOTORING_CHECKS As IBooleanChannel
+        Private CAPTURE_TRANSIENT_ACCEL_TEST_TARGET_SPEED As IBooleanChannel
+        Private CAPTURE_TRANSIENT_AMBIENT_PRESSURE As IBooleanChannel
+        Private CAPTURE_TRANSIENT_AMBIENT_TEMPERATURE As IBooleanChannel
+        Private CAPTURE_TRANSIENT_DECEL_TEST_TARGET_SPEED As IBooleanChannel
+        Private CAPTURE_TRANSIENT_MAXIMUM_RATE_NG As IBooleanChannel
+        Private CAPTURE_TRANSIENT_NG_MAX_TAKEOFF As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_100NP_100NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_100NP_70NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_100NP_80NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_100NP_90NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_100NP_95NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_100NP_TO As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_105NP_100NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_105NP_70NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_105NP_80NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_105NP_90NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_105NP_95NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_105NP_TO As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_90NP_100NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_90NP_70NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_90NP_80NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_90NP_90NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_90NP_95NG As IBooleanChannel
+        Private CAPTURE_VIB_SURVEY_90NP_TO As IBooleanChannel
+
+        'Performance capture starts
+
+        Private CAPTURE_START_INITIAL_START_TO_GI As IBooleanChannel
+        Private LOG_PERF_INITIAL_START_TO_GI_START As INumericChannel
+        Private CAPTURE_START_MOTORING_CHECKS As IBooleanChannel
+        Private LOG_PERF_MOTORING_CHECKS_START As INumericChannel
+        Private CAPTURE_START_FI_CHECK As IBooleanChannel
+        Private LOG_PERF_FI_CHECK_START As INumericChannel
+        Private CAPTURE_START_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE As IBooleanChannel
+        Private LOG_PERF_GAS_PRODUCER_SEAL_BREAKIN_PROCEDURE_START As INumericChannel
+        Private CAPTURE_START_TO_POWER_SETTING As IBooleanChannel
+        Private LOG_PERF_TO_POWER_SETTING_START As INumericChannel
+        Private CAPTURE_START_TORQUEMETER_CALIBRATION As IBooleanChannel
+        Private LOG_PERF_TORQUEMETER_CALIBRATION_START As INumericChannel
+        Private CAPTURE_START_CONTROL_SYSTEM_CHECKS As IBooleanChannel
+        Private LOG_PERF_CONTROL_SYSTEM_CHECKS_START As INumericChannel
+        Private CAPTURE_START_TRANSIENT_TIME_CHECK As IBooleanChannel
+        Private LOG_PERF_TRANSIENT_TIME_CHECK_START As INumericChannel
+        Private CAPTURE_START_PERFORMANCE_AND_SENSOR_CORRELATION As IBooleanChannel
+        Private LOG_PERF_PERFORMANCE_AND_SENSOR_CORRELATION_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_100NP_70NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_70NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_100NP_80NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_80NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_100NP_90NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_90NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_100NP_95NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_95NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_100NP_100NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_100NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_100NP_TO As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_100NP_TO_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_90NP_70NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_70NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_90NP_80NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_80NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_90NP_90NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_90NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_90NP_95NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_95NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_90NP_100NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_100NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_90NP_TO As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_90NP_TO_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_105NP_70NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_70NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_105NP_80NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_80NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_105NP_90NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_90NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_105NP_95NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_95NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_105NP_100NG As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_100NG_START As INumericChannel
+        Private CAPTURE_START_VIB_SURVEY_105NP_TO As IBooleanChannel
+        Private LOG_PERF_VIB_SURVEY_105NP_TO_START As INumericChannel
+
+        Private CAPTURE_START_FINAL_OIL_LEVEL_MARKING As IBooleanChannel
+        Private LOG_PERF_FINAL_OIL_LEVEL_MARKING_START As INumericChannel
+        Private CAPTURE_START_FINAL_INSPECTIONS As IBooleanChannel
+        Private LOG_PERF_FINAL_INSPECTIONS_START As INumericChannel
+        Private CAPTURE_START_LEAK_AND_SEAL_DRAIN_CHECK As IBooleanChannel
+        Private LOG_PERF_LEAK_AND_SEAL_DRAIN_CHECK_START As INumericChannel
+
+        '*********************
+        '* Forms and Control *
+        '*********************
+        Private Inlet_Dem_Display As KineticaRT.Studio.Controls.Display
+        Private Control_Frame As KineticaRT.Controls.Control
+        Private TransientControl As CEL.KineticaRT.Controls.ZedGraphControl
+
+        '********
+        '* Misc *
+        '********
+        Private Log_Condition As Integer
+        Private SG_Base As Double
+
+        Private IgnitionMaxCurrentRecordCtrl As MinMaxRecordController = Nothing
+        Private IgnitionMaxVoltageRecordCtrl As MinMaxRecordController = Nothing
+        Private StarterMaxCurrentRecordCtrl As MinMaxRecordController = Nothing
+        Private StarterMaxVoltageRecordCtrl As MinMaxRecordController = Nothing
+
+        Private MGTMaxTemperatureRecordCtrl As MinMaxRecordController = Nothing
+        Private VibVADAMaxRecordCtrl As MinMaxRecordController = Nothing
+        Private VibVADRMaxRecordCtrl As MinMaxRecordController = Nothing
+        Private VibVCHRMaxRecordCtrl As MinMaxRecordController = Nothing
+        Private VibVGBRMaxRecordCtrl As MinMaxRecordController = Nothing
+        Private NPTMaxRecordCtrl As MinMaxRecordController = Nothing
+        Private NGMaxRecordCtrl As MinMaxRecordController = Nothing
+
+        Private DeletableTInletChCtrl As DeletableChannelController = Nothing
+        Private DeletableTEgtChCtrl As DeletableChannelController = Nothing
+
+        Private PersistentValuesCtrl As PersistentValuesController = Nothing
+
+        Private UnitronCtrl As UnitronController = Nothing
+
+        Private TimeToIdleTimerCtrl As TimerController = Nothing
+        Private TimeToLightTimerCtrl As TimerController = Nothing
+        Private CrankTimerCtrl As TimerController = Nothing
+        Private StarterTimerCtrl As TimerController = Nothing
+        Private AccelCheckTimerCtrl As TimerController = Nothing
+        Private DecelCheckTimerCtrl As TimerController = Nothing
+
+        Private FlowmeterCtrl As FlowmeterController = Nothing
+
+        Private UserInputs As New UserInput()
+
+        Public Class UserInput
+
+            Public EngineSerialNumber As String = ""
+            Public WorkOrder As String = ""
+            Public PartNumber As String = ""
+            Public CustomerName As String = ""
+            Public OilType As String = ""
+            Public FuelType As String = ""
+            Public LHV As String = ""
+            Public SampleTFuel As String = ""
+            Public SampleFuelSG As String = ""
+            Public Build As String = ""
+            Public TestInstructions As String = ""
+            Public TestInstructionsRev As String = ""
+            Public FADECPartNumber As String = ""
+            Public FADECSerialNumber As String = ""
+
+            Public OperatorName As String = ""
+            Public InspectorName As String = ""
+            Public TestType As String = ""
+
+            ' Allow friend access to the empty constructor.
+            Friend Sub New()
+
+            End Sub
+
+            ' Récupère les informations du UserInput 
+            Public Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+                EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+                PartNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+                CustomerName = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+                OilType = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+                FuelType = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+                LHV = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+                SampleTFuel = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+                SampleFuelSG = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+                Build = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+                TestInstructions = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+                TestInstructionsRev = CELProject.Test_Mgr_UUT_Answer(11).Value.ToString()
+                FADECPartNumber = CELProject.Test_Mgr_UUT_Answer(12).Value.ToString()
+                FADECSerialNumber = CELProject.Test_Mgr_UUT_Answer(13).Value.ToString()
+
+                OperatorName = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+                InspectorName = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+                TestType = CELProject.Test_Mgr_UUT_Choice(2).Value.ToString()
+
+            End Sub
+
+        End Class
+
+    End Class
+End Namespace

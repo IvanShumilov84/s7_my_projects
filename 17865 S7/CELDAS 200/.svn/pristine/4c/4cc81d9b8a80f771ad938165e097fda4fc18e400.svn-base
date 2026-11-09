@@ -1,0 +1,169 @@
+<SOAP-ENV:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:clr="http://schemas.microsoft.com/soap/encoding/clr/1.0" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<SOAP-ENV:Body>
+<a1:ChannelCollection id="ref-1" xmlns:a1="http://schemas.microsoft.com/clr/nsassem/KineticaRT/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<AIR_STARTER_INPUT href="#ref-5"/>
+<BTN_FUEL_ENABLE href="#ref-6"/>
+<BTN_OS_TEST_AB href="#ref-7"/>
+<BTN_OS_TEST_AB_TIMED href="#ref-8"/>
+<DYNO_INLET_POS href="#ref-9"/>
+<DYNO_MANUAL href="#ref-10"/>
+<DYNO_OUTLET_POS href="#ref-11"/>
+<DYNO_POS_MODE href="#ref-12"/>
+<DYNO_SET_INLET href="#ref-13"/>
+<DYNO_SPEED href="#ref-14"/>
+<DYNO_SPEED_MODE href="#ref-15"/>
+<DYNO_TORQUE_MODE href="#ref-16"/>
+<EPS_TRIP_LATCH_Q1 href="#ref-17"/>
+<T_ENGINE_OIL href="#ref-18"/>
+<VLS23_NOMEAN href="#ref-19"/>
+<VLS24_NOMEAN href="#ref-20"/>
+</a1:ChannelCollection>
+<a2:BooleanChannel id="ref-5" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-21">AIR_STARTER_INPUT</Name>
+<Description id="ref-22">Air Starter Input</Description>
+<ToolTip id="ref-23"></ToolTip>
+<TrueText id="ref-24">True</TrueText>
+<FalseText id="ref-25">False</FalseText>
+</a2:BooleanChannel>
+<a2:BooleanChannel id="ref-6" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-26">BTN_FUEL_ENABLE</Name>
+<Description id="ref-27">BTN Fuel Enable</Description>
+<ToolTip href="#ref-23"/>
+<TrueText id="ref-28">True</TrueText>
+<FalseText id="ref-29">False</FalseText>
+</a2:BooleanChannel>
+<a2:BooleanChannel id="ref-7" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-30">BTN_OS_TEST_AB</Name>
+<Description id="ref-31">Overspeed Test A+B</Description>
+<ToolTip href="#ref-23"/>
+<TrueText id="ref-32">True</TrueText>
+<FalseText id="ref-33">False</FalseText>
+</a2:BooleanChannel>
+<a2:BooleanChannel id="ref-8" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-34">BTN_OS_TEST_AB_TIMED</Name>
+<Description id="ref-35">Overspeed Test A+B 0.1s</Description>
+<ToolTip href="#ref-23"/>
+<TrueText id="ref-36">True</TrueText>
+<FalseText id="ref-37">False</FalseText>
+</a2:BooleanChannel>
+<a3:NumericConstant id="ref-9" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-38">DYNO_INLET_POS</Name>
+<Description id="ref-39">Inlet</Description>
+<ToolTip href="#ref-23"/>
+<Units id="ref-40"> %</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-41">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Value href="#ref-42"/>
+</a3:NumericConstant>
+<a2:BooleanChannel id="ref-10" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-43">DYNO_MANUAL</Name>
+<Description id="ref-44">Manual</Description>
+<ToolTip href="#ref-23"/>
+<TrueText id="ref-45">True</TrueText>
+<FalseText id="ref-46">False</FalseText>
+</a2:BooleanChannel>
+<a2:NumericChannel id="ref-11" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-47">DYNO_OUTLET_POS</Name>
+<Description id="ref-48">Outlet</Description>
+<ToolTip href="#ref-23"/>
+<Units id="ref-49"> %</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-50">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+</a2:NumericChannel>
+<a2:BooleanChannel id="ref-12" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-51">DYNO_POS_MODE</Name>
+<Description id="ref-52">Position</Description>
+<ToolTip href="#ref-23"/>
+<TrueText href="#ref-45"/>
+<FalseText href="#ref-46"/>
+</a2:BooleanChannel>
+<a2:NumericChannel id="ref-13" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-53">DYNO_SET_INLET</Name>
+<Description id="ref-54">Set Inlet</Description>
+<ToolTip href="#ref-23"/>
+<Units id="ref-55"> %</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-56">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+</a2:NumericChannel>
+<a2:NumericChannel id="ref-14" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-57">DYNO_SPEED</Name>
+<Description id="ref-58">Speed</Description>
+<ToolTip href="#ref-23"/>
+<Units id="ref-59"> RPM</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-60">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+</a2:NumericChannel>
+<a2:BooleanChannel id="ref-15" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-61">DYNO_SPEED_MODE</Name>
+<Description id="ref-62">Speed</Description>
+<ToolTip href="#ref-23"/>
+<TrueText href="#ref-45"/>
+<FalseText href="#ref-46"/>
+</a2:BooleanChannel>
+<a2:BooleanChannel id="ref-16" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-63">DYNO_TORQUE_MODE</Name>
+<Description id="ref-64">Torque</Description>
+<ToolTip href="#ref-23"/>
+<TrueText href="#ref-45"/>
+<FalseText href="#ref-46"/>
+</a2:BooleanChannel>
+<a4:BooleanItem id="ref-17" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-65">EPS_TRIP_LATCH_Q1</Name>
+<Description id="ref-66">EPS_TRIP_LATCH_Q1</Description>
+<ToolTip href="#ref-23"/>
+<TrueText id="ref-67">True</TrueText>
+<FalseText id="ref-68">False</FalseText>
+<Group id="ref-69">Group_Fast</Group>
+<ItemID id="ref-70">dacn1.dacn1_uut_controller.eps_trip_latch.q1</ItemID>
+</a4:BooleanItem>
+<a2:NumericChannel id="ref-18" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-71">T_ENGINE_OIL</Name>
+<Description id="ref-72">ELDT</Description>
+<ToolTip href="#ref-23"/>
+<Units id="ref-73"> °C</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-74">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+</a2:NumericChannel>
+<a4:Item id="ref-19" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-75">VLS23_NOMEAN</Name>
+<Description href="#ref-23"/>
+<ToolTip href="#ref-23"/>
+<Units href="#ref-23"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-76">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-77">Group_Fast</Group>
+<ItemID id="ref-78">dacn1.dacn1_distributed_iomgr.vls[23].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-20" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-79">VLS24_NOMEAN</Name>
+<Description href="#ref-23"/>
+<ToolTip href="#ref-23"/>
+<Units href="#ref-23"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-80">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-81">Group_Fast</Group>
+<ItemID id="ref-82">dacn1.dacn1_distributed_iomgr.vls[24].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a5:Double id="ref-42" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Values/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<val>NaN</val>
+</a5:Double>
+</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

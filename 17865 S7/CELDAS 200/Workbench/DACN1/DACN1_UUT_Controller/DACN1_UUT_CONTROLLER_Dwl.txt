@@ -1,0 +1,6 @@
+[VARIABLE]
+VarWithLREALType = 1
+VarWithLINTType = 1
+VarWithNewDataType = 1
+[FUNCTION]
+UseExtGstartGrst = 0

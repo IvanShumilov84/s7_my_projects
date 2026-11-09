@@ -1,0 +1,2534 @@
+Imports System
+Imports System.Collections
+Imports System.Reflection
+Imports System.Text
+Imports System.Threading
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Windows.Forms
+Imports KineticaRT
+Imports KineticaRT.Channels
+Imports KineticaRT.Sequence
+Imports KineticaRT.Values
+Imports KineticaRT.Controls.Frame
+Imports Microsoft.Office.Interop 'Excel
+Imports System.Data
+Imports System.Data.OleDb
+Imports Microsoft.VisualBasic
+
+Imports EntitySpaces.Interfaces
+
+Imports CEL.HMI
+Imports CEL.Library
+Imports CEL.Data.BusinessObjects
+
+
+Namespace StudioDemonstration
+
+    Public Class TSCP700_Sequence
+        Inherits CEL.KineticaRT.Sequence.Sequence
+
+        Private CELProject As CELDAS = CELDAS.Instance()
+
+        Private Const MaxNumberOfTBleedProbe As Integer = 4
+        Private Const MaxNumberOfTEgtProbe As Integer = 18
+        Private Const MaxNumberOfTInletProbe As Integer = 4
+
+        Private Enum eTestStepTSCP700_GARUDA
+            RUN_IN_IDLE = 0
+            GENERATOR_LOAD = 1
+            STANDBY = 2
+            MES_PERFORMANCE = 3
+            ECS = 4
+            ZERO_LOAD = 5
+            FINAL_DATA = 6
+        End Enum
+
+        'See OnTestStep_List_SelectedIndexChanged to make sure test step number is manage with standby step with TSCP700-4B/5
+        Private Enum eTestStepTSCP700_REVIMA
+            NO_LOAD = 0
+            COMBINATION_LOAD = 1
+            MES = 2
+            STANDBY = 3
+            FINAL_DATA = 4
+        End Enum
+
+
+        Private ReadOnly Property EngineConfiguration() As EngineInformationItem
+            Get
+                Return UsingConfigurationManager.engineInfoCollection.Item(CELProject.EngineModel)
+            End Get
+        End Property
+
+        Private Sub Compute_TSCP700(ByVal CalculateForLogAndPerformanceReports As Boolean)
+
+            Try
+                If CalculateForLogAndPerformanceReports Then
+
+                    LOG_PERF_WB_CALC.Value = New KineticaRT.Values.Double(Compute_BleedAirFlow(LOG_PERF_T_ORIFICE_DEGF.Value.ToDouble(), _
+                                                                                               LOG_PERF_P_ORIFICE_PSIA.Value.ToDouble(), _
+                                                                                               LOG_PERF_P_ORIFICE_DELTA_PSID.Value.ToDouble))
+
+                    Compute_TSCP700_Perf(LOG_PERF_T_INLET_AVG_DEGF, _
+                                            LOG_PERF_N1, _
+                                            LOG_PERF_DELWB, _
+                                            LOG_PERF_DELPB, _
+                                            LOG_PERF_DELTB, _
+                                            LOG_PERF_T_UNIT_EGT_SOURCE_DEGF, _
+                                            LOG_PERF_DELWB2, _
+                                            LOG_PERF_DELPB2, _
+                                            LOG_PERF_DELTB2)
+
+                    FlowmeterCtrl.ComputeFlow(True)
+
+                    'IMPORTANT: Toutes les variables flottantes telles que WB_CALC, DELPB, LB_DEMAND dont la source et la destination sont vides doivent
+                    'manuellement être updaté pour être inscrite dans le LOG ou le PERF report.
+                Else
+
+                    WB_CALC.Value = New KineticaRT.Values.Double(Compute_BleedAirFlow(T_ORIFICE_DEGF.Value.ToDouble(), _
+                                                                                      P_ORIFICE_PSIA.Value.ToDouble(), _
+                                                                                      P_ORIFICE_DELTA_PSID.Value.ToDouble))
+                    Compute_TSCP700_Perf(T_INLET_AVG_DEGF, _
+                                            N1, _
+                                            DELWB, _
+                                            DELPB, _
+                                            DELTB, _
+                                            T_UNIT_EGT_SOURCE_DEGF, _
+                                            DELWB2, _
+                                            DELPB2, _
+                                            DELTB2)
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Compute_TSCP700" + ex.ToString(), "Error")
+            End Try
+
+        End Sub
+
+        Private Sub Compute_TSCP700_Perf(ByRef tinlet_degf_avg As IChannel, _
+                                          ByRef n1 As IChannel, _
+                                          ByRef del_wb As IChannel, _
+                                          ByRef del_pb As IChannel, _
+                                          ByRef del_tb As IChannel, _
+                                          ByRef unit_egt As IChannel, _
+                                          ByRef del_wb2 As IChannel, _
+                                          ByRef del_pb2 As IChannel, _
+                                          ByRef del_tb2 As IChannel)
+            Try
+                Dim TestStep As Integer = CELProject.PERF_TEST_STEP_NB.Value.ToDouble()
+
+                unit_egt.Value = CELProject.Interpolate_1D(tinlet_degf_avg.Value.ToDouble, TSCP700_TTI, 4)
+
+                PerfCalcOutsideRange = False
+
+                If (TestStep = eTestStepTSCP700_REVIMA.COMBINATION_LOAD And CELProject.Project.Number = "12917") Or (TestStep = eTestStepTSCP700_GARUDA.ECS And CELProject.Project.Number = "10726") Then
+                    del_wb.Value = CELProject.Interpolate_1D(tinlet_degf_avg.Value.ToDouble, TSCP700_TTI, 1)
+                    del_pb.Value = CELProject.Interpolate_1D(tinlet_degf_avg.Value.ToDouble, TSCP700_TTI, 2)
+                    del_tb.Value = CELProject.Interpolate_1D(tinlet_degf_avg.Value.ToDouble, TSCP700_TTI, 3)
+
+                    Dim N1Speed = n1.Value.ToDouble()
+
+                    If N1Speed < TSCP700_N1(0, 0) Then ' N1 speed lower than first data in the table
+                        PerfCalcOutsideRange = True
+                        del_wb2.Value = New KineticaRT.Values.Double(TSCP700_N1(0, 1))
+                        del_pb2.Value = New KineticaRT.Values.Double(TSCP700_N1(0, 2))
+                        del_tb2.Value = New KineticaRT.Values.Double(TSCP700_N1(0, 3))
+
+                    ElseIf N1Speed > TSCP700_N1(TSCP700_N1.GetUpperBound(0), 0) Then 'N1 speed higher than last data in the table
+                        PerfCalcOutsideRange = True
+                        del_wb2.Value = New KineticaRT.Values.Double(TSCP700_N1(TSCP700_N1.GetUpperBound(0), 1))
+                        del_pb2.Value = New KineticaRT.Values.Double(TSCP700_N1(TSCP700_N1.GetUpperBound(0), 2))
+                        del_tb2.Value = New KineticaRT.Values.Double(TSCP700_N1(TSCP700_N1.GetUpperBound(0), 3))
+
+                    Else 'N1 speed is in the table
+                        del_wb2.Value = CELProject.Interpolate_1D(N1Speed, TSCP700_N1, 1)
+                        del_pb2.Value = CELProject.Interpolate_1D(N1Speed, TSCP700_N1, 2)
+                        del_tb2.Value = CELProject.Interpolate_1D(N1Speed, TSCP700_N1, 3)
+                    End If
+
+                Else
+                    del_wb.Value = Values.NaN
+                    del_pb.Value = Values.NaN
+                    del_tb.Value = Values.NaN
+
+                    del_wb2.Value = Values.NaN
+                    del_pb2.Value = Values.NaN
+                    del_tb2.Value = Values.NaN
+                End If
+
+
+            Catch Ex As Exception
+                MessageBox.Show("Compute_TSCP700_Perf: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+        Private Sub ValidateFMInitialValue()
+
+            Try
+
+                'Read the mass flow meter value, the value cannot be 0
+                If FM_INITIAL_VOLUME_LITERS.Value.ToDouble() = 0.0 Then
+                    FM_INITIAL_VOLUME_LITERS.Value = New KineticaRT.Values.Double(FM_TOTAL_VOLUME_LITERS.Value.ToDouble())
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("ValidateFMInitialValue: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+       Private Sub GarudaWriteRunningTime(ByVal excelSheets As Excel.Sheets)
+
+            Try
+                Dim excelWorksheet As Excel.Worksheet = excelSheets.Item("APU CONDITION TEST SHEET")
+
+                Dim FuelUsed As Double = LOG_PERF_FUEL_USED_TOTAL_LITERS.Value.ToDouble()
+                Dim OperatingTime As Double = LOG_PERF_OPERATING_TIME_CURRENT_MINUTES.Value.ToDouble()
+
+                'Running Time, cellule I8
+                excelWorksheet.Cells(8, 9).Value = OperatingTime.ToString(LOG_PERF_OPERATING_TIME_CURRENT_MINUTES.Format) + " " + LOG_PERF_OPERATING_TIME_CURRENT_MINUTES.Units.ToString()
+
+                'Fuel Used, cellule I11
+                excelWorksheet.Cells(11, 9).NumberFormat = "@"
+                excelWorksheet.Cells(11, 9).Value = FuelUsed.ToString(LOG_PERF_FUEL_USED_TOTAL_LITERS.Format) + " " + LOG_PERF_FUEL_USED_TOTAL_LITERS.Units.ToString()
+
+            Catch Ex As Exception
+                MessageBox.Show("GarudaWriteRunningTime: " & Ex.ToString())
+            End Try
+        End Sub
+
+       Private Sub GarudaWriteCommonDataForApuConditionTestSheet(ByVal excelSheets As Excel.Sheets, ByVal Column As Integer, ByVal Page As Integer)
+
+            Try
+                Dim excelWorksheet As Excel.Worksheet
+
+                If Page = 1 Then
+                    excelWorksheet = excelSheets.Item("APU CONDITION TEST SHEET")
+                Else
+                    excelWorksheet = excelSheets.Item("APU CONDITION TEST SHEET2")
+                End If
+
+                excelWorksheet.Cells(13, Column).Value = LOG_PERF_P_BARO_MBARA.Value.ToString(LOG_PERF_P_BARO_MBARA.Format, Nothing)
+                excelWorksheet.Cells(14, Column).Value = LOG_PERF_T_INLET_AVG_DEGF.Value.ToString(LOG_PERF_T_INLET_AVG_DEGF.Format, Nothing)
+                excelWorksheet.Cells(15, Column).Value = LOG_PERF_T_OIL_DEGF.Value.ToString(LOG_PERF_T_OIL_DEGF.Format, Nothing)
+                excelWorksheet.Cells(16, Column).Value = LOG_PERF_T_FUEL_DEGF.Value.ToString(LOG_PERF_T_FUEL_DEGF.Format, Nothing)
+                excelWorksheet.Cells(17, Column).Value = LOG_PERF_P_FUEL_PSIG.Value.ToString(LOG_PERF_P_FUEL_PSIG.Format, Nothing)
+                excelWorksheet.Cells(18, Column).Value = LOG_PERF_P_FUEL_DSCH_NOZZLE_PSIG.Value.ToString(LOG_PERF_P_FUEL_DSCH_NOZZLE_PSIG.Format, Nothing)
+                excelWorksheet.Cells(19, Column).Value = LOG_PERF_P_OIL_PUMP_DSCH_PSIG.Value.ToString(LOG_PERF_P_OIL_PUMP_DSCH_PSIG.Format, Nothing)
+                excelWorksheet.Cells(20, Column).Value = LOG_PERF_P_OIL_GB_BREATHER_INHGG.Value.ToString(LOG_PERF_P_OIL_GB_BREATHER_INHGG.Format, Nothing)
+                excelWorksheet.Cells(21, Column).Value = LOG_PERF_WF_AVG_PPH.Value.ToString(LOG_PERF_WF_AVG_PPH.Format, Nothing)
+                excelWorksheet.Cells(22, Column).Value = LOG_PERF_T_EGT_AVG_DEGF.Value.ToString(LOG_PERF_T_EGT_AVG_DEGF.Format, Nothing)
+                excelWorksheet.Cells(23, Column).Value = LOG_PERF_T_ETC1_DEGF.Value.ToString(LOG_PERF_T_ETC1_DEGF.Format, Nothing)
+                excelWorksheet.Cells(24, Column).Value = LOG_PERF_T_ETC2_DEGF.Value.ToString(LOG_PERF_T_ETC2_DEGF.Format, Nothing)
+                excelWorksheet.Cells(25, Column).Value = LOG_PERF_VIB_GEARBOX.Value.ToString(LOG_PERF_VIB_GEARBOX.Format, Nothing)
+                excelWorksheet.Cells(26, Column).Value = LOG_PERF_VIB_TURBINE.Value.ToString(LOG_PERF_VIB_TURBINE.Format, Nothing)
+                excelWorksheet.Cells(27, Column).Value = LOG_PERF_N1.Value.ToString(LOG_PERF_N1.Format, Nothing)
+                excelWorksheet.Cells(28, Column).Value = LOG_PERF_N2.Value.ToString(LOG_PERF_N2.Format, Nothing)
+
+                excelWorksheet.Cells(32, Column).Value = LOG_PERF_P_SURGE_INHGG.Value.ToString(LOG_PERF_P_SURGE_INHGG.Format, Nothing)
+                excelWorksheet.Cells(33, Column).Value = LOG_PERF_P_LP_COMP_DSCH_PSIG.Value.ToString(LOG_PERF_P_LP_COMP_DSCH_PSIG.Format, Nothing)
+
+                excelWorksheet.Cells(36, Column).Value = LOG_PERF_GENERATOR_POWER_KW.Value.ToString(LOG_PERF_GENERATOR_POWER_KW.Format, Nothing)
+
+                excelWorksheet.Cells(41, Column).Value = LOG_PERF_SHPCOR_HP.Value.ToString(LOG_PERF_SHPCOR_HP.Format, Nothing)
+
+            Catch Ex As Exception
+                MessageBox.Show("GarudaWriteCommonDataForApuConditionTestSheet: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Private Sub GarudaWriteCommonData2ForApuConditionTestSheet(ByVal excelSheets As Excel.Sheets, ByVal Column As Integer, ByVal Page As Integer)
+
+            Try
+                Dim excelWorksheet As Excel.Worksheet
+
+                If Page = 1 Then
+                    excelWorksheet = excelSheets.Item("APU CONDITION TEST SHEET")
+                Else
+                    excelWorksheet = excelSheets.Item("APU CONDITION TEST SHEET2")
+                End If
+
+                excelWorksheet.Cells(29, Column).Value = LOG_PERF_P_BLEED_INHGA.Value.ToString(LOG_PERF_P_BLEED_INHGA.Format, Nothing)
+                excelWorksheet.Cells(30, Column).Value = LOG_PERF_P_ORIFICE_INHGG.Value.ToString(LOG_PERF_P_ORIFICE_INHGG.Format, Nothing)
+                excelWorksheet.Cells(31, Column).Value = LOG_PERF_P_ORIFICE_DELTA_INH2OD.Value.ToString(LOG_PERF_P_ORIFICE_DELTA_INH2OD.Format, Nothing)
+
+                excelWorksheet.Cells(34, Column).Value = LOG_PERF_T_BLEED_AVG_DEGF.Value.ToString(LOG_PERF_T_BLEED_AVG_DEGF.Format, Nothing)
+                excelWorksheet.Cells(35, Column).Value = LOG_PERF_T_ORIFICE_DEGF.Value.ToString(LOG_PERF_T_ORIFICE_DEGF.Format, Nothing)
+
+                excelWorksheet.Cells(37, Column).Value = LOG_PERF_WBCOR_PPM.Value.ToString(LOG_PERF_WBCOR_PPM.Format, Nothing)
+                excelWorksheet.Cells(38, Column).Value = LOG_PERF_PBCOR_INHGA.Value.ToString(LOG_PERF_PBCOR_INHGA.Format, Nothing)
+                excelWorksheet.Cells(39, Column).Value = LOG_PERF_TBCOR_DEGF.Value.ToString(LOG_PERF_TBCOR_DEGF.Format, Nothing)
+                excelWorksheet.Cells(40, Column).Value = LOG_PERF_WFCOR_PPH.Value.ToString(LOG_PERF_WFCOR_PPH.Format, Nothing)
+
+            Catch Ex As Exception
+                MessageBox.Show("GarudaWriteCommonData2ForApuConditionTestSheet: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Private Function CreateGaruda10726PerformanceFile(ByVal AppendOption As Boolean, ByVal TestStepNumber As Integer, ByVal ProtectPassword As String, ByVal UnProtectPassword As String, ByRef excelWorkbook As Excel.Workbook) As Boolean
+            'Declaration
+            Dim excelSheets As Excel.Sheets
+            Dim excelWorksheet As Excel.Worksheet
+
+            CreateGaruda10726PerformanceFile = True
+
+            ' The following gets the Worksheets collection
+            excelSheets = excelWorkbook.Worksheets
+
+            Try
+                excelWorkbook.Worksheets(1).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(2).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(3).Unprotect(UnProtectPassword)
+
+                If AppendOption = False Then
+
+                    excelWorksheet = excelSheets.Item("APU CONDITION TEST SHEET")
+
+                    'TSN/TSO
+                    excelWorksheet.Cells(7, 7).NumberFormat = "@"
+                    excelWorksheet.Cells(7, 7).Value = UserInputsGaruda.TimeSinceNewOrOverhaul
+
+                    'Report No.
+                    excelWorksheet.Cells(7, 9).NumberFormat = "@"
+                    excelWorksheet.Cells(7, 9).Value = UserInputsGaruda.TestNumber
+
+                    'Serial No.
+                    excelWorksheet.Cells(8, 3).NumberFormat = "@"
+                    excelWorksheet.Cells(8, 3).Value = UserInputsGaruda.EngineSerialNumber
+
+                    'Work Order
+                    excelWorksheet.Cells(8, 7).NumberFormat = "@"
+                    excelWorksheet.Cells(8, 7).Value = UserInputsGaruda.WorkOrder
+
+                    'Customer
+                    excelWorksheet.Cells(9, 3).NumberFormat = "@"
+                    excelWorksheet.Cells(9, 3).Value = UserInputsGaruda.CustomerName
+
+                    'Type of Test
+                    excelWorksheet.Cells(9, 7).NumberFormat = "@"
+                    excelWorksheet.Cells(9, 7).Value = UserInputsGaruda.TestType
+
+                    'Date : cellule J9
+                    excelWorksheet.Cells(9, 9).NumberFormat = "@"
+                    excelWorksheet.Cells(9, 9).Value = Format(Now, "d MMMM yyyy")
+
+                    'Reference, cellule C10
+                    excelWorksheet.Cells(10, 3).NumberFormat = "@"
+                    excelWorksheet.Cells(10, 3).Value = Custom_Parameters("APUTestedAccordingTo").ToString()
+
+                    'Operator
+                    excelWorksheet.Cells(42, 3).NumberFormat = "@"
+                    excelWorksheet.Cells(42, 3).Value = UserInputsGaruda.OperatorName
+
+                    'Observer
+                    excelWorksheet.Cells(42, 8).NumberFormat = "@"
+                    excelWorksheet.Cells(42, 8).Value = UserInputsGaruda.ObserverName
+
+                    excelWorksheet = excelSheets.Item("APU TEST REPORT")
+
+                    'PD Sheet No.
+                    excelWorksheet.Cells(5, 7).NumberFormat = "@"
+                    excelWorksheet.Cells(5, 7).Value = UserInputsGaruda.PDSheetNumber
+
+                    'Light/Heavy
+                    If UserInputsGaruda.RepairType = "Heavy" Then
+                        excelWorksheet.OLEObjects("HeavyRepair").object.value = True
+                        excelWorksheet.OLEObjects("LightMediumRepair").object.value = False
+
+                        excelWorksheet.Cells(31, 2).NumberFormat = "@"
+                        excelWorksheet.Cells(31, 2).Value = "341"
+
+                    ElseIf UserInputsGaruda.RepairType = "Light" Then
+                        excelWorksheet.OLEObjects("HeavyRepair").object.value = False
+                        excelWorksheet.OLEObjects("LightMediumRepair").object.value = True
+
+                        excelWorksheet.Cells(31, 2).NumberFormat = "@"
+                        excelWorksheet.Cells(31, 2).Value = "320"
+
+                    Else
+                        excelWorksheet.OLEObjects("HeavyRepair").object.value = False
+                        excelWorksheet.OLEObjects("LightMediumRepair").object.value = False
+                    End If
+
+                    'Test Cell Performer (Operator)
+                    excelWorksheet.Cells(39, 5).NumberFormat = "@"
+                    excelWorksheet.Cells(39, 5).Value = UserInputsGaruda.OperatorName
+
+                    'Supervisor
+                    excelWorksheet.Cells(39, 7).NumberFormat = "@"
+                    excelWorksheet.Cells(39, 7).Value = UserInputsGaruda.SupervisorName
+
+                    'Inspector
+                    excelWorksheet.Cells(39, 9).NumberFormat = "@"
+                    excelWorksheet.Cells(39, 9).Value = UserInputsGaruda.QCInspectorName
+
+                End If
+
+                GarudaWriteRunningTime(excelSheets)
+
+                Select Case TestStepNumber
+
+                    Case eTestStepTSCP700_GARUDA.RUN_IN_IDLE
+
+                        GarudaWriteCommonDataForApuConditionTestSheet(excelSheets, 7, 1)
+
+                    Case eTestStepTSCP700_GARUDA.ZERO_LOAD
+
+                        GarudaWriteCommonDataForApuConditionTestSheet(excelSheets, 8, 1)
+
+                    Case eTestStepTSCP700_GARUDA.GENERATOR_LOAD
+
+                        GarudaWriteCommonDataForApuConditionTestSheet(excelSheets, 8, 2)
+
+                    Case eTestStepTSCP700_GARUDA.STANDBY
+
+                        GarudaWriteCommonDataForApuConditionTestSheet(excelSheets, 9, 1)
+                        GarudaWriteCommonData2ForApuConditionTestSheet(excelSheets, 9, 1)
+
+                    Case eTestStepTSCP700_GARUDA.ECS
+
+                        GarudaWriteCommonDataForApuConditionTestSheet(excelSheets, 9, 2)
+                        GarudaWriteCommonData2ForApuConditionTestSheet(excelSheets, 9, 2)
+
+                    Case eTestStepTSCP700_GARUDA.MES_PERFORMANCE
+
+                        GarudaWriteCommonDataForApuConditionTestSheet(excelSheets, 10, 1)
+                        GarudaWriteCommonData2ForApuConditionTestSheet(excelSheets, 10, 1)
+
+                        excelWorksheet = excelSheets.Item("APU TEST REPORT")
+
+                        excelWorksheet.Cells(14, 3).Value = LOG_PERF_P_BARO_MBARA.Value.ToString(LOG_PERF_P_BARO_MBARA.Format, Nothing)
+                        excelWorksheet.Cells(15, 3).Value = LOG_PERF_T_INLET_AVG_DEGF.Value.ToString(LOG_PERF_T_INLET_AVG_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(16, 3).Value = LOG_PERF_P_OIL_PUMP_DSCH_PSIG.Value.ToString(LOG_PERF_P_OIL_PUMP_DSCH_PSIG.Format, Nothing)
+                        excelWorksheet.Cells(17, 3).Value = LOG_PERF_T_OIL_DEGF.Value.ToString(LOG_PERF_T_OIL_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(18, 3).Value = LOG_PERF_T_FUEL_DEGF.Value.ToString(LOG_PERF_T_FUEL_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(19, 3).Value = LOG_PERF_P_FUEL_PSIG.Value.ToString(LOG_PERF_P_FUEL_PSIG.Format, Nothing)
+                        excelWorksheet.Cells(20, 3).Value = LOG_PERF_P_FUEL_DSCH_NOZZLE_PSIG.Value.ToString(LOG_PERF_P_FUEL_DSCH_NOZZLE_PSIG.Format, Nothing)
+                        excelWorksheet.Cells(21, 3).Value = LOG_PERF_WF_AVG_PPH.Value.ToString(LOG_PERF_WF_AVG_PPH.Format, Nothing)
+                        excelWorksheet.Cells(22, 3).Value = LOG_PERF_T_EGT_AVG_DEGF.Value.ToString(LOG_PERF_T_EGT_AVG_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(23, 3).Value = LOG_PERF_T_ETC1_DEGF.Value.ToString(LOG_PERF_T_ETC1_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(24, 3).Value = LOG_PERF_T_ETC2_DEGF.Value.ToString(LOG_PERF_T_ETC2_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(25, 3).Value = LOG_PERF_VIB_GEARBOX.Value.ToString(LOG_PERF_VIB_GEARBOX.Format, Nothing)
+                        excelWorksheet.Cells(26, 3).Value = LOG_PERF_VIB_TURBINE.Value.ToString(LOG_PERF_VIB_TURBINE.Format, Nothing)
+
+                        excelWorksheet.Cells(14, 8).Value = LOG_PERF_N1.Value.ToString(LOG_PERF_N1.Format, Nothing)
+                        excelWorksheet.Cells(15, 8).Value = LOG_PERF_N2.Value.ToString(LOG_PERF_N2.Format, Nothing)
+
+                        excelWorksheet.Cells(17, 8).Value = LOG_PERF_P_OIL_GB_BREATHER_INHGG.Value.ToString(LOG_PERF_P_OIL_GB_BREATHER_INHGG.Format, Nothing)
+                        excelWorksheet.Cells(18, 8).Value = LOG_PERF_P_BLEED_INHGA.Value.ToString(LOG_PERF_P_BLEED_INHGA.Format, Nothing)
+
+                        excelWorksheet.Cells(20, 8).Value = LOG_PERF_P_ORIFICE_INHGG.Value.ToString(LOG_PERF_P_ORIFICE_INHGG.Format, Nothing)
+                        excelWorksheet.Cells(21, 8).Value = LOG_PERF_P_ORIFICE_DELTA_INH2OD.Value.ToString(LOG_PERF_P_ORIFICE_DELTA_INH2OD.Format, Nothing)
+                        excelWorksheet.Cells(22, 8).Value = LOG_PERF_P_LP_COMP_DSCH_PSIG.Value.ToString(LOG_PERF_P_LP_COMP_DSCH_PSIG.Format, Nothing)
+                        excelWorksheet.Cells(23, 8).Value = LOG_PERF_P_SURGE_INHGG.Value.ToString(LOG_PERF_P_SURGE_INHGG.Format, Nothing)
+
+                        excelWorksheet.Cells(25, 8).Value = LOG_PERF_T_ORIFICE_DEGF.Value.ToString(LOG_PERF_T_ORIFICE_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(26, 8).Value = LOG_PERF_T_BLEED_AVG_DEGF.Value.ToString(LOG_PERF_T_BLEED_AVG_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(27, 8).Value = LOG_PERF_GENERATOR_POWER_KW.Value.ToString(LOG_PERF_GENERATOR_POWER_KW.Format, Nothing)
+
+                        excelWorksheet.Cells(31, 3).Value = LOG_PERF_WBCOR_PPM.Value.ToString(LOG_PERF_WBCOR_PPM.Format, Nothing)
+                        excelWorksheet.Cells(32, 3).Value = LOG_PERF_PBCOR_INHGA.Value.ToString(LOG_PERF_PBCOR_INHGA.Format, Nothing)
+                        excelWorksheet.Cells(33, 3).Value = LOG_PERF_TBCOR_DEGF.Value.ToString(LOG_PERF_TBCOR_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(34, 3).Value = LOG_PERF_WFCOR_PPH.Value.ToString(LOG_PERF_WFCOR_PPH.Format, Nothing)
+
+
+                        Dim cTemp As String = Nothing
+
+                        If PerfCalcOutsideRange Then
+                            cTemp = "WBCorr, TBCorr and PBCorr cannot be calculated because the N1 speed is below or higher than the specified values in table 709 " + vbCrLf + "The mimimum or maximum values in table 709 are used."
+                        Else
+                            cTemp = "         "
+                        End If
+
+                        excelWorksheet = excelSheets.Item("APU CONDITION TEST SHEET")
+                        'cell A48
+                        excelWorksheet.Cells(48, 1).NumberFormat = "@"
+                        excelWorksheet.Cells(48, 1).Value = cTemp
+
+                        excelWorksheet = excelSheets.Item("APU CONDITION TEST SHEET2")
+                        'cell A48
+                        excelWorksheet.Cells(48, 1).NumberFormat = "@"
+                        excelWorksheet.Cells(48, 1).Value = cTemp
+
+                        excelWorksheet = excelSheets.Item("APU TEST REPORT")
+                        'cell A46
+                        excelWorksheet.Cells(46, 1).NumberFormat = "@"
+                        excelWorksheet.Cells(46, 1).Value = cTemp
+
+                    Case eTestStepTSCP700_GARUDA.FINAL_DATA
+                        'Nothing to do, all in common section
+
+                End Select
+
+                'Write the manual Entry
+                excelWorksheet = excelSheets.Item("APU TEST REPORT")
+
+                'Preservation, cellule B36
+                excelWorksheet.Cells(36, 2).NumberFormat = "@"
+                excelWorksheet.Cells(36, 2).Value = "For " + PERF_PRESERVATION_MONTH.Value.ToString() + " Months"
+
+                If CELProject.IsTrue(PERF_PRESERVATION_YES.Value) Then
+                    excelWorksheet.OLEObjects("PreservationYes").object.value = True
+                Else
+                    excelWorksheet.OLEObjects("PreservationYes").object.value = False
+                End If
+
+                If CELProject.IsTrue(PERF_PRESERVATION_NO.Value) Then
+                    excelWorksheet.OLEObjects("PreservationNo").object.value = True
+                Else
+                    excelWorksheet.OLEObjects("PreservationNo").object.value = False
+                End If
+
+                'Test Result
+                If CELProject.IsTrue(CELProject.PERF_TEST_RESULT_ACCEPTED.Value) Then
+                    excelWorksheet.OLEObjects("TestResultAccepted").object.value = True
+                Else
+                    excelWorksheet.OLEObjects("TestResultAccepted").object.value = False
+                End If
+
+                If CELProject.IsTrue(CELProject.PERF_TEST_RESULT_REJECTED.Value) Then
+                    excelWorksheet.OLEObjects("TestResultRejected").object.value = True
+                Else
+                    excelWorksheet.OLEObjects("TestResultRejected").object.value = False
+                End If
+
+                excelWorksheet = excelSheets.Item("APU CONDITION TEST SHEET")
+
+                If CELProject.IsTrue(CELProject.PERF_TEST_RESULT_ACCEPTED.Value) Then
+                    excelWorksheet.Cells(11, 3).Value = "Accepted"
+                Else
+                    excelWorksheet.Cells(11, 3).Value = "Rejected"
+                End If
+
+            Catch ex As Exception
+                System.Diagnostics.Trace.WriteLine("CreatePerformanceFile: " + ex.ToString())
+                MessageBox.Show(ex.ToString)
+                CreateGaruda10726PerformanceFile = False
+            Finally
+
+                'Lock Sheets
+                excelWorkbook.Worksheets(1).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(2).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(3).Protect(ProtectPassword)
+
+            End Try
+        End Function
+
+        Private Sub RevimaWriteCommonDataForSummaryPerformedTestDetails(ByVal excelSheets As Excel.Sheets, ByVal Line As Integer, ByVal Description As String, ByVal StepText As String, Value As Boolean)
+            Try
+                Dim excelWorksheet As Excel.Worksheet = excelSheets.Item("SUMMARY")
+
+                ' write the line: description, step, units , value
+                excelWorksheet.Cells(Line, 2).Value = Description
+                excelWorksheet.Cells(Line, 50).Value = StepText
+
+                If Value Then
+                    excelWorksheet.Cells(Line, 78).Value = "Passed"
+                Else
+                    excelWorksheet.Cells(Line, 78).Value = "Failed"
+
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("RevimaWriteCommonDataForSummaryPerformedTestDetails: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Private Sub RevimaWriteStandbyData(ByVal excelSheets As Excel.Sheets)
+
+            Try
+                Dim excelWorksheet As Excel.Worksheet = excelSheets.Item("SUMMARY")
+
+                excelWorksheet.Cells(32, 2).Value = "Standby Speed N1"
+                excelWorksheet.Cells(32, 50).Value = "2.E (2)"
+                excelWorksheet.Cells(32, 66).Value = "RPM"
+                excelWorksheet.Cells(32, 78).Value = LOG_PERF_N1.Value.ToString(LOG_PERF_N1.Format, Nothing)
+
+                excelWorksheet.Cells(33, 2).Value = "Standby Speed N2"
+                excelWorksheet.Cells(33, 50).Value = "2.E (2)"
+                excelWorksheet.Cells(33, 66).Value = "RPM"
+                excelWorksheet.Cells(33, 78).Value = LOG_PERF_N2.Value.ToString(LOG_PERF_N2.Format, Nothing)
+
+                excelWorksheet.Cells(34, 2).Value = "Compressor Inlet Temp."
+                excelWorksheet.Cells(34, 50).Value = "2.E (2)"
+                excelWorksheet.Cells(34, 66).Value = "°F"
+                excelWorksheet.Cells(34, 78).Value = LOG_PERF_T_INLET_AVG_DEGF.Value.ToString(LOG_PERF_T_INLET_AVG_DEGF.Format, Nothing)
+
+            Catch Ex As Exception
+                MessageBox.Show("RevimaWriteStandbyData: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Private Sub RevimaWriteFinalData(ByVal excelSheets As Excel.Sheets)
+
+            Try
+                Dim excelWorksheet As Excel.Worksheet = excelSheets.Item("ACCEPTANCE")
+
+                'Test Result
+                If CELProject.IsTrue(CELProject.PERF_TEST_RESULT_ACCEPTED.Value) Then
+                    excelWorksheet.OLEObjects("TestResultAccepted").object.value = True
+                Else
+                    excelWorksheet.OLEObjects("TestResultAccepted").object.value = False
+                End If
+
+                If CELProject.IsTrue(CELProject.PERF_TEST_RESULT_REJECTED.Value) Then
+                    excelWorksheet.OLEObjects("TestResultRejected").object.value = True
+                Else
+                    excelWorksheet.OLEObjects("TestResultRejected").object.value = False
+                End If
+
+                excelWorksheet = excelSheets.Item("SUMMARY")
+
+                If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 28, "APU Run-In and Electronic Control Check", "2A", CELProject.IsTrue(Log_Perf_APU_RUN_In_Check.Value))
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 29, "Oil Filter and Mag Plug/Detector Strainer Check", "2B", CELProject.IsTrue(Log_Perf_OIL_Filter_Check.Value))
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 30, "Oil Consumtion Check", "2C", CELProject.IsTrue(Log_Perf_Oil_Consumtion_Check.Value))
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 31, "OIL Level Sensor Check", "2D", CELProject.IsTrue(Log_Perf_OIL_Level_Sensor_Check.Value))
+
+                ElseIf CELProject.EngineModel = "TSCP700-4E" Then
+
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 28, "Start Tests Check", "1.G (2)", CELProject.IsTrue(Log_Perf_Start_Tests_Check.Value))
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 29, "Engine Run-In Check", "1.G (3)", CELProject.IsTrue(Log_Perf_Engine_RUN_In_Check.Value))
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 30, "Magnetic Chip Detector Check", "1.G (4)", CELProject.IsTrue(Log_Perf_Magnetic_Chip_Detector_Check.Value))
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 31, "Oil Consumtion Check", "1.G (5)", CELProject.IsTrue(Log_Perf_Oil_Consumtion_Check.Value))
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 32, "VTN Actuator null position N1 speed Check", "1.G (6)", CELProject.IsTrue(Log_Perf_VTN_Check.Value))
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 33, "Test for 100% MES Speed Check", "1.G (7)", CELProject.IsTrue(Log_Perf_Test_100_MES_Check.Value))
+                    RevimaWriteCommonDataForSummaryPerformedTestDetails(excelSheets, 34, "OIL Level Sensor Check", "1.G (8)", CELProject.IsTrue(Log_Perf_OIL_Level_Sensor_Check.Value))
+
+                Else
+                    MessageBox.Show("Init_Egine_Channels: Engine Model Not supported", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+
+
+                excelWorksheet.Cells(38, 78).Value = LOG_PERF_OPERATING_TIME_CURRENT_HOURS.Value.ToString(LOG_PERF_OPERATING_TIME_CURRENT_HOURS.Format, Nothing)
+                excelWorksheet.Cells(39, 78).Value = NUMBER_OF_STARTS.Value.ToString(NUMBER_OF_STARTS.Format, Nothing)
+                excelWorksheet.Cells(40, 78).Value = LOG_PERF_FUEL_USED_TOTAL_LITERS.Value.ToString(LOG_PERF_FUEL_USED_TOTAL_LITERS.Format, Nothing)
+
+            Catch Ex As Exception
+                MessageBox.Show("RevimaWriteFinalData: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Private Sub RevimaWriteCommonDataForSummaryTestSheet(ByVal excelSheets As Excel.Sheets, ByVal Column As Integer, ByVal Correction As Boolean, ByVal ColumnLimit As Integer)
+
+            Try
+                Dim excelWorksheet As Excel.Worksheet
+
+                excelWorksheet = excelSheets.Item("SUMMARY")
+
+                If Correction Then
+                    'CEL AY20 a AY22
+                    excelWorksheet.Cells(20, Column).Value = LOG_PERF_PBCOR_INHGA.Value.ToString(LOG_PERF_PBCOR_INHGA.Format, Nothing)
+                    excelWorksheet.Cells(21, Column).Value = LOG_PERF_TBCOR_DEGF.Value.ToString(LOG_PERF_TBCOR_DEGF.Format, Nothing)
+                    excelWorksheet.Cells(22, Column).Value = LOG_PERF_WBCOR_PPM.Value.ToString(LOG_PERF_WBCOR_PPM.Format, Nothing)
+                End If
+
+                excelWorksheet.Cells(23, Column).Value = LOG_PERF_WFCOR_PPH.Value.ToString(LOG_PERF_WFCOR_PPH.Format, Nothing)
+
+                If ColumnLimit <> 0 Then
+                    'Limit for PBCOR
+                    excelWorksheet.Cells(20, ColumnLimit).NumberFormat = "@"
+                    excelWorksheet.Cells(20, ColumnLimit).Value = "  Min  " & PBCOR_PERF_MIN_INHGA.Value.ToString(PBCOR_PERF_MIN_INHGA.Format, Nothing)
+
+                    'Limit for TBCOR
+                    excelWorksheet.Cells(21, ColumnLimit).NumberFormat = "@"
+                    excelWorksheet.Cells(21, ColumnLimit).Value = "  Max  " & TBCOR_PERF_MAX_DEGF.Value.ToString(TBCOR_PERF_MAX_DEGF.Format, Nothing)
+
+                    'Limit for WBCORdepending on Light/Heavy
+                    excelWorksheet.Cells(22, ColumnLimit).NumberFormat = "@"
+                    excelWorksheet.Cells(22, ColumnLimit).Value = "  Min  " & WBCOR_PERF_MIN_PPM.Value.ToString(WBCOR_PERF_MIN_PPM.Format, Nothing)
+                End If
+
+
+            Catch Ex As Exception
+                MessageBox.Show("RevimaWriteCommonDataForSummaryTestSheet: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+        Private Sub RevimaWriteCommonDataForDetailsTestSheet(ByVal excelSheets As Excel.Sheets, ByVal Column As Integer, ByVal NoBleed As Boolean, ByVal NoCorrection As Boolean)
+
+            Try
+                Dim excelWorksheet As Excel.Worksheet
+
+                excelWorksheet = excelSheets.Item("DETAILS")
+
+                excelWorksheet.Cells(18, Column).Value = LOG_PERF_P_BARO_MBARA.Value.ToString(LOG_PERF_P_BARO_MBARA.Format, Nothing)
+                excelWorksheet.Cells(19, Column).Value = LOG_PERF_T_INLET_AVG_DEGF.Value.ToString(LOG_PERF_T_INLET_AVG_DEGF.Format, Nothing)
+                excelWorksheet.Cells(20, Column).Value = LOG_PERF_T_OIL_DEGF.Value.ToString(LOG_PERF_T_OIL_DEGF.Format, Nothing)
+                excelWorksheet.Cells(21, Column).Value = LOG_PERF_T_FUEL_DEGF.Value.ToString(LOG_PERF_T_FUEL_DEGF.Format, Nothing)
+                excelWorksheet.Cells(22, Column).Value = LOG_PERF_P_FUEL_PSIG.Value.ToString(LOG_PERF_P_FUEL_PSIG.Format, Nothing)
+
+                If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+
+                    excelWorksheet.Cells(23, Column).Value = LOG_PERF_P_FUEL_DSCH_NOZZLE_PSIG.Value.ToString(LOG_PERF_P_FUEL_DSCH_NOZZLE_PSIG.Format, Nothing)
+
+                ElseIf CELProject.EngineModel = "TSCP700-4E" Then
+
+                    excelWorksheet.Cells(23, Column).Value = "N/A"
+                    excelWorksheet.Cells(23, Column).Interior.ColorIndex = 15
+                Else
+
+                    MessageBox.Show("RevimaWriteCommonDataForAcceptanceTestSheet: Engine Model Not supported", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+                End If
+
+                excelWorksheet.Cells(24, Column).Value = LOG_PERF_P_OIL_PUMP_DSCH_PSIG.Value.ToString(LOG_PERF_P_OIL_PUMP_DSCH_PSIG.Format, Nothing)
+                excelWorksheet.Cells(25, Column).Value = LOG_PERF_P_OIL_GB_BREATHER_INHGG.Value.ToString(LOG_PERF_P_OIL_GB_BREATHER_INHGG.Format, Nothing)
+                excelWorksheet.Cells(26, Column).Value = LOG_PERF_WF_AVG_PPH.Value.ToString(LOG_PERF_WF_AVG_PPH.Format, Nothing)
+                excelWorksheet.Cells(27, Column).Value = LOG_PERF_T_EGT_AVG_DEGF.Value.ToString(LOG_PERF_T_EGT_AVG_DEGF.Format, Nothing)
+                excelWorksheet.Cells(28, Column).Value = LOG_PERF_T_ETC1_DEGF.Value.ToString(LOG_PERF_T_ETC1_DEGF.Format, Nothing)
+                excelWorksheet.Cells(29, Column).Value = LOG_PERF_T_ETC2_DEGF.Value.ToString(LOG_PERF_T_ETC2_DEGF.Format, Nothing)
+                excelWorksheet.Cells(30, Column).Value = LOG_PERF_VIB_GEARBOX.Value.ToString(LOG_PERF_VIB_GEARBOX.Format, Nothing)
+                excelWorksheet.Cells(31, Column).Value = LOG_PERF_VIB_TURBINE.Value.ToString(LOG_PERF_VIB_TURBINE.Format, Nothing)
+                excelWorksheet.Cells(32, Column).Value = LOG_PERF_N1.Value.ToString(LOG_PERF_N1.Format, Nothing)
+                excelWorksheet.Cells(33, Column).Value = LOG_PERF_N2.Value.ToString(LOG_PERF_N2.Format, Nothing)
+
+                If NoBleed Then
+
+                    excelWorksheet.Cells(34, Column).Value = "N/A"
+                    excelWorksheet.Cells(34, Column).Interior.ColorIndex = 15
+                    excelWorksheet.Cells(35, Column).Value = "N/A"
+                    excelWorksheet.Cells(35, Column).Interior.ColorIndex = 15
+                    excelWorksheet.Cells(36, Column).Value = "N/A"
+                    excelWorksheet.Cells(36, Column).Interior.ColorIndex = 15
+
+                Else
+                    excelWorksheet.Cells(34, Column).Value = LOG_PERF_P_BLEED_INHGA.Value.ToString(LOG_PERF_P_BLEED_INHGA.Format, Nothing)
+                    excelWorksheet.Cells(35, Column).Value = LOG_PERF_P_ORIFICE_INHGG.Value.ToString(LOG_PERF_P_ORIFICE_INHGG.Format, Nothing)
+                    excelWorksheet.Cells(36, Column).Value = LOG_PERF_P_ORIFICE_DELTA_INH2OD.Value.ToString(LOG_PERF_P_ORIFICE_DELTA_INH2OD.Format, Nothing)
+
+                End If
+
+                excelWorksheet.Cells(37, Column).Value = LOG_PERF_P_SURGE_INHGG.Value.ToString(LOG_PERF_P_SURGE_INHGG.Format, Nothing)
+
+                If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+
+                    excelWorksheet.Cells(38, Column).Value = LOG_PERF_P_LP_COMP_DSCH_PSIG.Value.ToString(LOG_PERF_P_LP_COMP_DSCH_PSIG.Format, Nothing)
+
+                ElseIf CELProject.EngineModel = "TSCP700-4E" Then
+
+                    excelWorksheet.Cells(38, Column).Value = "N/A"
+                    excelWorksheet.Cells(38, Column).Interior.ColorIndex = 15
+                Else
+
+                    MessageBox.Show("RevimaWriteCommonDataForAcceptanceTestSheet: Engine Model Not supported", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+                End If
+
+                If NoBleed Then
+
+                    excelWorksheet.Cells(39, Column).Value = "N/A"
+                    excelWorksheet.Cells(39, Column).Interior.ColorIndex = 15
+                    excelWorksheet.Cells(40, Column).Value = "N/A"
+                    excelWorksheet.Cells(40, Column).Interior.ColorIndex = 15
+
+                Else
+
+                    excelWorksheet.Cells(39, Column).Value = LOG_PERF_T_BLEED_AVG_DEGF.Value.ToString(LOG_PERF_T_BLEED_AVG_DEGF.Format, Nothing)
+                    excelWorksheet.Cells(40, Column).Value = LOG_PERF_T_ORIFICE_DEGF.Value.ToString(LOG_PERF_T_ORIFICE_DEGF.Format, Nothing)
+
+                End If
+
+                excelWorksheet.Cells(41, Column).Value = LOG_PERF_GENERATOR_POWER_KW.Value.ToString(LOG_PERF_GENERATOR_POWER_KW.Format, Nothing)
+
+                If NoCorrection Then
+
+                    excelWorksheet.Cells(42, Column).Value = "N/A"
+                    excelWorksheet.Cells(42, Column).Interior.ColorIndex = 15
+                    excelWorksheet.Cells(43, Column).Value = "N/A"
+                    excelWorksheet.Cells(43, Column).Interior.ColorIndex = 15
+                    excelWorksheet.Cells(44, Column).Value = "N/A"
+                    excelWorksheet.Cells(44, Column).Interior.ColorIndex = 15
+                    excelWorksheet.Cells(45, Column).Value = "N/A"
+                    excelWorksheet.Cells(45, Column).Interior.ColorIndex = 15
+
+                Else
+
+                    excelWorksheet.Cells(42, Column).Value = LOG_PERF_WBCOR_PPM.Value.ToString(LOG_PERF_WBCOR_PPM.Format, Nothing)
+                    excelWorksheet.Cells(43, Column).Value = LOG_PERF_PBCOR_INHGA.Value.ToString(LOG_PERF_PBCOR_INHGA.Format, Nothing)
+                    excelWorksheet.Cells(44, Column).Value = LOG_PERF_TBCOR_DEGF.Value.ToString(LOG_PERF_TBCOR_DEGF.Format, Nothing)
+                    excelWorksheet.Cells(45, Column).Value = LOG_PERF_WFCOR_PPH.Value.ToString(LOG_PERF_WFCOR_PPH.Format, Nothing)
+
+                End If
+
+                excelWorksheet.Cells(46, Column).Value = LOG_PERF_SHPCOR_HP.Value.ToString(LOG_PERF_SHPCOR_HP.Format, Nothing)
+
+            Catch Ex As Exception
+                MessageBox.Show("RevimaWriteCommonDataForAcceptanceTestSheet: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Private Function CreateRevima12917PerformanceFile(ByVal AppendOption As Boolean, ByVal TestStepNumber As Integer, ByVal ProtectPassword As String, ByVal UnProtectPassword As String, ByRef excelWorkbook As Excel.Workbook) As Boolean
+            'Declaration
+            Dim excelSheets As Excel.Sheets
+            Dim excelWorksheet As Excel.Worksheet
+
+            CreateRevima12917PerformanceFile = True
+
+            ' The following gets the Worksheets collection
+            excelSheets = excelWorkbook.Worksheets
+
+            Try
+                excelWorkbook.Worksheets(1).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(2).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(3).Unprotect(UnProtectPassword)
+
+                If AppendOption = False Then
+
+                    excelWorksheet = excelSheets.Item("SUMMARY")
+
+                    'APU        (Cell V1)
+                    excelWorksheet.Cells(1, 22).NumberFormat = "@"
+                    excelWorksheet.Cells(1, 22).Value = CELProject.EngineModel & " APU TEST DATA SHEET"
+
+                    'Engine S/N.   (Cell AB5)
+                    excelWorksheet.Cells(5, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(5, 28).Value = UserInputsRevima.EngineSerialNumber
+
+                    'Work Order    (Cell AB6)
+                    excelWorksheet.Cells(6, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(6, 28).Value = UserInputsRevima.WorkOrder
+
+                    'ECB S/N    (Cell AB7)
+                    excelWorksheet.Cells(7, 28).NumberFormat = "@"
+
+                    If CELProject.EngineModel = "TSCP700-4E" Then
+                        excelWorksheet.Cells(7, 28).Value = UserInputsRevima.ECBSerialNumber
+                    Else
+                        excelWorksheet.Cells(7, 28).Value = "N/A"
+                        excelWorksheet.Cells(7, 28).Interior.ColorIndex = 15
+                    End If
+
+                    'Exhaust Duct S/N    (Cell AB8)
+                    excelWorksheet.Cells(8, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(8, 28).Value = UserInputsRevima.ExhaustDuctSerialNumber
+
+                    'Bellmouth S/N    (Cell AB9)
+                    excelWorksheet.Cells(9, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(9, 28).Value = UserInputsRevima.BellmouthSerialNumber
+
+                    'Bleed Duct S/N    (Cell AB10)
+                    excelWorksheet.Cells(10, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(10, 28).Value = UserInputsRevima.BleedDuctSerialNumber
+
+                    'Starter S/N    (Cell AB11)
+                    excelWorksheet.Cells(11, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(11, 28).Value = UserInputsRevima.StarterSerialNumber
+
+                    'Dyno/Generator S/N    (Cell AB12)
+                    excelWorksheet.Cells(12, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(12, 28).Value = UserInputsRevima.DynoGeneratorSerialNumber
+
+                    'Turbine Vib Pickup S/N    (Cell AB13)
+                    excelWorksheet.Cells(13, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(13, 28).Value = UserInputsRevima.TurbineVibPickupSerialNumber
+
+                    'Gearbox Vib Pickup S/N    (Cell AB14)
+                    excelWorksheet.Cells(14, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(14, 28).Value = UserInputsRevima.GearboxVibPickupSerialNumber
+
+                    'Oil Type S/N    (Cell CE5)
+                    excelWorksheet.Cells(5, 83).NumberFormat = "@"
+                    excelWorksheet.Cells(5, 83).Value = UserInputsRevima.OilType
+
+                    'TSN/TSO        (Cell CE6)
+                    excelWorksheet.Cells(6, 83).NumberFormat = "@"
+                    excelWorksheet.Cells(6, 83).Value = UserInputsRevima.TimeSinceNewOrOverhaul
+
+                    'CSN/CSO        (Cell CE7)
+                    excelWorksheet.Cells(7, 83).NumberFormat = "@"
+                    excelWorksheet.Cells(7, 83).Value = UserInputsRevima.CyclesSinceNewOrOverhaul
+
+                    'Reason        (Cell CE8)
+                    excelWorksheet.Cells(8, 83).NumberFormat = "@"
+                    excelWorksheet.Cells(8, 83).Value = UserInputsRevima.Reason
+
+                    'Test Type (Cell CE9)
+                    excelWorksheet.Cells(9, 83).NumberFormat = "@"
+                    excelWorksheet.Cells(9, 83).Value = UserInputsRevima.TestType
+
+                    'Reppair Type (Cell CE10)
+                    excelWorksheet.Cells(10, 83).NumberFormat = "@"
+                    excelWorksheet.Cells(10, 83).Value = UserInputsRevima.RepairType
+
+                    'Load Cell S/N (Cell CE11)
+                    excelWorksheet.Cells(11, 83).NumberFormat = "@"
+                    excelWorksheet.Cells(11, 83).Value = UserInputsRevima.LoadCellSN
+
+                    'Load Type (Cell CE12)
+                    excelWorksheet.Cells(12, 83).NumberFormat = "@"
+                    excelWorksheet.Cells(12, 83).Value = UserInputsRevima.LoadType
+
+                    'Date     (Cell CE13)
+                    excelWorksheet.Cells(13, 83).NumberFormat = "@"
+                    excelWorksheet.Cells(13, 83).Value = Format(Now, "d MMMM yyyy")
+
+                    If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+
+                        excelWorksheet.Cells(17, 38).Value = "3.A (2a)" 'NO lOAD perf point
+                        excelWorksheet.Cells(17, 56).Value = "3.A (2d)" 'Combination Load perf point
+                        excelWorksheet.Cells(17, 74).Value = "2.E (6)"  'MES perf point
+
+                        excelWorksheet.Cells(35, 50).Value = "STEP 3.A (2d)"
+                        excelWorksheet.Cells(36, 50).Value = "STEP 3.A (2d)"
+                        excelWorksheet.Cells(37, 50).Value = "STEP 3.A (2d)"
+
+                        excelWorksheet = excelSheets.Item("DETAILS")
+
+                        excelWorksheet.Cells(16, 37).Value = "3.A (2a)" 'NO lOAD perf point
+                        excelWorksheet.Cells(16, 58).Value = "3.A (2d)" 'Combination Load perf point
+                        excelWorksheet.Cells(16, 79).Value = "2.E (6)"  'MES perf point
+
+
+                    ElseIf CELProject.EngineModel = "TSCP700-4E" Then
+
+                        excelWorksheet.Cells(17, 38).Value = "1.H (1b)" 'NO lOAD perf point
+                        excelWorksheet.Cells(17, 56).Value = "1.H (2g)" 'Combination Load perf point
+                        excelWorksheet.Cells(17, 74).Value = "1.H (3a)" 'MES perf point
+
+                        excelWorksheet.Cells(35, 50).Value = "STEP 1.H (2g)"
+                        excelWorksheet.Cells(36, 50).Value = "STEP 1.H (2g)"
+                        excelWorksheet.Cells(37, 50).Value = "STEP 1.H (2g)"
+
+                        excelWorksheet = excelSheets.Item("DETAILS")
+
+                        excelWorksheet.Cells(16, 37).Value = "1.H (1b)" 'NO lOAD perf point
+                        excelWorksheet.Cells(16, 58).Value = "1.H (2g)" 'Combination Load perf point
+                        excelWorksheet.Cells(16, 79).Value = "1.H (3a)" 'MES perf point
+
+
+                    Else
+                        MessageBox.Show("CreateRevima12917PerformanceFile: Engine Model Not supported", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    excelWorksheet = excelSheets.Item("ACCEPTANCE")
+
+
+
+                    'Document Number (Cell Al43)
+                    excelWorksheet.Cells(43, 38).NumberFormat = "@"
+                    excelWorksheet.Cells(43, 38).Value = Custom_Parameters("APUTestedAccordingTo").ToString()
+
+                End If
+
+                Select Case TestStepNumber
+
+                    Case eTestStepTSCP700_REVIMA.NO_LOAD
+
+                        RevimaWriteCommonDataForDetailsTestSheet(excelSheets, 37, True, True)
+                        RevimaWriteCommonDataForSummaryTestSheet(excelSheets, 47, False, 0)
+                        TestProgress_RecordPerfStep("No Load", False)
+
+                    Case eTestStepTSCP700_REVIMA.COMBINATION_LOAD
+
+                        RevimaWriteCommonDataForDetailsTestSheet(excelSheets, 58, False, False)
+                        RevimaWriteCommonDataForSummaryTestSheet(excelSheets, 65, True, 56)
+                        TestProgress_RecordPerfStep("Combination Load", True)
+
+                        excelWorksheet = excelSheets.Item("SUMMARY")
+
+                        'CEL BZ27 a BZ31
+                        excelWorksheet.Cells(35, 78).Value = STARTING_TIME_SEC.Value.ToString(STARTING_TIME_SEC.Format, Nothing)
+                        excelWorksheet.Cells(36, 78).Value = START_MAX_EGT_DEGF.Value.ToString(START_MAX_EGT_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(37, 78).Value = START_MAX_ETC_DEGF.Value.ToString(START_MAX_ETC_DEGF.Format, Nothing)
+
+                        Dim cTemp As String = Nothing
+
+                        If PerfCalcOutsideRange Then
+                            If CELProject.EngineModel = "TSCP700-4E" Then
+                                cTemp = "WBCorr, TBCorr and PBCorr cannot be calculated because the N1 speed is below or higher than the specified values in table 106 " + vbCrLf + "The mimimum or maximum values in table 106 are used."
+                            Else
+                                cTemp = "WBCorr, TBCorr and PBCorr cannot be calculated because the N1 speed is below or higher than the specified values in table 709 " + vbCrLf + "The mimimum or maximum values in table 709 are used."
+                            End If
+                        Else
+                            cTemp = "         "
+                        End If
+
+                        excelWorksheet = excelSheets.Item("SUMMARY")
+                        'cell B34
+                        excelWorksheet.Cells(42, 2).NumberFormat = "@"
+                        excelWorksheet.Cells(42, 2).Value = cTemp
+
+                        excelWorksheet = excelSheets.Item("DETAILS")
+                        'cell B47
+                        excelWorksheet.Cells(49, 2).NumberFormat = "@"
+                        excelWorksheet.Cells(49, 2).Value = cTemp
+
+                    Case eTestStepTSCP700_REVIMA.MES
+
+                        RevimaWriteCommonDataForDetailsTestSheet(excelSheets, 79, False, True)
+                        RevimaWriteCommonDataForSummaryTestSheet(excelSheets, 83, False, 0)
+
+                    Case eTestStepTSCP700_REVIMA.STANDBY
+
+                        'ONLY FOR TSCP700-4B/5
+                        RevimaWriteStandbyData(excelSheets)
+
+                    Case eTestStepTSCP700_REVIMA.FINAL_DATA
+                        RevimaWriteFinalData(excelSheets)
+
+                End Select
+
+            Catch ex As Exception
+
+                System.Diagnostics.Trace.WriteLine("CreateRevima12917PerformanceFile: " + ex.ToString())
+                MessageBox.Show(ex.ToString)
+                CreateRevima12917PerformanceFile = False
+
+            Finally
+
+                'Lock Sheets
+                excelWorkbook.Worksheets(1).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(2).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(3).Protect(ProtectPassword)
+
+            End Try
+        End Function
+
+        Private Function CreateStandardCELPerformanceFile(ByVal AppendOption As Boolean, ByVal TestStepNumber As Integer, ByVal ProtectPassword As String, ByVal UnProtectPassword As String, ByRef excelWorkbook As Excel.Workbook) As Boolean
+
+            '**********************************************************************************************************************************
+            '               Comme on utilise un autre rapport, Garuda pour le premier projet, on
+            '               va devoir faire le rapport de CEL dans un autre projet.
+            '**********************************************************************************************************************************
+            Return False
+
+        End Function
+
+        Private Sub Init_Arrays()
+
+
+            Dim i As Integer
+            Dim rs As New ADODB.Recordset
+            Dim SelectString As String
+
+            Try
+                'Read Table 709 from Page 746 Dec 5/97
+
+                SelectString = "SELECT * FROM TSCP700_TTI ORDER BY [TTI]"
+                If DatabaseHelper.OpenRecordset(rs, SelectString, cnMain, True) Then
+                    ReDim TSCP700_TTI(DatabaseHelper.RecordCount(rs) - 1, 4)
+                    For i = 0 To TSCP700_TTI.GetLength(0) - 1
+                        TSCP700_TTI(i, 0) = rs.Fields("TTI").Value
+                        TSCP700_TTI(i, 1) = rs.Fields("WB_CHNG").Value
+                        TSCP700_TTI(i, 2) = rs.Fields("PB_CHNG").Value
+                        TSCP700_TTI(i, 3) = rs.Fields("TB_CHNG").Value
+                        TSCP700_TTI(i, 4) = rs.Fields("UNIT_EGT").Value
+                        rs.MoveNext()
+                    Next i
+                    DatabaseHelper.CloseRecordset(rs)
+                End If
+
+                'Read Revised Table 707 from Temporary Revision 49-387
+
+                SelectString = "SELECT * FROM TSCP700_N1 ORDER BY [N1]"
+                If DatabaseHelper.OpenRecordset(rs, SelectString, cnMain, True) Then
+                    ReDim TSCP700_N1(DatabaseHelper.RecordCount(rs) - 1, 3)
+                    For i = 0 To TSCP700_N1.GetLength(0) - 1
+                        TSCP700_N1(i, 0) = rs.Fields("N1").Value
+                        TSCP700_N1(i, 1) = rs.Fields("WB2_CHNG").Value
+                        TSCP700_N1(i, 2) = rs.Fields("PB2_CHNG").Value
+                        TSCP700_N1(i, 3) = rs.Fields("TB2_CHNG").Value
+                        rs.MoveNext()
+                    Next i
+                    DatabaseHelper.CloseRecordset(rs)
+                End If
+
+                'Array used for the TSCP700-4E Arinc
+                ECU_STATUS_CODE(0) = "UNDEFINED"
+                ECU_STATUS_CODE(1) = "PRESTART BITE IN PROGRESS"
+                ECU_STATUS_CODE(2) = "REMOTE BITE IN PROGRESS"
+                ECU_STATUS_CODE(3) = "APU START IN PROGRESS"
+                ECU_STATUS_CODE(4) = "APU RUN"
+                ECU_STATUS_CODE(5) = "APU COOL DOWN IN PROGRESS"
+                ECU_STATUS_CODE(6) = "ECU SHUTDOWN IDLE"
+                ECU_STATUS_CODE(7) = "ECU AUTO SHUTDOWN HOLD"
+                ECU_STATUS_CODE(8) = "REMOTE BITE COMMAND ENABLE"
+                ECU_STATUS_CODE(9) = "SPARE 9"
+                ECU_STATUS_CODE(10) = "SPARE 10"
+                ECU_STATUS_CODE(11) = "SPARE 11"
+                ECU_STATUS_CODE(12) = "SPARE 12"
+                ECU_STATUS_CODE(13) = "SPARE 13"
+                ECU_STATUS_CODE(14) = "SPARE 14"
+                ECU_STATUS_CODE(15) = "SPARE 15"
+
+                INHIBIT_CODE(0) = "OK (NO INHIBIT)"
+                INHIBIT_CODE(1) = "FUEL SOLENOID CIRCUIT"
+                INHIBIT_CODE(2) = "LOP SWITCH"
+                INHIBIT_CODE(3) = "HOT"
+                INHIBIT_CODE(4) = "FUEL TORQUE MOTOR CIRCUIT"
+                INHIBIT_CODE(5) = "IGNITION CIRCUIT"
+                INHIBIT_CODE(6) = "SPARE 6"
+                INHIBIT_CODE(7) = "ECU SUBSYSTEM"
+                INHIBIT_CODE(8) = "NOZZLE SOLENOID"
+                INHIBIT_CODE(9) = "EGT CIRCUIT"
+                INHIBIT_CODE(10) = "SPARE 10"
+                INHIBIT_CODE(11) = "SPARE 11"
+                INHIBIT_CODE(12) = "SPARE 12"
+                INHIBIT_CODE(13) = "SPARE 13"
+                INHIBIT_CODE(14) = "SPARE 14"
+                INHIBIT_CODE(15) = "SPARE 15"
+
+                N1_SPEED_SELECT_CODE(0) = "78 TO 97 %"
+                N1_SPEED_SELECT_CODE(1) = "78 TO 97 %"
+                N1_SPEED_SELECT_CODE(2) = "78 TO 91 %"
+                N1_SPEED_SELECT_CODE(3) = "78 TO 97 %"
+
+                FAULT_HISTORY_CODE(0) = "NO SHUTDOWN HISTORY"
+                FAULT_HISTORY_CODE(1) = "ONE SHUTDOWN RECORD"
+                FAULT_HISTORY_CODE(2) = "2 SHUTDOWN RECORDS"
+                FAULT_HISTORY_CODE(3) = "3 SHUTDOWN RECORDS"
+                FAULT_HISTORY_CODE(4) = "4 SHUTDOWN RECORDS"
+                FAULT_HISTORY_CODE(5) = "5 SHUTDOWN RECORDS"
+                FAULT_HISTORY_CODE(6) = "INVALID"
+                FAULT_HISTORY_CODE(7) = "INVALID"
+
+                TRANSMIT_CODE(0) = "INVALID"
+                TRANSMIT_CODE(1) = "FAULT HISTORY 1"
+                TRANSMIT_CODE(2) = "FAULT HISTORY 2"
+                TRANSMIT_CODE(3) = "FAULT HISTORY 3"
+                TRANSMIT_CODE(4) = "FAULT HISTORY 4"
+                TRANSMIT_CODE(5) = "FAULT HISTORY 5"
+                TRANSMIT_CODE(6) = "INVALID"
+                TRANSMIT_CODE(7) = "INVALID"
+
+                SHUTDOWN_CODE(0) = "INVALID"
+                SHUTDOWN_CODE(1) = "OVER TEMPERATURE"
+                SHUTDOWN_CODE(2) = "REVERSE FLOW"
+                SHUTDOWN_CODE(3) = "INLET DOOR"
+                SHUTDOWN_CODE(4) = "FIRE EMERGENCY"
+                SHUTDOWN_CODE(5) = "ECU"
+                SHUTDOWN_CODE(6) = "START CIRCUIT"
+                SHUTDOWN_CODE(7) = "OVER CURRENT"
+                SHUTDOWN_CODE(8) = "LOSS OF SPEED"
+                SHUTDOWN_CODE(9) = "DC POWER LOSS"
+                SHUTDOWN_CODE(10) = "SHUTDOWN FAILURE"
+                SHUTDOWN_CODE(11) = "SLOW START"
+                SHUTDOWN_CODE(12) = "LOP"
+                SHUTDOWN_CODE(13) = "HOT"
+                SHUTDOWN_CODE(14) = "NO FLAME"
+                SHUTDOWN_CODE(15) = "EGT SENSORS"
+                SHUTDOWN_CODE(16) = "OVER SPEED"
+                SHUTDOWN_CODE(17) = "SPARE 17"
+                SHUTDOWN_CODE(18) = "SPARE 18"
+                SHUTDOWN_CODE(19) = "SPARE 19"
+                SHUTDOWN_CODE(20) = "SPARE 20"
+                SHUTDOWN_CODE(21) = "SPARE 21"
+                SHUTDOWN_CODE(22) = "SPARE 22"
+                SHUTDOWN_CODE(23) = "SPARE 23"
+                SHUTDOWN_CODE(24) = "SPARE 24"
+                SHUTDOWN_CODE(25) = "SPARE 25"
+                SHUTDOWN_CODE(26) = "SPARE 26"
+                SHUTDOWN_CODE(27) = "SPARE 27"
+                SHUTDOWN_CODE(28) = "SPARE 28"
+                SHUTDOWN_CODE(29) = "SPARE 29"
+                SHUTDOWN_CODE(30) = "SPARE 30"
+                SHUTDOWN_CODE(31) = "SPARE 31"
+
+            Catch Ex As Exception
+                MessageBox.Show("InitArrays_TSCP700: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Private Sub ConfigHMIforEngine()
+
+            'The Page for the TSCP700 have been tested for 4B, 4E and 5. For the other engine of the familly we may have to
+            'modify a little bit this section.
+            '
+            Try
+                Dim BTN_TARE As CEL.KineticaRT.Controls.Button = Nothing
+                Dim DYNO_Frame As KineticaRT.Controls.Frame = Nothing
+                Dim DYNO_Frame2 As KineticaRT.Controls.Frame = Nothing
+                Dim DYNO_Text As System.Windows.Forms.Label = Nothing
+                Dim LB_Frame As KineticaRT.Controls.Frame = Nothing
+                Dim LB_Frame2 As KineticaRT.Controls.Frame = Nothing
+                Dim LB_Text As System.Windows.Forms.Label = Nothing
+                Dim SHPCOR_DSP As KineticaRT.Studio.Controls.Display = Nothing
+                Dim WaterDynoFrame As KineticaRT.Controls.Frame = Nothing
+                Dim WaterDynoLamp As KineticaRT.Studio.Controls.LampIndicator = Nothing
+
+                MyBase.InitializeObject(BTN_TARE, "TSCP700_Screen.fraAlarmsAndStatus.btnTARE")
+                MyBase.InitializeObject(DYNO_Frame, "TSCP700_Screen.TSCP700_EngineRun.fraDyno")
+                MyBase.InitializeObject(DYNO_Frame2, "TSCP700_Screen.fraControlSystem.fraDynanometerControl")
+                MyBase.InitializeObject(DYNO_Text, "TSCP700_Screen.fraControlSystem.txtDynanometerControl")
+                MyBase.InitializeObject(LB_Frame, "TSCP700_Screen.TSCP700_EngineRun.fraLoadBank")
+                MyBase.InitializeObject(LB_Frame2, "TSCP700_Screen.fraControlSystem.fraLoadBankControl")
+                MyBase.InitializeObject(LB_Text, "TSCP700_Screen.fraControlSystem.txtLoadBankControl")
+                MyBase.InitializeObject(SHPCOR_DSP, "TSCP700_Screen.TSCP700_EngineRun.fraCalculated.dspSHPCOR")
+                MyBase.InitializeObject(WaterDynoFrame, "Diagnostic_Screen.fraFacilityReady.fraWaterSystemReady")
+                MyBase.InitializeObject(WaterDynoLamp, "Diagnostic_Screen.fraFacilityReady.indWATER_SYSTEM_READY")
+
+                Dim Display_LB As Boolean = False
+                Dim Display_Dyno As Boolean = False
+
+                If CELProject.Project.Number = "10726" Then
+
+                    Display_LB = True
+                    SHPCOR_DSP.Source = "SHPCOR_HP"
+
+                ElseIf CELProject.Project.Number = "12917" Then
+
+                    If UserInputsRevima.LoadType = "Hydraulic" Then
+
+                        BTN_TARE.Visible = True
+                        Display_Dyno = True
+                        SHPCOR_DSP.Source = "OUTPUT_POWER_COR_HP_MEAN"
+
+                    ElseIf UserInputsRevima.LoadType = "Electric" Then
+
+                        BTN_TARE.Visible = False
+                        Display_LB = True
+                        SHPCOR_DSP.Source = "SHPCOR_HP_MEAN"
+                        WaterDynoFrame.Visible = False 'in the diagnostic page
+                        WaterDynoLamp.Visible = False  'in the diagnostic page
+
+                    Else
+                        MessageBox.Show("ConfigHMIforEngine: Load Type Not supported", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+                Else
+                    MessageBox.Show("ConfigHMIforEngine: Project Not supported", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+
+                DYNO_Frame.Visible = Display_Dyno
+                DYNO_Frame2.Visible = Display_Dyno
+                DYNO_Text.Visible = Display_Dyno
+                LB_Frame.Visible = Display_LB
+                LB_Frame2.Visible = Display_LB
+                LB_Text.Visible = Display_LB
+
+            Catch ex As Exception
+                MessageBox.Show("ConfigHMIforEngine: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+
+        Private Sub Init_Engine_Channels_Value()
+            Try
+
+                'Read the mass flow meter value
+                FM_INITIAL_VOLUME_LITERS.Value = New KineticaRT.Values.Double(FM_TOTAL_VOLUME_LITERS.Value.ToDouble())
+
+                CELProject.PERF_TEST_STEP_NB.Value = Values.Zero
+
+                If CELProject.EngineModel = "TSCP700-4E" Then
+                    OnArincValueChange(Nothing, Nothing) ' just to initialize the text 
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("Init_Engine_Channels_Value: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+        Private Sub Init_Engine_Controls()
+
+            Try
+                SetTestStepList(0)
+
+            Catch ex As Exception
+                MessageBox.Show("TSCP700_Sequence.Init_Engine_Controls() + " + ex.ToString())
+            End Try
+
+        End Sub
+
+        'Use Delegate for Cross Thread Operation
+        Private Delegate Sub SetTestStepListDelegate(ByVal value As Integer)
+        Private Sub SetTestStepList(ByVal value As Integer)
+
+            If (Me.TestStep_List.InvokeRequired) Then
+                Me.TestStep_List.BeginInvoke(New SetTestStepListDelegate(AddressOf Me.SetTestStepList), value)
+            Else
+                TestStep_List.Items.Clear()
+                TestStep_List.Items.Add("NO LOAD")
+                TestStep_List.Items.Add("COMBINATION LOAD")
+                TestStep_List.Items.Add("MES")
+                If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+                    TestStep_List.Items.Add("STANDBY")
+                End If
+                TestStep_List.Items.Add("FINAL DATA")
+                TestStep_List.SelectedIndex = value
+
+            End If
+        End Sub
+
+        Public Function CreateCustomHeaderLogFile(ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+
+            Try
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Date Time:"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+                RowIndex += 1
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Cond#:"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+                RowIndex += 1
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Comment:"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                ExcelWorksheet.Rows(RowIndex).RowHeight = 65.25
+                ExcelWorksheet.Rows(RowIndex).VerticalAlignment = Excel.XlVAlign.xlVAlignTop
+                ExcelWorksheet.Rows(RowIndex).WrapText = True
+
+                Return True
+
+            Catch ex As Exception
+                MessageBox.Show("CreateCustomHeaderLogFile: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Function
+
+        Public Function UpdateCustomHeaderLogFile(ByVal AppendOption As Boolean, ByVal IsPerfEntry As Boolean, ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+
+            Try
+                Dim Log_Condition As Integer
+
+                If AppendOption = False Then
+                    Log_Condition = 1
+                Else
+                    Log_Condition = ExcelWorksheet.Cells(RowIndex + 1, ExcelWorksheet.Columns.Count).End(Excel.XlDirection.xlToLeft).Column - 1
+                    Log_Condition = Log_Condition + 1
+
+                End If
+
+                If ((Log_Condition > 1) And ((Log_Condition Mod 5) = 1)) Then
+
+                    'Repeat The Test Spec For this new sets of condition
+
+                    With ExcelWorksheet
+                        .Range(.Cells(2, 2), .Cells(RowIndex - 2, 6)).Copy(.Cells(2, Log_Condition + 1))
+                    End With
+                End If
+
+                ColumnIndex = 1 + Log_Condition
+
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Format(Now, "yyyy/MM/dd HH:mm:ss")
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                RowIndex += 1
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Log_Condition.ToString()
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                RowIndex += 1
+                If IsPerfEntry = False Then
+                    Dim CommentText As String = ""
+                    Dim InputObject As New InputCommentForm
+                    InputObject.ShowDialog("Log Report", "Comment:", "", CommentText)
+
+                    ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = CommentText
+                Else
+                    ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "STEP: " & TestStep_List.SelectedItem
+                End If
+
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                RowIndex += 2
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Values"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter
+
+            Catch ex As Exception
+                MessageBox.Show("UpdateCustomHeaderLogFile: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Function
+
+        Protected Overrides Sub OnEngineWorkingThread()
+
+            Compute_TSCP700(False)
+
+            'Make sure FM_INITIAL_VOLUME_LITERS is different than 0
+            ValidateFMInitialValue()
+
+            'Persistent Values Save Check
+            PersistentValuesCtrl.SavePersistentValues()
+
+            StartTimerCtrl.Timer()
+
+        End Sub
+
+        Private Function Compute_BleedAirFlow(ByVal TOrifice_DEGF As Double, _
+                                              ByVal POrifice_PSIA As Double, _
+                                              ByVal POrificeDelta_PSID As Double) As Double
+            Try
+
+                If CELProject.IsTrue(BLEED_BTN.Value) Then
+
+                    Dim BleedAirFLow As Double = CELProject.GetBleedAirFlow( _
+                                                                            EngineConfiguration.DuctDiameter, _
+                                                                            EngineConfiguration.DuctDiameterUnit, _
+                                                                            EngineConfiguration.OrificeDiameter, _
+                                                                            EngineConfiguration.OrificeDiameterUnit, _
+                                                                            TOrifice_DEGF, _
+                                                                            CELDAS.eTemperature.Fahrenheit, _
+                                                                            POrifice_PSIA, _
+                                                                            CELDAS.ePressure.PSI, _
+                                                                            POrificeDelta_PSID, _
+                                                                            CELDAS.ePressure.PSI, _
+                                                                            EngineConfiguration.OrificeThinkness, _
+                                                                            EngineConfiguration.OrificeThinknessUnit, _
+                                                                            EngineConfiguration.TapArrangement, _
+                                                                            CELDAS.eFlowMass.LbByMin)
+
+                    Return BleedAirFLow
+
+                Else
+                    Return 0.0
+                End If
+
+            Catch Ex As Exception
+                'Log error
+                MessageBox.Show("Error in Engine_Sequence.Compute_BleedAirFlow: " & Ex.ToString)
+            End Try
+
+        End Function
+
+        Private Sub OnAcceleratingTime_Calc(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+
+                If (sender.Name = "N2_95_IND") Then
+                    If CELProject.IsTrue(newVal) Then
+                        NUMBER_OF_STARTS.Value = New KineticaRT.Values.Double(NUMBER_OF_STARTS.Value.ToDouble + 1)
+                    End If
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnAcceleratingTime_Calc: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+         Private Sub OnClose_Test(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    MyBase.StopWorkingThread()
+
+                    'Persistent Values Force Save
+                    PersistentValuesCtrl.SavePersistentValues(True)
+
+                    If Not (ARINC_ECU_STATUS_VALUE Is Nothing) Then
+                        RemoveHandler ARINC_ECU_STATUS_VALUE.ValueChanged, AddressOf OnArincValueChange
+                    End If
+
+                    If Not (ARINC_FAULT_RECORDS_VALUE Is Nothing) Then
+                        RemoveHandler ARINC_FAULT_RECORDS_VALUE.ValueChanged, AddressOf OnArincValueChange
+                    End If
+
+                    If Not (ARINC_HISTORY_SHUTDOWN_VALUE Is Nothing) Then
+                        RemoveHandler ARINC_HISTORY_SHUTDOWN_VALUE.ValueChanged, AddressOf OnArincValueChange
+                    End If
+
+                    If Not (ARINC_N1_SPEED_SELECT_VALUE Is Nothing) Then
+                        RemoveHandler ARINC_N1_SPEED_SELECT_VALUE.ValueChanged, AddressOf OnArincValueChange
+                    End If
+
+                    If Not (ARINC_SHUTDOWN_VALUE Is Nothing) Then
+                        RemoveHandler ARINC_SHUTDOWN_VALUE.ValueChanged, AddressOf OnArincValueChange
+                    End If
+
+                    If Not (ARINC_START_INHIBIT_STATUS_VALUE Is Nothing) Then
+                        RemoveHandler ARINC_START_INHIBIT_STATUS_VALUE.ValueChanged, AddressOf OnArincValueChange
+                    End If
+
+                    If Not (ARINC_TRANSMIT_RECORD_NUMBER_VALUE Is Nothing) Then
+                        RemoveHandler ARINC_TRANSMIT_RECORD_NUMBER_VALUE.ValueChanged, AddressOf OnArincValueChange
+                    End If
+
+                    If Not (CELProject.CLOSE_TEST_BTN Is Nothing) Then
+                        RemoveHandler CELProject.CLOSE_TEST_BTN.ValueChanged, AddressOf OnClose_Test
+                    End If
+
+                    If Not (CELProject.LOG_TAKE_POINT_BTN Is Nothing) Then
+                        RemoveHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+                    End If
+
+                    If Not (CELProject.PERF_CLOSE_WINDOW_BTN Is Nothing) Then
+                        RemoveHandler CELProject.PERF_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnPERF_CLOSE_WINDOW_BTN
+                    End If
+
+                    If Not (CELProject.PERF_OPEN_WINDOW_BTN Is Nothing) Then
+                        RemoveHandler CELProject.PERF_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnPERF_OPEN_WINDOW_BTN
+                    End If
+
+                    If Not (CELProject.PERF_TAKE_POINT_BTN Is Nothing) Then
+                        RemoveHandler CELProject.PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnPERF_TAKE_POINT_BTN
+                    End If
+
+                    If Not (N2_95_IND Is Nothing) Then
+                        RemoveHandler N2_95_IND.ValueChanged, AddressOf OnAcceleratingTime_Calc
+                    End If
+
+                    If Not (DeletableTBleedChCtrl Is Nothing) Then
+                        DeletableTBleedChCtrl.Dispose()
+                    End If
+
+                    If Not (DeletableTEgtChCtrl Is Nothing) Then
+                        DeletableTEgtChCtrl.Dispose()
+                    End If
+
+                    If Not (DeletableTInletChCtrl Is Nothing) Then
+                        DeletableTInletChCtrl.Dispose()
+                    End If
+
+                    If Not (LoadBankCtrl Is Nothing) Then
+                        LoadBankCtrl.Dispose()
+                    End If
+
+                    If Not (PERF_PRESERVATION_YES Is Nothing) Then
+                        RemoveHandler PERF_PRESERVATION_YES.ValueChanged, AddressOf OnPERFPreservationYesCheckBox
+                    End If
+
+                    If Not (PERF_PRESERVATION_NO Is Nothing) Then
+                        RemoveHandler PERF_PRESERVATION_NO.ValueChanged, AddressOf OnPERFPreservationNoCheckBox
+                    End If
+
+                    If Not (CELProject.PERF_TEST_RESULT_ACCEPTED Is Nothing) Then
+                        RemoveHandler CELProject.PERF_TEST_RESULT_ACCEPTED.ValueChanged, AddressOf OnPERFTestResultAcceptedCheckBox
+                    End If
+
+                    If Not (CELProject.PERF_TEST_RESULT_REJECTED Is Nothing) Then
+                        RemoveHandler CELProject.PERF_TEST_RESULT_REJECTED.ValueChanged, AddressOf OnPERFTestResultRejectedCheckBox
+                    End If
+
+                    If Not (PersistentValuesCtrl Is Nothing) Then
+                        PersistentValuesCtrl.Dispose()
+                    End If
+
+                    If Not (POilGbBreatherMaxPressureRecordCtrl Is Nothing) Then
+                        POilGbBreatherMaxPressureRecordCtrl.Dispose()
+                    End If
+
+                    If Not (StarterMaxCurrentRecordCtrl Is Nothing) Then
+                        StarterMaxCurrentRecordCtrl.Dispose()
+                    End If
+
+                    If Not (StarterMaxVoltageRecordCtrl Is Nothing) Then
+                        StarterMaxVoltageRecordCtrl.Dispose()
+                    End If
+
+                    If Not (StartMaxETCRecordCtrl Is Nothing) Then
+                        StartMaxETCRecordCtrl.Dispose()
+                    End If
+
+                    If Not (StartMaxEGTRecordCtrl Is Nothing) Then
+                        StartMaxEGTRecordCtrl.Dispose()
+                    End If
+
+                    If Not (StartTimerCtrl Is Nothing) Then
+                        StartTimerCtrl.Dispose()
+                    End If
+
+                    If Not (TestStep_List Is Nothing) Then
+                        RemoveHandler TestStep_List.SelectedIndexChanged, AddressOf OnTestStep_List_SelectedIndexChanged
+                    End If
+
+                End If
+
+                If Not (FlowmeterCtrl Is Nothing) Then
+                    FlowmeterCtrl.Dispose()
+                End If
+
+                CELProject.CLOSE_TEST_BTN.Value = Values.False
+
+            Catch ex As Exception
+                MessageBox.Show("OnClose_Test: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnArincValueChange(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Dim LocalIndex As Integer
+            Dim WhichOne As Integer
+
+            Try
+                WhichOne = 0
+                LocalIndex = ARINC_ECU_STATUS_VALUE.Value.ToDouble()
+                WhichOne = 1
+
+                If LocalIndex >= 0 And LocalIndex <= 15 Then
+                    ARINC_ECU_STATUS_TEXT.Value = New KineticaRT.Values.Text(ECU_STATUS_CODE(LocalIndex))
+                Else
+                    ARINC_ECU_STATUS_TEXT.Value = New KineticaRT.Values.Text("Invalid value from ARINC")
+                End If
+
+                WhichOne = 2
+                LocalIndex = ARINC_START_INHIBIT_STATUS_VALUE.Value.ToDouble()
+                WhichOne = 3
+
+                If LocalIndex >= 0 And LocalIndex <= 15 Then
+                    ARINC_START_INHIBIT_STATUS_TEXT.Value = New KineticaRT.Values.Text(INHIBIT_CODE(LocalIndex))
+                Else
+                    ARINC_START_INHIBIT_STATUS_TEXT.Value = New KineticaRT.Values.Text("Invalid value from ARINC")
+                End If
+
+                WhichOne = 4
+                LocalIndex = ARINC_N1_SPEED_SELECT_VALUE.Value.ToDouble()
+                WhichOne = 5
+
+                If LocalIndex >= 0 And LocalIndex <= 3 Then
+                    ARINC_N1_SPEED_SELECT_TEXT.Value = New KineticaRT.Values.Text(N1_SPEED_SELECT_CODE(LocalIndex))
+                Else
+                    ARINC_N1_SPEED_SELECT_TEXT.Value = New KineticaRT.Values.Text("Invalid value from ARINC")
+                End If
+
+                WhichOne = 6
+                LocalIndex = ARINC_FAULT_RECORDS_VALUE.Value.ToDouble()
+                WhichOne = 7
+
+                If LocalIndex >= 0 And LocalIndex <= 7 Then
+                    ARINC_FAULT_RECORDS_TEXT.Value = New KineticaRT.Values.Text(FAULT_HISTORY_CODE(LocalIndex))
+                Else
+                    ARINC_FAULT_RECORDS_TEXT.Value = New KineticaRT.Values.Text("Invalid value from ARINC")
+                End If
+
+                WhichOne = 8
+                LocalIndex = ARINC_TRANSMIT_RECORD_NUMBER_VALUE.Value.ToDouble()
+                WhichOne = 9
+
+                If LocalIndex >= 0 And LocalIndex <= 7 Then
+                    ARINC_TRANSMIT_RECORD_NUMBER_TEXT.Value = New KineticaRT.Values.Text(TRANSMIT_CODE(LocalIndex))
+                Else
+                    ARINC_TRANSMIT_RECORD_NUMBER_TEXT.Value = New KineticaRT.Values.Text("Invalid value from ARINC")
+                End If
+
+                WhichOne = 10
+                LocalIndex = ARINC_SHUTDOWN_VALUE.Value.ToDouble()
+                WhichOne = 11
+
+                If LocalIndex >= 0 And LocalIndex <= 31 Then
+                    ARINC_SHUTDOWN_TEXT.Value = New KineticaRT.Values.Text(SHUTDOWN_CODE(LocalIndex))
+                Else
+                    ARINC_SHUTDOWN_TEXT.Value = New KineticaRT.Values.Text("Invalid value from ARINC")
+                End If
+
+                WhichOne = 12
+                LocalIndex = ARINC_HISTORY_SHUTDOWN_VALUE.Value.ToDouble()
+                WhichOne = 13
+
+                If LocalIndex >= 0 And LocalIndex <= 31 Then
+                    ARINC_HISTORY_SHUTDOWN_TEXT.Value = New KineticaRT.Values.Text(SHUTDOWN_CODE(LocalIndex))
+                Else
+                    ARINC_HISTORY_SHUTDOWN_TEXT.Value = New KineticaRT.Values.Text("Invalid value from ARINC")
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnArincValueChange: (LocalIndex, WhichOne) = " & LocalIndex.ToString() & "  " & WhichOne.ToString() & vbCrLf & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnLOG_TAKE_POINT_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    'Update the Log/Perf channel set
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    'Synchronize data for Log and Performance
+                    Compute_TSCP700(True)
+
+                    CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, False, CELProject.EngineModel, True)
+                    CELProject.LOG_TAKE_POINT_BTN.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnLOG_TAKE_POINT_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+  
+        Private Sub OnPERF_CLOSE_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    CELProject.ActivateForm("TSCP700_Performance_Screen", CELProject.EngineFamily.Replace("-", "_") + "_Screen", False, False)
+                    CELProject.PERF_CLOSE_WINDOW_BTN.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERF_CLOSE_WINDOW_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+
+    
+        Private Sub OnPERF_OPEN_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    CELProject.ActivateForm("TSCP700_Performance_Screen", CELProject.EngineFamily.Replace("-", "_") + "_Screen", True, False)
+                    CELProject.PERF_OPEN_WINDOW_BTN.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERF_OPEN_WINDOW_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Private Sub OnPERF_TAKE_POINT_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Dim SearchPath As String
+            Dim excelWorkbook As Excel.Workbook = Nothing
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    'Update the Log/Perf channel set
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    'Synchronize data for Log and Performance
+                    Compute_TSCP700(True)
+
+                    SearchPath = CELProject.EngineSession.PerfFolder
+
+                    Dim NewFileCreated As Boolean
+
+                    If CELProject.Project.Number = "10726" Then 'Value Specific to the Indonesia project
+
+                        Dim Garuda10726TemplateReportFullFileName As String = EngineConfiguration.PerformanceReportTemplateFile
+                        NewFileCreated = CELProject.ProcessPerformanceReport(SearchPath, Garuda10726TemplateReportFullFileName, AddressOf CreateGaruda10726PerformanceFile)
+
+                    ElseIf CELProject.Project.Number = "12917" Then 'Value Specific to the Revima project
+
+                        Dim Revima12917TemplateReportFullFileName As String = EngineConfiguration.PerformanceReportTemplateFile
+                        NewFileCreated = CELProject.ProcessPerformanceReport(SearchPath, Revima12917TemplateReportFullFileName, AddressOf CreateRevima12917PerformanceFile)
+
+                    Else
+
+                        Dim StandardCELTemplateReportFullFileName As String = EngineConfiguration.PerformanceReportTemplateFile
+                        NewFileCreated = CELProject.ProcessPerformanceReport(SearchPath, StandardCELTemplateReportFullFileName, AddressOf CreateStandardCELPerformanceFile)
+
+                    End If
+
+                    CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, True, CELProject.EngineModel, NewFileCreated)
+
+                    CELProject.PERF_TAKE_POINT_BTN.Value = Values.False
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnPERF_TAKE_POINT_BTN: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+
+            End Try
+        End Sub
+
+        Private Sub OnPERFPreservationNoCheckBox(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    PERF_PRESERVATION_YES.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERFPreservationNoCheckBox: " & Ex.ToString())
+            End Try
+        End Sub
+
+      
+        Private Sub OnPERFPreservationYesCheckBox(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    PERF_PRESERVATION_NO.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERFPreservationYesCheckBox: " & Ex.ToString())
+            End Try
+        End Sub
+
+
+        Private Sub OnPERFTestResultAcceptedCheckBox(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    CELProject.PERF_TEST_RESULT_REJECTED.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERFTestResultAcceptedCheckBox: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Private Sub OnPERFTestResultRejectedCheckBox(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    CELProject.PERF_TEST_RESULT_ACCEPTED.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERFTestResultRejectedCheckBox: " & Ex.ToString())
+            End Try
+        End Sub
+
+    
+        Private Sub OnTestStep_List_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs)
+            Try
+                'TSCP700-4B/5 has a Standby speed and inlet temperature check which is not present in the TSCP700-4E test procedure
+                'The ENUM is the same for the family even if there is one step less in the TSCP700-4E but we keep the same value for the PERF_TEST_STEP_NB
+                'for the final data
+                If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+                    CELProject.PERF_TEST_STEP_NB.Value = New KineticaRT.Values.Integer(TestStep_List.SelectedIndex)
+                ElseIf CELProject.EngineModel = "TSCP700-4E" Then
+                    'Final Data Step = 3 for TSCP700-4E instead of 4 for the TSCP700-4B/5
+                    If TestStep_List.SelectedIndex = 3 Then
+                        CELProject.PERF_TEST_STEP_NB.Value = New KineticaRT.Values.Integer(TestStep_List.SelectedIndex + 1)
+                    Else
+                        CELProject.PERF_TEST_STEP_NB.Value = New KineticaRT.Values.Integer(TestStep_List.SelectedIndex)
+                    End If
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestStep_List_SelectedIndexChanged: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+     
+        Protected Overrides Sub OnTestSessionClosing(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionClosing(newStatus)
+
+                If CELProject.EngineFamily = "TSCP700" Then
+
+                    'Close the connection to the database
+                    DatabaseHelper.CloseConnection(cnMain)
+
+                    If TestProgressMgr IsNot Nothing Then
+                        TestProgress_Save()
+                        TestProgressMgr.Dispose()
+                        TestProgressMgr = Nothing
+                    End If
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionClosing: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionInitialized(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionInitialized(newStatus)
+
+                If CELProject.EngineFamily = "TSCP700" Then
+
+                    If CELProject.Project.Number = "10726" Then 'Value Specific to the Indonesia project
+
+                        UserInputsGaruda.MapUserInputsParameters(CELProject)
+                        CELProject.EngineSession.WorkingFolder = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + UserInputsGaruda.EngineSerialNumber + "\" + UserInputsGaruda.WorkOrder
+                    ElseIf CELProject.Project.Number = "12917" Then
+
+                        UserInputsRevima.MapUserInputsParameters(CELProject)
+                        CELProject.EngineSession.WorkingFolder = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + UserInputsRevima.EngineSerialNumber + "\" + UserInputsRevima.WorkOrder
+                    Else
+                        MessageBox.Show("OnTestSessionInitialized: Project not supported", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+                    End If
+
+
+                    CELProject.CreateLogFile(AddressOf CreateCustomHeaderLogFile, CELProject.EngineModel, CELProject.EngineModel)
+
+                    'Set The Connection (Global scope)
+                    If Not DatabaseHelper.OpenConnection(CELProject.Database.OleDbConnectionString, cnMain, True) Then
+                        'Close Test if unable to open connection to database
+                        CELProject.Test_Mgr_Cmd.Value = New KineticaRT.Values.Text(CELDAS.eTest_Mgr_Cmd.Close)
+                    End If
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionInitialized: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionOpened(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionOpened(newStatus)
+
+            Catch ex As Exception
+
+                MessageBox.Show("TSCP700_Sequence.OnTestSessionOpened: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+
+            End Try
+        End Sub
+    
+        Protected Overrides Sub OnTestSessionRunning(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            'Dim i As Integer
+            Try
+                MyBase.OnTestSessionRunning(newStatus)
+
+                If CELProject.EngineFamily = "TSCP700" Then
+
+                    Init_Engine_Channels()
+                    Init_Arrays()
+                    Init_Engine_Channels_Value()
+
+                    CELProject.LoadSave_Custom_Parameters(Custom_Parameters, False)
+
+                    CELProject.Perf_Nb_Sheet_To_Print = 3
+
+                    Dim PersistentValuesChannels() As String = {"NUMBER_OF_STARTS",
+                                                                "OPERATING_TIME_CURRENT_SEC",
+                                                                "FUEL_USED_INITIAL_LITERS", "FUEL_USED_TOTAL_LITERS"}
+
+                    Dim PersistentValuesFileName = "C:\CELDAS DATA\" & CELProject.EngineModel & "\" & UserInputsRevima.EngineSerialNumber & "\" & UserInputsRevima.WorkOrder & "\Log\PersistentValues.xml"
+
+                    PersistentValuesCtrl = New PersistentValuesController(Me, PersistentValuesChannels, 1, PersistentValuesFileName)
+
+                    Dim FuelUsedTotal As Double = FUEL_USED_TOTAL_LITERS.Value.ToDouble()
+                    FM_INITIAL_VOLUME_LITERS.Value = New KineticaRT.Values.Double(FM_TOTAL_VOLUME_LITERS.Value.ToDouble())
+                    FUEL_USED_INITIAL_LITERS.Value = New KineticaRT.Values.Double(FuelUsedTotal)
+
+                    CELProject.EngineWindowCollection.Item(0).EngineWindow.BeginInvoke(New MethodInvoker(AddressOf Me.ConfigHMIforEngine))
+
+                    ' Default value if not override by the project
+                    Dim RealNumberOfTBleedProbe As Integer = MaxNumberOfTBleedProbe
+                    Dim RealNumberOfTEgtProbe As Integer = MaxNumberOfTEgtProbe
+                    Dim RealNumberOfTInletProbe As Integer = MaxNumberOfTInletProbe
+
+                    If CELProject.Project.Number = "10726" Then 'Value Specific to the Indonesia project
+
+                        RealNumberOfTBleedProbe = 1
+
+                    ElseIf CELProject.Project.Number = "12917" Then
+
+                        RealNumberOfTEgtProbe = 9
+
+                        If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+                            RealNumberOfTBleedProbe = 2
+                        ElseIf CELProject.EngineModel = "TSCP700-4E" Then
+                            RealNumberOfTBleedProbe = 1
+                        End If
+
+                    End If
+
+                    DeletableTBleedChCtrl = New DeletableChannelController(Me, RealNumberOfTBleedProbe, MaxNumberOfTBleedProbe, MaxNumberOfTBleedProbe, "T_BLEED", "_DEGF", "_DELETE_BTN", "T_BLEED_AVG_DEGF", "T_BLEED_MIN_DEGF", "T_BLEED_MAX_DEGF", "T_BLEED_SPREAD_DEGF")
+                    DeletableTEgtChCtrl = New DeletableChannelController(Me, RealNumberOfTEgtProbe, MaxNumberOfTEgtProbe, MaxNumberOfTEgtProbe, "T_EGT", "_DEGF", "_DELETE_BTN", "T_EGT_AVG_DEGF", "T_EGT_MIN_DEGF", "T_EGT_MAX_DEGF", "T_EGT_SPREAD_DEGF")
+                    DeletableTInletChCtrl = New DeletableChannelController(Me, RealNumberOfTInletProbe, MaxNumberOfTInletProbe, MaxNumberOfTInletProbe, "T_INLET", "_DEGF", "_DELETE_BTN", "T_INLET_AVG_DEGF", "T_INLET_MIN_DEGF", "T_INLET_MAX_DEGF", "T_INLET_SPREAD_DEGF")
+
+                    FlowmeterCtrl = New FlowmeterController(Me)
+
+                    'Configuring ECS Control
+                    ECSCtrl = New ECSController(Me, 0, 10, 0, "ECS_BTN", "ECS_DEMAND", "ECS_UP_DEMAND_BTN", "ECS_DOWN_DEMAND_BTN", ECS_Display)
+                    ECSCtrl.Memorize = False
+                    ECSCtrl.Enable = False
+
+                    If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+
+                        StarterMaxCurrentRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_CURRENT_AMP", "STARTER_CURRENT_MAX_AMP", "START_BTN")
+                        StarterMaxVoltageRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_VOLTAGE_VDC", "STARTER_VOLTAGE_MAX_VDC", "START_BTN")
+
+                        StartMaxETCRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "T_ETC_AVG_DEGF", "START_MAX_ETC_DEGF", "START_BTN", "N2_95_IND")
+                        StartMaxEGTRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "T_EGT_AVG_DEGF", "START_MAX_EGT_DEGF", "START_BTN", "N2_95_IND")
+
+                    ElseIf CELProject.EngineModel = "TSCP700-4E" Then
+
+                        StarterMaxCurrentRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_CURRENT_AMP", "STARTER_CURRENT_MAX_AMP", "RUN_STOP_BTN")
+                        StarterMaxVoltageRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_VOLTAGE_VDC", "STARTER_VOLTAGE_MAX_VDC", "RUN_STOP_BTN")
+
+                        StartMaxETCRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "T_ETC_AVG_DEGF", "START_MAX_ETC_DEGF", "RUN_STOP_BTN", "N2_95_IND")
+                        StartMaxEGTRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "T_EGT_AVG_DEGF", "START_MAX_EGT_DEGF", "RUN_STOP_BTN", "N2_95_IND")
+
+                    End If
+
+                    POilGbBreatherMaxPressureRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "P_OIL_GB_BREATHER_INHGG", "P_OIL_GB_BREATHER_MAX_INHGG", "P_OIL_GB_BREATHER_MAX_RESET_BTN")
+
+                    StartTimerCtrl = New TimerController(Me, "STARTING_TIME_START_CONDITION_LATCH", "STARTING_TIME_STOP_CONDITION_LATCH", "STARTING_TIME_CONDITION_RESET", "STARTING_TIME_SEC", Nothing, 0, "NONE")
+
+                    'Configuring Load Bank Control
+                    Dim myLBData As LoadBankController.LB_DataInfo
+
+                    myLBData.FanEnableChannelName = "LB1_FAN_ENABLE_CMD"
+                    myLBData.FanEnableBtnChannelName = "LB1_FAN_ENABLE_BTN"
+                    myLBData.EnableChannelName = "LB_LOAD_BTN"
+                    myLBData.DemandChannelName = "LB1_DEMAND"
+                    myLBData.UpDemandChannelName = "LB1_UP_DEMAND_BTN"
+                    myLBData.DownDemandChannelName = "LB1_DOWN_DEMAND_BTN"
+                    myLBData.DemandChannelIncrementName = "LB1_DEMAND_INCREMENT"
+                    myLBData.FrameName = "TSCP700_Screen.fraControlSystem.fraLoadBankControl"
+                    myLBData.DisplayName = "dspLB_DEMAND"
+                    myLBData.ThreadSpeedMsec = 250 'msec
+                    myLBData.Maximum = 100
+                    myLBData.DelestageKwpersec = 10 '10 kW/sec delestage
+                    myLBData.FanCoolDownSeconds = 300
+                    myLBData.Memorize = False
+                    myLBData.Increment = 1
+                    myLBData.InitialDemandChannelName = Nothing
+                    myLBData.BtnLatchSeconds = 0
+                    myLBData.FanEnableChannelPulseName = Nothing
+                    myLBData.FanStopChannelPulseName = Nothing
+                    myLBData.PulseEnableInitialType = False
+                    myLBData.PulseStopInitialType = False
+
+                    If CELProject.Project.Number = "12917" Then 'Value Specific to the Revima project
+
+                        myLBData.FieldFlashingTimeMsec = 1000
+                        myLBData.FieldFlashingSignalName = "FIELD_FLASHING"
+                        myLBData.FieldFlashingTriggerSignalName = "LB_GCU_BTN"
+
+                    Else
+                        myLBData.FieldFlashingTimeMsec = 0  'no field flashing
+                        myLBData.FieldFlashingSignalName = Nothing
+                        myLBData.FieldFlashingTriggerSignalName = Nothing
+
+                    End If
+
+
+                    LoadBankCtrl = New LoadBankController(myLBData)
+
+                    'Configuring Load Bank Stage Values
+                    LoadBankCtrl.AddStage(1, "LB1_1")
+                    LoadBankCtrl.AddStage(2, "LB1_2")
+                    LoadBankCtrl.AddStage(4, "LB1_3")
+                    LoadBankCtrl.AddStage(7, "LB1_4")
+                    LoadBankCtrl.AddStage(9, "LB1_5")
+                    LoadBankCtrl.AddStage(9, "LB1_6")
+                    LoadBankCtrl.AddStage(22, "LB1_7")
+                    LoadBankCtrl.AddStage(44, "LB1_8")
+                    LoadBankCtrl.AddStage(99, "LB1_9")
+                    LoadBankCtrl.AddStage(99, "LB1_10")
+                    LoadBankCtrl.AddStage(99, "LB1_11")
+                    LoadBankCtrl.AddCurrentPhases("LB1_CURRENT_IA", "LB1_CURRENT_IB", "LB1_CURRENT_IC", 20)
+                    LoadBankCtrl.AddVoltagePhases("LB1_VOLTAGE_VAB", "LB1_VOLTAGE_VBC", "LB1_VOLTAGE_VCA", 20)
+                    LoadBankCtrl.StartWorkerThread(250)
+
+
+                    CELProject.EngineWindowCollection.Item(0).EngineWindow.BeginInvoke(New MethodInvoker(AddressOf Me.Init_Engine_Controls))
+
+                    'Add Handlers
+
+                    If CELProject.EngineModel = "TSCP700-4E" Then
+                        AddHandler ARINC_ECU_STATUS_VALUE.ValueChanged, AddressOf OnArincValueChange
+                        AddHandler ARINC_FAULT_RECORDS_VALUE.ValueChanged, AddressOf OnArincValueChange
+                        AddHandler ARINC_HISTORY_SHUTDOWN_VALUE.ValueChanged, AddressOf OnArincValueChange
+                        AddHandler ARINC_N1_SPEED_SELECT_VALUE.ValueChanged, AddressOf OnArincValueChange
+                        AddHandler ARINC_SHUTDOWN_VALUE.ValueChanged, AddressOf OnArincValueChange
+                        AddHandler ARINC_START_INHIBIT_STATUS_VALUE.ValueChanged, AddressOf OnArincValueChange
+                        AddHandler ARINC_TRANSMIT_RECORD_NUMBER_VALUE.ValueChanged, AddressOf OnArincValueChange
+                    End If
+
+                    AddHandler CELProject.CLOSE_TEST_BTN.ValueChanged, AddressOf OnClose_Test
+                    AddHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+                    AddHandler CELProject.PERF_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnPERF_CLOSE_WINDOW_BTN
+                    AddHandler CELProject.PERF_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnPERF_OPEN_WINDOW_BTN
+                    AddHandler CELProject.PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnPERF_TAKE_POINT_BTN
+                    AddHandler N2_95_IND.ValueChanged, AddressOf OnAcceleratingTime_Calc
+                    AddHandler PERF_PRESERVATION_YES.ValueChanged, AddressOf OnPERFPreservationYesCheckBox
+                    AddHandler PERF_PRESERVATION_NO.ValueChanged, AddressOf OnPERFPreservationNoCheckBox
+                    AddHandler CELProject.PERF_TEST_RESULT_ACCEPTED.ValueChanged, AddressOf OnPERFTestResultAcceptedCheckBox
+                    AddHandler CELProject.PERF_TEST_RESULT_REJECTED.ValueChanged, AddressOf OnPERFTestResultRejectedCheckBox
+                    AddHandler TestStep_List.SelectedIndexChanged, AddressOf OnTestStep_List_SelectedIndexChanged
+
+                    Me.DuctDiameter_Inches = CELProject.Test_Mgr_UUT_Calib_Constant(0).Value.ToDouble()
+                    Me.OrificeDiameter_Inches = CELProject.Test_Mgr_UUT_Calib_Constant(1).Value.ToDouble()
+
+                    MyBase.StartWorkingThread()
+
+                    TestProgress_Initialize()
+
+                End If
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionRunning: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Private Function Init_Engine_Channels() As Boolean
+
+            Dim Return_Value As New ArrayList()
+
+            Return_Value.Clear()
+
+            Try
+                'Initialise Common Engine Channels
+                If CELProject.EngineModel = "TSCP700-4E" Then
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_ECU_STATUS_TEXT, "ARINC_ECU_STATUS_TEXT"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_ECU_STATUS_VALUE, "A429IN_STATUS_WORD_SDI15_11_14"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_FAULT_RECORDS_TEXT, "ARINC_FAULT_RECORDS_TEXT"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_FAULT_RECORDS_VALUE, "A429IN_FAULT_HISTORY_WORD_1_SDI15_11_13"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_HISTORY_SHUTDOWN_TEXT, "ARINC_HISTORY_SHUTDOWN_TEXT"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_HISTORY_SHUTDOWN_VALUE, "A429IN_FAULT_HISTORY_WORD_1_SDI15_17_21"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_N1_SPEED_SELECT_TEXT, "ARINC_N1_SPEED_SELECT_TEXT"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_N1_SPEED_SELECT_VALUE, "A429IN_N1_SPEED_SELECT"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_SHUTDOWN_TEXT, "ARINC_SHUTDOWN_TEXT"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_SHUTDOWN_VALUE, "A429IN_MAINTENANCE_WORD_4_SDI15_11_15"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_START_INHIBIT_STATUS_TEXT, "ARINC_START_INHIBIT_STATUS_TEXT"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_START_INHIBIT_STATUS_VALUE, "A429IN_STATUS_WORD_SDI15_26_29"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_TRANSMIT_RECORD_NUMBER_TEXT, "ARINC_TRANSMIT_RECORD_NUMBER_TEXT"))
+                    Return_Value.Add(MyBase.InitializeChannel(ARINC_TRANSMIT_RECORD_NUMBER_VALUE, "A429IN_FAULT_HISTORY_WORD_1_SDI15_14_16"))
+                End If
+
+                Return_Value.Add(MyBase.InitializeChannel(BLEED_BTN, "BLEED_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(DELPB, "DELPB"))
+                Return_Value.Add(MyBase.InitializeChannel(DELPB2, "DELPB2"))
+                Return_Value.Add(MyBase.InitializeChannel(DELTB, "DELTB"))
+                Return_Value.Add(MyBase.InitializeChannel(DELTB2, "DELTB2"))
+                Return_Value.Add(MyBase.InitializeChannel(DELWB, "DELWB"))
+                Return_Value.Add(MyBase.InitializeChannel(DELWB2, "DELWB2"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_INITIAL_LITERS, "FUEL_USED_INITIAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_TOTAL_LITERS, "FUEL_USED_TOTAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(FM_INITIAL_VOLUME_LITERS, "FM_INITIAL_VOLUME_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(FM_TOTAL_VOLUME_LITERS, "FM_TOTAL_VOLUME_LITERS"))
+
+                If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_APU_RUN_In_Check, "Log_Perf_APU_RUN_In_Check"))
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_Oil_Consumtion_Check, "Log_Perf_Oil_Consumtion_Check"))
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_OIL_Filter_Check, "Log_Perf_OIL_Filter_Check"))
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_OIL_Level_Sensor_Check, "Log_Perf_OIL_Level_Sensor_Check"))
+
+                ElseIf CELProject.EngineModel = "TSCP700-4E" Then
+
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_Engine_RUN_In_Check, "Log_Perf_Engine_RUN_In_Check"))
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_Oil_Consumtion_Check, "Log_Perf_Oil_Consumtion_Check"))
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_OIL_Level_Sensor_Check, "Log_Perf_OIL_Level_Sensor_Check"))
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_Magnetic_Chip_Detector_Check, "Log_Perf_Magnetic_Chip_Detector_Check"))
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_Start_Tests_Check, "Log_Perf_Start_Tests_Check"))
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_Test_100_MES_Check, "Log_Perf_Test_100_MES_Check"))
+                    Return_Value.Add(MyBase.InitializeChannel(Log_Perf_VTN_Check, "Log_Perf_VTN_Check"))
+
+                Else
+                    MessageBox.Show("Init_Egine_Channels: Engine Model Not supported", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DELPB, "LOG_PERF_DELPB"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DELPB2, "LOG_PERF_DELPB2"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DELTB, "LOG_PERF_DELTB"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DELTB2, "LOG_PERF_DELTB2"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DELWB, "LOG_PERF_DELWB"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DELWB2, "LOG_PERF_DELWB2"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FUEL_USED_TOTAL_LITERS, "LOG_PERF_FUEL_USED_TOTAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_GENERATOR_POWER_KW, "LOG_PERF_GENERATOR_POWER_KW"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_N1, "LOG_PERF_N1"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_N2, "LOG_PERF_N2"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_OPERATING_TIME_CURRENT_HOURS, "LOG_PERF_OPERATING_TIME_CURRENT_HOURS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_OPERATING_TIME_CURRENT_MINUTES, "LOG_PERF_OPERATING_TIME_CURRENT_MINUTES"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BARO_MBARA, "LOG_PERF_P_BARO_MBARA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BLEED_INHGA, "LOG_PERF_P_BLEED_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_FUEL_PSIG, "LOG_PERF_P_FUEL_PSIG"))
+
+                If CELProject.EngineModel = "TSCP700-4B" Or CELProject.EngineModel = "TSCP700-5" Then
+
+                    Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_FUEL_DSCH_NOZZLE_PSIG, "LOG_PERF_P_FUEL_DSCH_NOZZLE_PSIG"))
+                    Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_LP_COMP_DSCH_PSIG, "LOG_PERF_P_LP_COMP_DSCH_PSIG"))
+
+                End If
+
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_OIL_GB_BREATHER_INHGG, "LOG_PERF_P_OIL_GB_BREATHER_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_OIL_PUMP_DSCH_PSIG, "LOG_PERF_P_OIL_PUMP_DSCH_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ORIFICE_PSIA, "LOG_PERF_P_ORIFICE_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ORIFICE_INHGG, "LOG_PERF_P_ORIFICE_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ORIFICE_DELTA_PSID, "LOG_PERF_P_ORIFICE_DELTA_PSID"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ORIFICE_DELTA_INH2OD, "LOG_PERF_P_ORIFICE_DELTA_INH2OD"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_SURGE_INHGG, "LOG_PERF_P_SURGE_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PBCOR_INHGA, "LOG_PERF_PBCOR_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_SHPCOR_HP, "LOG_PERF_SHPCOR_HP"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_BLEED_AVG_DEGF, "LOG_PERF_T_BLEED_AVG_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_EGT_AVG_DEGF, "LOG_PERF_T_EGT_AVG_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_ETC1_DEGF, "LOG_PERF_T_ETC1_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_ETC2_DEGF, "LOG_PERF_T_ETC2_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_FUEL_DEGF, "LOG_PERF_T_FUEL_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_INLET_AVG_DEGF, "LOG_PERF_T_INLET_AVG_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_OIL_DEGF, "LOG_PERF_T_OIL_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_ORIFICE_DEGF, "LOG_PERF_T_ORIFICE_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TBCOR_DEGF, "LOG_PERF_TBCOR_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_UNIT_EGT_SOURCE_DEGF, "LOG_PERF_T_UNIT_EGT_SOURCE_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_GEARBOX, "LOG_PERF_VIB_GEARBOX"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_TURBINE, "LOG_PERF_VIB_TURBINE"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WB_CALC, "LOG_PERF_WB_CALC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WBCOR_PPM, "LOG_PERF_WBCOR_PPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF_AVG_PPH, "LOG_PERF_WF_AVG_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WFCOR_PPH, "LOG_PERF_WFCOR_PPH"))
+
+                Return_Value.Add(MyBase.InitializeChannel(N1, "N1"))
+                Return_Value.Add(MyBase.InitializeChannel(N2_95_IND, "N2_95_IND"))
+                Return_Value.Add(MyBase.InitializeChannel(NUMBER_OF_STARTS, "NUMBER_OF_STARTS"))
+                Return_Value.Add(MyBase.InitializeChannel(P_ORIFICE_PSIA, "P_ORIFICE_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(P_ORIFICE_DELTA_PSID, "P_ORIFICE_DELTA_PSID"))
+                Return_Value.Add(MyBase.InitializeChannel(PBCOR_PERF_MIN_INHGA, "PBCOR_PERF_MIN_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_PRESERVATION_YES, "PERF_PRESERVATION_YES"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_PRESERVATION_NO, "PERF_PRESERVATION_NO"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_PRESERVATION_MONTH, "PERF_PRESERVATION_MONTH"))
+                Return_Value.Add(MyBase.InitializeChannel(START_MAX_EGT_DEGF, "START_MAX_EGT_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(START_MAX_ETC_DEGF, "START_MAX_ETC_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(STARTING_TIME_SEC, "STARTING_TIME_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(T_INLET_AVG_DEGF, "T_INLET_AVG_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(T_ORIFICE_DEGF, "T_ORIFICE_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(T_UNIT_EGT_SOURCE_DEGF, "T_UNIT_EGT_SOURCE_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(TBCOR_PERF_MAX_DEGF, "TBCOR_PERF_MAX_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(WB_CALC, "WB_CALC"))
+                Return_Value.Add(MyBase.InitializeChannel(WBCOR_PERF_MIN_PPM, "WBCOR_PERF_MIN_PPM"))
+
+                Return_Value.Add(MyBase.InitializeChannel(OPERATING_TIME_CURRENT_SEC, "OPERATING_TIME_CURRENT_SEC"))
+
+                Return_Value.Add(MyBase.InitializeObject(Test_Step_Frame, CELProject.EngineFamily.Replace("-", "_") + "_Screen.fraControl"))
+                Return_Value.Add(MyBase.InitializeObject(Ctrl_System_Frame, CELProject.EngineFamily.Replace("-", "_") + "_Screen.fraControlSystem"))
+
+                ECS_Frame = Ctrl_System_Frame.FindObject("fraECS")
+                ECS_Display = ECS_Frame.FindObject("dspECS_DEMAND")
+
+                If ECS_Display Is Nothing Then
+                    MessageBox.Show("MyBase.InitializeObject - dspECS Is Nothing")
+                    Return_Value.Add(False)
+                Else
+                    Return_Value.Add(True)
+                End If
+
+                TestStep_List = Test_Step_Frame.FindObject("TestStep_List")
+
+                If TestStep_List Is Nothing Then
+                    MessageBox.Show("MyBase.InitializeObject - TestStep_List Is Nothing")
+                    Return_Value.Add(False)
+                Else
+                    Return_Value.Add(True)
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Init_Engine_Channels: " & ex.ToString())
+                Return_Value.Add(False)
+            End Try
+
+            If Return_Value.Contains(False) Then
+                Init_Engine_Channels = False
+            Else
+                Init_Engine_Channels = True
+            End If
+        End Function
+
+        Private Sub TestProgress_Initialize()
+            Dim dataInfo As CEL.TestProgress.TestProgressMgr.TestProgress_DataInfo
+
+            If CELProject.EngineModel = "TSCP700-4E" Then
+                dataInfo.EngineStartEventChannelName = "RUN_STOP_BTN"
+                dataInfo.EngineStartEventChannelValue = True
+            Else
+                dataInfo.EngineStartEventChannelName = "START_BTN"
+                dataInfo.EngineStartEventChannelValue = True
+            End If
+            dataInfo.EngineStartEventDescription = "Mise en route"
+            dataInfo.EngineStartEventRecordTime = True
+            dataInfo.EngineStopEventChannelName = "RUN_STOP_BTN"
+            dataInfo.EngineStopEventChannelValue = False
+            dataInfo.EngineStopEventDescription = "Arrêt moteur - Temps d'arrêt (s): "
+            dataInfo.EngineStopEventRecordTime = True
+            dataInfo.TestProgressFrameName = CELProject.EngineFamily.Replace("-", "_") + "_Screen.fraTestProgressHorizontal"
+            dataInfo.TestProgressSheetFileName = CELProject.EngineSession.LogFolder + "/TestProgress.xml"
+            dataInfo.UUTModel = CELProject.EngineModel
+            dataInfo.UUTSerialNumber = Me.UserInputsRevima.EngineSerialNumber
+            dataInfo.UUTWorkOrder = Me.UserInputsRevima.WorkOrder
+            Me.TestProgressMgr = New CEL.TestProgress.TestProgressMgr(dataInfo)
+        End Sub
+
+       
+        Private Sub TestProgress_RecordPerfStep(stepName As String, correction As Boolean)
+            If Not Me.TestProgressMgr Is Nothing Then
+                Dim checkItemPBCor As String = "Corrected Bleed Air Pressure: - Min: " + _
+                    PBCOR_PERF_MIN_INHGA.Value.ToString(PBCOR_PERF_MIN_INHGA.Format, Nothing) + " Read: " + _
+                    LOG_PERF_PBCOR_INHGA.Value.ToString(Me.LOG_PERF_PBCOR_INHGA.Format, Nothing) + " inHgA"
+                Dim checkItemTBCor As String = "Corrected Bleed Air Temperature: - Max: " + _
+                    TBCOR_PERF_MAX_DEGF.Value.ToString(TBCOR_PERF_MAX_DEGF.Format, Nothing) + " Read: " + _
+                    LOG_PERF_TBCOR_DEGF.Value.ToString(LOG_PERF_TBCOR_DEGF.Format, Nothing) + " °F"
+                Dim checkItemWBCor As String = "Corrected Bleed Air Flow: - Min: " + _
+                    WBCOR_PERF_MIN_PPM.Value.ToString(WBCOR_PERF_MIN_PPM.Format, Nothing) + " Read: " + _
+                    LOG_PERF_WBCOR_PPM.Value.ToString(LOG_PERF_WBCOR_PPM.Format, Nothing) + " lb/min"
+                Dim checkItemWFCor As String = "Corrected Fuel Flow: - Read: " + Me.LOG_PERF_WFCOR_PPH.Value.ToString(Me.LOG_PERF_WFCOR_PPH.Format, Nothing) + " lb/hr"
+
+                If correction Then
+                    Me.TestProgressMgr.AddTestProgressEntry( _
+                        New CEL.TestProgress.TestProgressSheetEntry(String.Empty, stepName, {checkItemPBCor, checkItemTBCor, checkItemWBCor, checkItemWFCor}))
+                Else
+                    Me.TestProgressMgr.AddTestProgressEntry( _
+                        New CEL.TestProgress.TestProgressSheetEntry(String.Empty, stepName, {checkItemWFCor}))
+                End If
+            End If
+        End Sub
+
+        Private Sub TestProgress_Save()
+            If Not Me.TestProgressMgr Is Nothing Then
+                TestProgress_UpdateProgressSheetHeader(Me.TestProgressMgr.TestProgressSheet)
+                Dim fileName As String = CELProject.EngineSession.LogFolder + "/TestProgress.xml"
+                Dim settings As Xml.XmlWriterSettings = New Xml.XmlWriterSettings()
+                settings.Indent = True
+
+                Using writer As Xml.XmlWriter = Xml.XmlWriter.Create(fileName, settings)
+                    Dim xslPath As String = "type=""text/xsl"" href=""" + Application.StartupPath + "/TestProgressSheet.xsl"""
+                    writer.WriteProcessingInstruction("xml-stylesheet", xslPath)
+                    Dim ser As New Xml.Serialization.XmlSerializer(GetType(CEL.TestProgress.TestProgressSheet))
+                    ser.Serialize(writer, Me.TestProgressMgr.TestProgressSheet)
+                End Using
+            End If
+        End Sub
+
+        Private Sub TestProgress_UpdateProgressSheetHeader(progressSheet As CEL.TestProgress.TestProgressSheet)
+            progressSheet.Header("No capteur de vibration turbine") = Me.UserInputsRevima.TurbineVibPickupSerialNumber
+            progressSheet.Header("No capteur de vibration accessoire") = Me.UserInputsRevima.GearboxVibPickupSerialNumber
+            progressSheet.Header("No Capt. frein") = Me.UserInputsRevima.LoadCellSN
+            progressSheet.Header("Type d'huile") = Me.UserInputsRevima.OilType
+            progressSheet.Header("Quantité totale Jet A1") = Me.FUEL_USED_TOTAL_LITERS.Value.ToString()
+            Dim runningTime As System.TimeSpan = System.TimeSpan.FromSeconds(Me.OPERATING_TIME_CURRENT_SEC.Value.ToDouble())
+            progressSheet.Header("Temps de fonctionnement") = Math.Floor(runningTime.TotalHours).ToString() + _
+                " h " + runningTime.Minutes.ToString("00")
+        End Sub
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+
+        '************
+        '* Channels *
+        '************
+
+        Private ARINC_ECU_STATUS_TEXT As ITextChannel
+        Private ARINC_ECU_STATUS_VALUE As KineticaRT.Channels.Channel
+        Private ARINC_FAULT_RECORDS_TEXT As ITextChannel
+        Private ARINC_FAULT_RECORDS_VALUE As KineticaRT.Channels.Channel
+        Private ARINC_HISTORY_SHUTDOWN_TEXT As ITextChannel
+        Private ARINC_HISTORY_SHUTDOWN_VALUE As KineticaRT.Channels.Channel
+        Private ARINC_N1_SPEED_SELECT_TEXT As ITextChannel
+        Private ARINC_N1_SPEED_SELECT_VALUE As INumericChannel
+        Private ARINC_SHUTDOWN_TEXT As ITextChannel
+        Private ARINC_SHUTDOWN_VALUE As KineticaRT.Channels.Channel
+        Private ARINC_START_INHIBIT_STATUS_TEXT As ITextChannel
+        Private ARINC_START_INHIBIT_STATUS_VALUE As KineticaRT.Channels.Channel
+        Private ARINC_TRANSMIT_RECORD_NUMBER_TEXT As ITextChannel
+        Private ARINC_TRANSMIT_RECORD_NUMBER_VALUE As KineticaRT.Channels.Channel
+
+        'Déroulement d'essai
+        Private OPERATING_TIME_CURRENT_SEC As IChannel
+
+        'valeur instantanne
+        Private BLEED_BTN As IBooleanChannel
+        Private DELPB As INumericChannel
+        Private DELPB2 As INumericChannel
+        Private DELTB As INumericChannel
+        Private DELTB2 As INumericChannel
+        Private DELWB As INumericChannel
+        Private DELWB2 As INumericChannel
+        Private FUEL_USED_INITIAL_LITERS As INumericChannel
+        Private FUEL_USED_TOTAL_LITERS As INumericChannel
+        Private FM_INITIAL_VOLUME_LITERS As INumericChannel
+        Private FM_TOTAL_VOLUME_LITERS As INumericChannel
+        Private Log_Perf_APU_RUN_In_Check As IBooleanChannel
+        Private Log_Perf_Engine_RUN_In_Check As IBooleanChannel
+        Private Log_Perf_Oil_Consumtion_Check As IBooleanChannel
+        Private Log_Perf_OIL_Filter_Check As IBooleanChannel
+        Private Log_Perf_OIL_Level_Sensor_Check As IBooleanChannel
+        Private Log_Perf_Magnetic_Chip_Detector_Check As IBooleanChannel
+        Private Log_Perf_Start_Tests_Check As IBooleanChannel
+        Private Log_Perf_Test_100_MES_Check As IBooleanChannel
+        Private Log_Perf_VTN_Check As IBooleanChannel
+        Private N1 As INumericChannel
+        Private N2_95_IND As IBooleanChannel
+        Private NUMBER_OF_STARTS As INumericChannel
+        Private P_ORIFICE_DELTA_PSID As INumericChannel
+        Private P_ORIFICE_PSIA As INumericChannel
+        Private PBCOR_PERF_MIN_INHGA As INumericChannel
+        Private PERF_PRESERVATION_MONTH As INumericChannel
+        Private PERF_PRESERVATION_NO As IBooleanChannel
+        Private PERF_PRESERVATION_YES As IBooleanChannel
+        Private STARTING_TIME_SEC As INumericChannel
+        Private START_MAX_EGT_DEGF As INumericChannel
+        Private START_MAX_ETC_DEGF As INumericChannel
+        Private T_INLET_AVG_DEGF As INumericChannel
+        Private T_ORIFICE_DEGF As INumericChannel
+        Private T_UNIT_EGT_SOURCE_DEGF As INumericChannel
+        Private TBCOR_PERF_MAX_DEGF As INumericChannel
+        Private WB_CALC As INumericChannel
+        Private WBCOR_PERF_MIN_PPM As INumericChannel
+
+        'valeur moyenne
+        Private LOG_PERF_DELPB As INumericChannel
+        Private LOG_PERF_DELPB2 As INumericChannel
+        Private LOG_PERF_DELTB As INumericChannel
+        Private LOG_PERF_DELTB2 As INumericChannel
+        Private LOG_PERF_DELWB As INumericChannel
+        Private LOG_PERF_DELWB2 As INumericChannel
+        Private LOG_PERF_FUEL_USED_TOTAL_LITERS As INumericChannel
+        Private LOG_PERF_GENERATOR_POWER_KW As INumericChannel
+        Private LOG_PERF_N1 As INumericChannel
+        Private LOG_PERF_N2 As INumericChannel
+        Private LOG_PERF_OPERATING_TIME_CURRENT_HOURS As INumericChannel
+        Private LOG_PERF_OPERATING_TIME_CURRENT_MINUTES As INumericChannel
+        Private LOG_PERF_P_BARO_MBARA As INumericChannel
+        Private LOG_PERF_P_BLEED_INHGA As INumericChannel
+        Private LOG_PERF_P_FUEL_PSIG As INumericChannel
+        Private LOG_PERF_P_FUEL_DSCH_NOZZLE_PSIG As INumericChannel
+        Private LOG_PERF_P_LP_COMP_DSCH_PSIG As INumericChannel
+        Private LOG_PERF_P_OIL_GB_BREATHER_INHGG As INumericChannel
+        Private LOG_PERF_P_OIL_PUMP_DSCH_PSIG As INumericChannel
+        Private LOG_PERF_P_ORIFICE_DELTA_PSID As INumericChannel
+        Private LOG_PERF_P_ORIFICE_DELTA_INH2OD As INumericChannel
+        Private LOG_PERF_P_ORIFICE_INHGG As INumericChannel
+        Private LOG_PERF_P_ORIFICE_PSIA As INumericChannel
+        Private LOG_PERF_P_SURGE_INHGG As INumericChannel
+        Private LOG_PERF_PBCOR_INHGA As INumericChannel
+        Private LOG_PERF_SHPCOR_HP As INumericChannel
+        Private LOG_PERF_T_BLEED_AVG_DEGF As INumericChannel
+        Private LOG_PERF_T_EGT_AVG_DEGF As INumericChannel
+        Private LOG_PERF_T_ETC1_DEGF As INumericChannel
+        Private LOG_PERF_T_ETC2_DEGF As INumericChannel
+        Private LOG_PERF_T_FUEL_DEGF As INumericChannel
+        Private LOG_PERF_T_INLET_AVG_DEGF As INumericChannel
+        Private LOG_PERF_T_OIL_DEGF As INumericChannel
+        Private LOG_PERF_T_ORIFICE_DEGF As INumericChannel
+        Private LOG_PERF_TBCOR_DEGF As INumericChannel
+        Private LOG_PERF_T_UNIT_EGT_SOURCE_DEGF As INumericChannel
+        Private LOG_PERF_VIB_GEARBOX As INumericChannel
+        Private LOG_PERF_VIB_TURBINE As INumericChannel
+        Private LOG_PERF_WB_CALC As INumericChannel
+        Private LOG_PERF_WBCOR_PPM As INumericChannel
+        Private LOG_PERF_WF_AVG_PPH As INumericChannel
+        Private LOG_PERF_WFCOR_PPH As INumericChannel
+
+        '*********************
+        '* Forms and Control *
+        '*********************
+        Private ECS_Display As KineticaRT.Studio.Controls.Display
+        'Frame
+        Private ECS_Frame As KineticaRT.Controls.Control
+        Private Ctrl_System_Frame As KineticaRT.Controls.Control
+        Private Test_Step_Frame As KineticaRT.Controls.Control
+        Private TestStep_List As System.Windows.Forms.ComboBox
+
+        '********
+        '* Misc *
+        '********
+        Private cnMain As ADODB.Connection
+        Private Custom_Parameters As New System.Collections.Specialized.OrderedDictionary()
+
+        Private PerfCalcOutsideRange As Boolean = False
+
+        Private testProgressStepListFactory As CEL.TestProgress.ITestProgressStepListFactory
+
+        Private PersistentValuesCtrl As PersistentValuesController = Nothing
+
+        'Arrays from access table in test session
+        Private TSCP700_N1(,) As Double 'Used to keep a database table in memory for fast access for TSCP700
+        Private TSCP700_TTI(,) As Double 'Used to keep a database table in memory for fast access for TSCP700
+
+        'Arrays used for the TSCP700-4E ARINC
+        Private ECU_STATUS_CODE(16) As String
+        Private INHIBIT_CODE(16) As String
+        Private N1_SPEED_SELECT_CODE(4) As String
+        Private FAULT_HISTORY_CODE(8) As String
+        Private TRANSMIT_CODE(8) As String
+        Private SHUTDOWN_CODE(32) As String
+
+        Private POilGbBreatherMaxPressureRecordCtrl As MinMaxRecordController = Nothing
+        Private StarterMaxCurrentRecordCtrl As MinMaxRecordController = Nothing
+        Private StarterMaxVoltageRecordCtrl As MinMaxRecordController = Nothing
+        Private StartMaxETCRecordCtrl As MinMaxRecordController = Nothing
+        Private StartMaxEGTRecordCtrl As MinMaxRecordController = Nothing
+
+        Private DeletableTBleedChCtrl As DeletableChannelController = Nothing
+        Private DeletableTEgtChCtrl As DeletableChannelController = Nothing
+        Private DeletableTInletChCtrl As DeletableChannelController = Nothing
+        Private FlowmeterCtrl As FlowmeterController = Nothing
+
+        Private LoadBankCtrl As LoadBankController = Nothing
+        Private ECSCtrl As ECSController = Nothing
+        Private StartTimerCtrl As TimerController = Nothing
+
+        Private UserInputsGaruda As New UserInputGaruda10726()
+        Private UserInputsRevima As New UserInputRevima12917()
+
+        Private DuctDiameter_Inches As Double
+        Private OrificeDiameter_Inches As Double
+
+        Private TestProgressMgr As CEL.TestProgress.TestProgressMgr = Nothing
+
+    End Class
+
+    Public Class UserInputRevima12917
+
+        Public EngineSerialNumber As String = ""
+        Public ECBSerialNumber As String = ""
+        Public WorkOrder As String = ""
+        Public ExhaustDuctSerialNumber As String = ""
+        Public BellmouthSerialNumber As String = ""
+        Public BleedDuctSerialNumber As String = ""
+        Public StarterSerialNumber As String = ""
+        Public DynoGeneratorSerialNumber As String = ""
+        Public TurbineVibPickupSerialNumber As String = ""
+        Public GearboxVibPickupSerialNumber As String = ""
+        Public OilType As String = ""
+        Public TimeSinceNewOrOverhaul As String = "" 'TSN/TSO
+        Public CyclesSinceNewOrOverhaul As String = "" 'CSN/CSO
+
+        Public Reason As String = ""
+        Public TestType As String = ""
+        Public RepairType As String = ""
+        Public LoadCellSN As String = ""
+        Public LoadType As String = ""
+
+        ' Allow friend access to the empty constructor.
+        Friend Sub New()
+
+        End Sub
+        Public Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+            EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+            WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+            ECBSerialNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+            ExhaustDuctSerialNumber = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+            BellmouthSerialNumber = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+            BleedDuctSerialNumber = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+            StarterSerialNumber = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+            DynoGeneratorSerialNumber = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+            TurbineVibPickupSerialNumber = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+            GearboxVibPickupSerialNumber = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+            OilType = CELProject.Test_Mgr_UUT_Answer(12).Value.ToString()
+            TimeSinceNewOrOverhaul = CELProject.Test_Mgr_UUT_Answer(15).Value.ToString()
+            CyclesSinceNewOrOverhaul = CELProject.Test_Mgr_UUT_Answer(16).Value.ToString()
+
+            Reason = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+            TestType = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+            RepairType = CELProject.Test_Mgr_UUT_Choice(2).Value.ToString()
+            LoadCellSN = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+            LoadType = CELProject.Test_Mgr_UUT_Choice(6).Value.ToString()
+
+        End Sub
+    End Class
+
+    Public Class UserInputGaruda10726
+
+        Public EngineSerialNumber As String = ""
+        Public WorkOrder As String = ""
+        Public TestNumber As String = ""
+        Public PDSheetNumber As String = ""
+        Public LHV As String = ""
+        Public SampleFuelSG As String = ""
+        Public SampleFuelTemperature As String = ""
+        Public OilType As String = ""
+        Public FuelType As String = ""
+        Public CustomerName As String = ""
+        Public TimeSinceNewOrOverhaul As String = "" 'TSN/TSO
+        Public Comment As String = ""
+
+        Public TestType As String = ""
+        Public OperatorName As String = ""
+        Public ObserverName As String = ""
+        Public SupervisorName As String = ""
+        Public QCInspectorName As String = ""
+        Public RepairType As String = ""
+        Public Reason As String = ""
+
+        ' Allow friend access to the empty constructor.
+        Friend Sub New()
+
+        End Sub
+        Public Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+            EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+            WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+            TestNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+            PDSheetNumber = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+            CustomerName = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+            LHV = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+            SampleFuelSG = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+            SampleFuelTemperature = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+            OilType = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+            FuelType = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+            TimeSinceNewOrOverhaul = CELProject.Test_Mgr_UUT_Answer(12).Value.ToString()
+            Comment = ""
+            TestType = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+            RepairType = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+            Reason = CELProject.Test_Mgr_UUT_Choice(2).Value.ToString()
+            OperatorName = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+            ObserverName = CELProject.Test_Mgr_UUT_Choice(5).Value.ToString()
+            SupervisorName = CELProject.Test_Mgr_UUT_Choice(6).Value.ToString()
+            QCInspectorName = CELProject.Test_Mgr_UUT_Choice(7).Value.ToString()
+
+        End Sub
+    End Class
+End Namespace

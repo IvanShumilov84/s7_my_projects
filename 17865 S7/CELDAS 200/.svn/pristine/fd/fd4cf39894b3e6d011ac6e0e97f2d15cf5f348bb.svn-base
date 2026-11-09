@@ -1,0 +1,161 @@
+<SOAP-ENV:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:clr="http://schemas.microsoft.com/soap/encoding/clr/1.0" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<SOAP-ENV:Body>
+<a1:ChannelCollection id="ref-1" xmlns:a1="http://schemas.microsoft.com/clr/nsassem/KineticaRT/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<OPC_ARINC_ATSCMD href="#ref-4"/>
+<OPC_ARINC_DP href="#ref-5"/>
+<OPC_ARINC_ELSCMD href="#ref-6"/>
+<OPC_ARINC_IGV_POS href="#ref-7"/>
+<OPC_ARINC_P2 href="#ref-8"/>
+<OPC_ARINC_PT href="#ref-9"/>
+<OPC_ARINC_SCV_POS href="#ref-10"/>
+<OPC_ARINC_T2 href="#ref-11"/>
+<OPC_ARINC_WC href="#ref-12"/>
+<OPC_GCU_K1_CMD href="#ref-13"/>
+<OPC_LOAD_BANK_ON href="#ref-14"/>
+</a1:ChannelCollection>
+<a2:Item id="ref-4" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-15">OPC_ARINC_ATSCMD</Name>
+<Description id="ref-16">AT Start Cmd</Description>
+<ToolTip id="ref-17"></ToolTip>
+<Units href="#ref-17"/>
+<Min>0</Min>
+<Max>0</Max>
+<Format id="ref-18">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-19">Group_Fast</Group>
+<ItemID id="ref-20">DACN1.DACN1_User_Interface.SerialArinc[9].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-5" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-21">OPC_ARINC_DP</Name>
+<Description id="ref-22">DP</Description>
+<ToolTip href="#ref-17"/>
+<Units id="ref-23"> psid</Units>
+<Min>0</Min>
+<Max>20</Max>
+<Format id="ref-24">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-25">Group_Fast</Group>
+<ItemID id="ref-26">DACN1.DACN1_User_Interface.SerialArinc[5].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-6" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-27">OPC_ARINC_ELSCMD</Name>
+<Description id="ref-28">El Start Cmd</Description>
+<ToolTip href="#ref-17"/>
+<Units href="#ref-17"/>
+<Min>0</Min>
+<Max>0</Max>
+<Format id="ref-29">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-30">Group_Fast</Group>
+<ItemID id="ref-31">DACN1.DACN1_User_Interface.SerialArinc[8].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-7" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-32">OPC_ARINC_IGV_POS</Name>
+<Description id="ref-33">IGV position</Description>
+<ToolTip href="#ref-17"/>
+<Units id="ref-34"> Deg</Units>
+<Min>0</Min>
+<Max>76</Max>
+<Format id="ref-35">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-36">Group_Fast</Group>
+<ItemID id="ref-37">DACN1.DACN1_User_Interface.SerialArinc[1].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-8" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-38">OPC_ARINC_P2</Name>
+<Description id="ref-39">P2</Description>
+<ToolTip href="#ref-17"/>
+<Units id="ref-40"> psia</Units>
+<Min>0</Min>
+<Max>20</Max>
+<Format id="ref-41">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-42">Group_Fast</Group>
+<ItemID id="ref-43">DACN1.DACN1_User_Interface.SerialArinc[6].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-9" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-44">OPC_ARINC_PT</Name>
+<Description id="ref-45">PT</Description>
+<ToolTip href="#ref-17"/>
+<Units id="ref-46"> psia</Units>
+<Min>0</Min>
+<Max>75</Max>
+<Format id="ref-47">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-48">Group_Fast</Group>
+<ItemID id="ref-49">DACN1.DACN1_User_Interface.SerialArinc[4].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-10" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-50">OPC_ARINC_SCV_POS</Name>
+<Description id="ref-51">SCV position</Description>
+<ToolTip href="#ref-17"/>
+<Units id="ref-52"> Deg</Units>
+<Min>10</Min>
+<Max>90</Max>
+<Format id="ref-53">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-54">Group_Fast</Group>
+<ItemID id="ref-55">DACN1.DACN1_User_Interface.SerialArinc[2].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-11" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-56">OPC_ARINC_T2</Name>
+<Description id="ref-57">T2</Description>
+<ToolTip href="#ref-17"/>
+<Units id="ref-58"> °C</Units>
+<Min>-55</Min>
+<Max>220</Max>
+<Format id="ref-59">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-60">Group_Fast</Group>
+<ItemID id="ref-61">DACN1.DACN1_User_Interface.SerialArinc[3].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-12" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-62">OPC_ARINC_WC</Name>
+<Description id="ref-63">WC</Description>
+<ToolTip href="#ref-17"/>
+<Units id="ref-64"> lb/sec</Units>
+<Min>0</Min>
+<Max>4000</Max>
+<Format id="ref-65">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-66">Group_Fast</Group>
+<ItemID id="ref-67">DACN1.DACN1_User_Interface.SerialArinc[7].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-13" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-68">OPC_GCU_K1_CMD</Name>
+<Description href="#ref-17"/>
+<ToolTip href="#ref-17"/>
+<TrueText id="ref-69">True</TrueText>
+<FalseText id="ref-70">False</FalseText>
+<Group id="ref-71">Group_Fast</Group>
+<ItemID id="ref-72">DACN1.DACN1_User_Interface.GCU_K1_Cmd</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-14" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-73">OPC_LOAD_BANK_ON</Name>
+<Description href="#ref-17"/>
+<ToolTip href="#ref-17"/>
+<TrueText id="ref-74">True</TrueText>
+<FalseText id="ref-75">False</FalseText>
+<Group id="ref-76">Group_Fast</Group>
+<ItemID id="ref-77">dacn1.dacn1_user_interface.load_bank_on</ItemID>
+</a2:BooleanItem>
+</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

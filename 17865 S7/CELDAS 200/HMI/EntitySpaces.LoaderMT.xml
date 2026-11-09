@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>EntitySpaces.LoaderMT</name>
+    </assembly>
+    <members>
+        <member name="M:EntitySpaces.LoaderMT.esDataProviderFactory.GetDataProvider(System.String,System.String)">
+            <summary>
+            Called by the esProviderFactory to get the proper data provider to carry
+            out a particular request agains the database
+            </summary>
+            <param name="providerName">This is the "provider" element from an EntitySpaces connection entry</param>
+            <param name="providerClass">This is the "providerClass" element from an EntitySpaces connection entry</param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

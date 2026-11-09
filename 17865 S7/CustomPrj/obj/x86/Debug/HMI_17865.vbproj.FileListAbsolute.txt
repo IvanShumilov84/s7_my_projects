@@ -1,0 +1,4 @@
+C:\My Projects\17865 S7\CustomPrj\obj\x86\Debug\HMI_17865.vbprojAssemblyReference.cache
+C:\My Projects\17865 S7\CustomPrj\obj\x86\Debug\PrjMaster_HMI.Resources.resources
+C:\My Projects\17865 S7\CustomPrj\obj\x86\Debug\HMI_17865.vbproj.GenerateResource.cache
+C:\My Projects\17865 S7\CustomPrj\obj\x86\Debug\HMI_17865.vbproj.CoreCompileInputs.cache

@@ -1,0 +1,3 @@
+<Window BackColor="Black" Font="Trebuchet MS, 14.25pt, style=Bold" ForeColor="White" RightToLeft="0" AllowDrop="true" TabIndex="0" BorderColor="Blue" BorderStyle="1" BorderWidth="0.1" Name="tab" Shape="1" ToolTipText="" UpdateSpeed="1" HorizontalGrid.Size="8" HorizontalGrid.Spacing="2" VerticalGrid.Size="8" VerticalGrid.Spacing="2" TitleEnabled="false" Title="Performance" WindowState="0" Left="1400" Top="162" Width="1074" Height="620" CurrentPanelIndex="0">
+  <Panel File="PW100\PW100_Performance_Panel.dll" Text="Panel 1" />
+</Window>

@@ -1,0 +1,1875 @@
+Imports System
+Imports System.Collections
+Imports System.Collections.Generic
+Imports System.Reflection
+Imports System.Text
+Imports System.Threading
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Windows.Forms
+Imports KineticaRT
+Imports KineticaRT.Channels
+Imports KineticaRT.Sequence
+Imports KineticaRT.Values
+Imports Microsoft.Office.Interop 'Excel
+Imports System.Data
+Imports System.Data.OleDb
+Imports System.Runtime.InteropServices
+Imports Microsoft.VisualBasic
+Imports CEL.HMI
+Imports CEL.Library
+
+
+Namespace StudioDemonstration
+
+    Public Class Throttle_Sequence
+        Inherits CEL.KineticaRT.Sequence.Sequence
+
+        Private CELProject As CELDAS = CELDAS.Instance()
+        Private STMSession As CEL.STM.Session = New CEL.STM.Session()
+        Private STMSessionReconnectTimer As System.Timers.Timer = New System.Timers.Timer(1000.0)
+        Private STMSessionClosing As Boolean = False
+
+        Private Const GOVFormName As String = "GOV_Rigging_Screen"
+        Private Const FCUFormName As String = "FCU_Rigging_Screen"
+        Private Const MORFormName As String = "MOR_Rigging_Screen"
+        Private Const RVDTResolverConfigFormName As String = "RVDT_Resolver_Screen"
+
+        Private Enum ThrottleInstanceName As Byte
+            PLA = 0
+            CLA = 1
+            MOR = 2
+        End Enum
+
+        '********************************************************************
+        '* Variable Declaration *********************************************
+        '********************************************************************
+
+
+
+
+        Public Overloads Overrides Sub Connect()
+            If Me.Connected = False Then
+                MyBase.Connect()
+                Me.Connected = True
+
+                '#If Not CELDAS200 Then
+                '                OnTestSessionInitialized(CEL.KineticaRT.Sequence.eTestMgrStatus.Initialized)
+                '                OnTestSessionRunning(CEL.KineticaRT.Sequence.eTestMgrStatus.Running)
+                '#End If
+            End If
+        End Sub
+
+        Public Overloads Overrides Sub Disconnect()
+            If Me.Connected = True Then
+                MyBase.Disconnect()
+                Me.Connected = False
+                '#If Not CELDAS200 Then
+                '                OnTestSessionClosing(CEL.KineticaRT.Sequence.eTestMgrStatus.Closing)
+                '#End If
+
+            End If
+        End Sub
+        Protected Overrides Sub OnEngineWorkingThread()
+            'DoNothing
+        End Sub
+
+        Private Sub ConnectSTMSession()
+            STMSessionClosing = False
+            STMSession.Connect(CELProject.cRIO.IpAdress.ToString, CELProject.cRIO.port.ToString)
+        End Sub
+
+        Private Sub DisconnectSTMSession()
+            Dim stmData(0) As Byte
+            If STMSession.IsConnected Then
+                STMSessionClosing = True
+                ResetRigging()
+                STMSession.SendMsg("Close", stmData)
+                STMSession.Disconnect()
+            End If
+        End Sub
+
+        Private Sub OnSTMReconnectTimerElapsed(sender As Object, e As System.Timers.ElapsedEventArgs)
+            System.Diagnostics.Trace.WriteLine("STM Session Reconnect timer tick.")
+
+            Me.ConnectSTMSession()
+
+        End Sub
+
+        Private Sub OnSTMSessionConnected(sender As Object, e As System.EventArgs)
+            System.Diagnostics.Trace.WriteLine("STM Session Connected.")
+            CRIO_CONNECTED.Value = Values.True
+        End Sub
+
+        Private Sub OnSTMSessionClosed(sender As Object, e As System.EventArgs)
+            System.Diagnostics.Trace.WriteLine("STM Session Closed.")
+            CRIO_CONNECTED.Value = Values.False
+            If Not STMSessionClosing Then
+                STMSessionReconnectTimer.AutoReset = False
+                STMSessionReconnectTimer.Start()
+            End If
+        End Sub
+
+        Private Sub OnSTMSessionError(sender As Object, e As CEL.STM.ErrorEventArgs)
+            Select Case e.ErrorCode
+                Case System.Net.Sockets.SocketError.ConnectionRefused
+                    System.Diagnostics.Trace.WriteLine("STM Session error: Connection refused.")
+                    STMSessionReconnectTimer.AutoReset = False
+                    STMSessionReconnectTimer.Start()
+                Case System.Net.Sockets.SocketError.ConnectionReset
+                    System.Diagnostics.Trace.WriteLine("STM Session error: Connection reset by the remote peer.")
+                    STMSessionReconnectTimer.AutoReset = False
+                    STMSessionReconnectTimer.Start()
+                Case System.Net.Sockets.SocketError.TimedOut
+                    System.Diagnostics.Trace.WriteLine("STM Session error: Connection timed out.")
+                    STMSessionReconnectTimer.AutoReset = False
+                    STMSessionReconnectTimer.Start()
+                Case Else
+                    System.Diagnostics.Trace.WriteLine("STM Session error: " & e.ErrorCode)
+            End Select
+        End Sub
+
+        Private Sub OnSTMSessionMetaDataReceived(sender As Object, e As System.EventArgs)
+            System.Diagnostics.Trace.WriteLine("Received MetaData:")
+            For Each metaName As String In STMSession.MetaData
+                System.Diagnostics.Trace.WriteLine(metaName)
+            Next
+
+            SendConfigTocRIO("PLA")
+            SendConfigTocRIO("CLP")
+
+        End Sub
+
+        Private Sub OnSTMSessionNewDataReceived(sender As Object, e As CEL.STM.NewDataReceivedEventArgs)
+
+            Dim bCloseConnection As Boolean = False
+            Dim position As Integer = 0
+            Dim throttleInstance As ThrottleInstanceName
+            Dim Active As Boolean
+            Dim Engaged As Boolean
+            Dim MaxPositionStored As Boolean
+            Dim MinPositionStored As Boolean
+            Dim RiggingDone As Boolean
+            Dim ComputeDone As Boolean
+            Dim MaxStopPositionStored As Boolean
+            Dim MinStopPositionStored As Boolean
+            Dim IdlePositionStored As Boolean
+            Dim LeverPosition As Double
+            Dim ServoPosition As Double
+            Dim FcuServoAngle As Double
+            Dim Faults() As UInt32
+            Dim Warnings() As UInt32
+
+            Select Case e.MetaName
+                Case "Throttle.Status"
+                    Try
+
+                        throttleInstance = CEL.STM.Convert.ByteUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        Active = CEL.STM.Convert.BoolUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        Engaged = CEL.STM.Convert.BoolUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        MaxPositionStored = CEL.STM.Convert.BoolUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        MinPositionStored = CEL.STM.Convert.BoolUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        RiggingDone = CEL.STM.Convert.BoolUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        ComputeDone = CEL.STM.Convert.BoolUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        MaxStopPositionStored = CEL.STM.Convert.BoolUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        MinStopPositionStored = CEL.STM.Convert.BoolUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        IdlePositionStored = CEL.STM.Convert.BoolUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Byte.MaxValue.GetType)
+                        LeverPosition = CEL.STM.Convert.DblUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Double.MaxValue.GetType)
+                        ServoPosition = CEL.STM.Convert.DblUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Double.MaxValue.GetType)
+                        FcuServoAngle = CEL.STM.Convert.DblUnflatten(e.Data, position)
+                        position += Marshal.SizeOf(Double.MaxValue.GetType)
+                        Faults = CEL.STM.Convert.UIntArrUnflatten(e.Data, position)
+                        Warnings = CEL.STM.Convert.UIntArrUnflatten(e.Data, position)
+
+                        THROTTLE_INSTANCE.Value = New KineticaRT.Values.Double(throttleInstance)
+
+                    Catch ex As Exception
+                        System.Diagnostics.Trace.WriteLine(" OnSTMSessionNewDataReceived: Unexpected error while Unflatting message: " + ex.Message)
+                        bCloseConnection = True
+                    End Try
+
+                    If Not bCloseConnection Then
+                        Select Case throttleInstance
+                            Case ThrottleInstanceName.PLA
+                                PLA_COMPUTE_DONE.Value = If(ComputeDone, Values.True, Values.False)
+                                PLA_IDLE_POS_DONE.Value = If(IdlePositionStored, Values.True, Values.False)
+                                PLA_LEVER_POS.Value = New KineticaRT.Values.Double(LeverPosition)
+                                PLA_MAX_POS_DONE.Value = If(MaxPositionStored, Values.True, Values.False)
+                                PLA_MAX_STOP_POS_DONE.Value = If(MaxStopPositionStored, Values.True, Values.False)
+                                PLA_MIN_POS_DONE.Value = If(MinPositionStored, Values.True, Values.False)
+                                PLA_MIN_STOP_POS_DONE.Value = If(MinStopPositionStored, Values.True, Values.False)
+                                PLA_RIGGING_DONE.Value = If(RiggingDone, Values.True, Values.False)
+                                PLA_SERVO_READING.Value = New KineticaRT.Values.Double(ServoPosition)
+                                PLA_SERVO_ANGLE_READING.Value = New KineticaRT.Values.Double(FcuServoAngle)
+                                Dim faultIndex As Integer = 0
+                                Dim NumberOfFaults As Integer = 0
+                                For Each faultCode As UInt32 In Faults
+                                    faultIndex += 1
+                                    If faultCode <> 0 Then
+                                        System.Diagnostics.Trace.WriteLine("Drive(" & throttleInstance.ToString() &
+                                                                           ") reported fault" & faultIndex.ToString() &
+                                                                           "= " & faultCode.ToString())
+                                        NumberOfFaults += 1
+                                    End If
+                                Next
+
+                                If NumberOfFaults > 0 Then
+                                    CRIO_PLA_DRIVE_FAULT.Value = KineticaRT.Values.Values.True
+                                Else
+                                    CRIO_PLA_DRIVE_FAULT.Value = KineticaRT.Values.Values.False
+                                End If
+
+                                Dim warningIndex As Integer = 0
+                                Dim NumberOfWarnings As Integer = 0
+                                For Each warningCode As UInt32 In Warnings
+                                    warningIndex += 1
+                                    If warningCode <> 0 Then
+                                        System.Diagnostics.Trace.WriteLine("Drive(" & throttleInstance.ToString() &
+                                                                           ") reported warning" & warningIndex.ToString() &
+                                                                           "= " & warningCode.ToString())
+                                        NumberOfWarnings += 1
+                                    End If
+                                Next
+
+                                If NumberOfWarnings > 0 Then
+                                    CRIO_PLA_DRIVE_WARNING.Value = KineticaRT.Values.Values.True
+                                Else
+                                    CRIO_PLA_DRIVE_WARNING.Value = KineticaRT.Values.Values.False
+                                End If
+
+                            Case ThrottleInstanceName.CLA
+                                CLA_COMPUTE_DONE.Value = If(ComputeDone, Values.True, Values.False)
+                                CLA_IDLE_POS_DONE.Value = If(IdlePositionStored, Values.True, Values.False)
+                                CLA_LEVER_POS.Value = New KineticaRT.Values.Double(LeverPosition)
+                                CLA_MAX_POS_DONE.Value = If(MaxPositionStored, Values.True, Values.False)
+                                CLA_MAX_STOP_POS_DONE.Value = If(MaxStopPositionStored, Values.True, Values.False)
+                                CLA_MIN_POS_DONE.Value = If(MinPositionStored, Values.True, Values.False)
+                                CLA_MIN_STOP_POS_DONE.Value = If(MinStopPositionStored, Values.True, Values.False)
+                                CLA_RIGGING_DONE.Value = If(RiggingDone, Values.True, Values.False)
+                                CLA_SERVO_READING.Value = New KineticaRT.Values.Double(ServoPosition)
+                                CLA_SERVO_ANGLE_READING.Value = New KineticaRT.Values.Double(FcuServoAngle)
+                                Dim faultIndex As Integer = 0
+                                Dim NumberOfFaults As Integer = 0
+                                For Each faultCode As UInt32 In Faults
+                                    faultIndex += 1
+                                    If faultCode <> 0 Then
+                                        System.Diagnostics.Trace.WriteLine("Drive(" & throttleInstance.ToString() &
+                                                                           ") reported fault" & faultIndex.ToString() &
+                                                                           "= " & faultCode.ToString())
+                                        NumberOfFaults += 1
+                                    End If
+                                Next
+
+                                If NumberOfFaults > 0 Then
+                                    CRIO_CLA_DRIVE_FAULT.Value = KineticaRT.Values.Values.True
+                                Else
+                                    CRIO_CLA_DRIVE_FAULT.Value = KineticaRT.Values.Values.False
+                                End If
+
+                                Dim warningIndex As Integer = 0
+                                Dim NumberOfWarnings As Integer = 0
+                                For Each warningCode As UInt32 In Warnings
+                                    warningIndex += 1
+                                    If warningCode <> 0 Then
+                                        System.Diagnostics.Trace.WriteLine("Drive(" & throttleInstance.ToString() &
+                                                                           ") reported warning" & warningIndex.ToString() &
+                                                                           "= " & warningCode.ToString())
+                                        NumberOfWarnings += 1
+                                    End If
+                                Next
+
+                                If NumberOfWarnings > 0 Then
+                                    CRIO_CLA_DRIVE_WARNING.Value = KineticaRT.Values.Values.True
+                                Else
+                                    CRIO_CLA_DRIVE_WARNING.Value = KineticaRT.Values.Values.False
+                                End If
+
+                            Case ThrottleInstanceName.MOR
+
+                                'Don't update values for MOR unless it is for one of the following engines:
+                                If Not (CELProject.EngineModel = "PT6A-135" Or
+                                    CELProject.EngineModel = "PT6A-135A" Or
+                                    CELProject.EngineModel = "PT6A-114A" Or
+                                    CELProject.EngineModel = "PT6A-34" Or
+                                    CELProject.EngineModel = "PT6A-34AG") _
+                                Then
+                                    Exit Select
+                                End If
+
+                                MOR_COMPUTE_DONE.Value = If(ComputeDone, Values.True, Values.False)
+                                MOR_IDLE_POS_DONE.Value = If(IdlePositionStored, Values.True, Values.False)
+                                MOR_LEVER_POS.Value = New KineticaRT.Values.Double(LeverPosition)
+                                MOR_MAX_POS_DONE.Value = If(MaxPositionStored, Values.True, Values.False)
+                                MOR_MAX_STOP_POS_DONE.Value = If(MaxStopPositionStored, Values.True, Values.False)
+                                MOR_MIN_POS_DONE.Value = If(MinPositionStored, Values.True, Values.False)
+                                MOR_MIN_STOP_POS_DONE.Value = If(MinStopPositionStored, Values.True, Values.False)
+                                MOR_RIGGING_DONE.Value = If(RiggingDone, Values.True, Values.False)
+                                MOR_SERVO_READING.Value = New KineticaRT.Values.Double(ServoPosition)
+                                MOR_SERVO_ANGLE_READING.Value = New KineticaRT.Values.Double(FcuServoAngle)
+                                MOR_SERVO_ANGLE_READING_OPC.Value = New KineticaRT.Values.Double(FcuServoAngle)
+                                Dim faultIndex As Integer = 0
+                                Dim NumberOfFaults As Integer = 0
+                                For Each faultCode As UInt32 In Faults
+                                    faultIndex += 1
+                                    If faultCode <> 0 Then
+                                        System.Diagnostics.Trace.WriteLine("Drive(" & throttleInstance.ToString() &
+                                                                           ") reported fault" & faultIndex.ToString() &
+                                                                           "= " & faultCode.ToString())
+                                        NumberOfFaults += 1
+                                    End If
+                                Next
+
+                                If NumberOfFaults > 0 Then
+                                    CRIO_MOR_DRIVE_FAULT.Value = KineticaRT.Values.Values.True
+                                Else
+                                    CRIO_MOR_DRIVE_FAULT.Value = KineticaRT.Values.Values.False
+                                End If
+
+                                Dim warningIndex As Integer = 0
+                                Dim NumberOfWarnings As Integer = 0
+                                For Each warningCode As UInt32 In Warnings
+                                    warningIndex += 1
+                                    If warningCode <> 0 Then
+                                        System.Diagnostics.Trace.WriteLine("Drive(" & throttleInstance.ToString() &
+                                                                           ") reported warning" & warningIndex.ToString() &
+                                                                           "= " & warningCode.ToString())
+                                        NumberOfWarnings += 1
+                                    End If
+                                Next
+
+                                If NumberOfWarnings > 0 Then
+                                    CRIO_MOR_DRIVE_WARNING.Value = KineticaRT.Values.Values.True
+                                Else
+                                    CRIO_MOR_DRIVE_WARNING.Value = KineticaRT.Values.Values.False
+                                End If
+
+                            Case Else
+                                System.Diagnostics.Trace.WriteLine("Unexpected Throttle Instance")
+                        End Select
+                    Else
+                        STMSession.Disconnect()
+                    End If
+
+                Case Else
+                    System.Diagnostics.Trace.WriteLine("Received Unexpected message: " & e.MetaName)
+            End Select
+
+        End Sub
+
+        Private Function Init_Channels() As Boolean
+            Try
+                Dim Return_Value As New ArrayList()
+
+                Return_Value.Clear()
+
+                'Initialize Throttle channels
+                Return_Value.Add(Initialize_Channel(CRIO_CONNECTED, "CRIO_CONNECTED"))
+                Return_Value.Add(Initialize_Channel(CRIO_PLA_DRIVE_FAULT, "CRIO_PLA_DRIVE_FAULT"))
+                Return_Value.Add(Initialize_Channel(CRIO_PLA_DRIVE_WARNING, "CRIO_PLA_DRIVE_WARNING"))
+                Return_Value.Add(Initialize_Channel(CRIO_CLA_DRIVE_FAULT, "CRIO_CLA_DRIVE_FAULT"))
+                Return_Value.Add(Initialize_Channel(CRIO_CLA_DRIVE_WARNING, "CRIO_CLA_DRIVE_WARNING"))
+                Return_Value.Add(Initialize_Channel(CRIO_MOR_DRIVE_FAULT, "CRIO_MOR_DRIVE_FAULT"))
+                Return_Value.Add(Initialize_Channel(CRIO_MOR_DRIVE_WARNING, "CRIO_MOR_DRIVE_WARNING"))
+                Return_Value.Add(Initialize_Channel(PLA_RVDT_VSB_SOURCE, "PLA_RVDT_VSB_SOURCE"))
+                Return_Value.Add(Initialize_Channel(CLP_RVDT_VSB_SOURCE, "CLP_RVDT_VSB_SOURCE"))
+                Return_Value.Add(Initialize_Channel(PULSE, "PULSE"))
+
+                Return_Value.Add(Initialize_Channel(CLA_CLOSE_THROTTLE_CALIB_BTN, "CLA_CLOSE_THROTTLE_CALIB_BTN"))
+                Return_Value.Add(Initialize_Channel(CLA_COMPUTE_BTN, "CLA_COMPUTE_BTN"))
+                Return_Value.Add(Initialize_Channel(CLA_COMPUTE_DONE, "CLA_COMPUTE_DONE"))
+                Return_Value.Add(Initialize_Channel(CLA_ENGAGE_BTN, "CLA_ENGAGE_BTN"))
+                Return_Value.Add(Initialize_Channel(CLA_IDLE_POS_DONE, "CLA_IDLE_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(CLA_LEVER_POS, "CLA_LEVER_POS"))
+                Return_Value.Add(Initialize_Channel(CLA_MAX_POS_DONE, "CLA_MAX_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(CLA_MAX_RIG_POS, "CLA_MAX_RIG_POS"))
+                Return_Value.Add(Initialize_Channel(CLA_MAX_STOP_POS_DONE, "CLA_MAX_STOP_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(CLA_MIN_POS_DONE, "CLA_MIN_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(CLA_MIN_RIG_POS, "CLA_MIN_RIG_POS"))
+                Return_Value.Add(Initialize_Channel(CLA_MIN_STOP_POS_DONE, "CLA_MIN_STOP_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(CLA_RESET_BTN, "CLA_RESET_BTN"))
+                Return_Value.Add(Initialize_Channel(CLA_RETURN_TO_IDLE_CMD, "CLA_RETURN_TO_IDLE_CMD"))
+                Return_Value.Add(Initialize_Channel(CLA_RIGGING_DONE, "CLA_RIGGING_DONE"))
+                Return_Value.Add(Initialize_Channel(CLA_SERVO_ANGLE_READING, "CLA_SERVO_ANGLE_READING"))
+                Return_Value.Add(Initialize_Channel(CLA_SERVO_READING, "CLA_SERVO_READING"))
+                Return_Value.Add(Initialize_Channel(CLA_STORE_IDLE_ANGLE_BTN, "CLA_STORE_IDLE_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(CLA_STORE_MIN_ANGLE_BTN, "CLA_STORE_MIN_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(CLA_STORE_MIN_STOP_ANGLE_BTN, "CLA_STORE_MIN_STOP_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(CLA_STORE_MAX_ANGLE_BTN, "CLA_STORE_MAX_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(CLA_STORE_MAX_STOP_ANGLE_BTN, "CLA_STORE_MAX_STOP_ANGLE_BTN"))
+
+                Return_Value.Add(Initialize_Channel(CLA_IDLE_POS_DEG, "CLA_IDLE_POS_DEG"))
+                Return_Value.Add(Initialize_Channel(CLA_MAX_STOP_POS_DEG, "CLA_MAX_STOP_POS_DEG"))
+                Return_Value.Add(Initialize_Channel(CLA_MIN_STOP_POS_DEG, "CLA_MIN_STOP_POS_DEG"))
+
+                Return_Value.Add(Initialize_Channel(PLA_CLOSE_THROTTLE_CALIB_BTN, "PLA_CLOSE_THROTTLE_CALIB_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_COMPUTE_BTN, "PLA_COMPUTE_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_COMPUTE_DONE, "PLA_COMPUTE_DONE"))
+                Return_Value.Add(Initialize_Channel(PLA_ENGAGE_BTN, "PLA_ENGAGE_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_IDLE_POS_DONE, "PLA_IDLE_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(PLA_LEVER_POS, "PLA_LEVER_POS"))
+                Return_Value.Add(Initialize_Channel(PLA_MAX_POS_DONE, "PLA_MAX_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(PLA_MAX_RIG_POS, "PLA_MAX_RIG_POS"))
+                Return_Value.Add(Initialize_Channel(PLA_MAX_STOP_POS_DONE, "PLA_MAX_STOP_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(PLA_MIN_POS_DONE, "PLA_MIN_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(PLA_MIN_RIG_POS, "PLA_MIN_RIG_POS"))
+                Return_Value.Add(Initialize_Channel(PLA_MIN_STOP_POS_DONE, "PLA_MIN_STOP_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(PLA_RESET_BTN, "PLA_RESET_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_RETURN_TO_IDLE_CMD, "PLA_RETURN_TO_IDLE_CMD"))
+                Return_Value.Add(Initialize_Channel(PLA_RIGGING_DONE, "PLA_RIGGING_DONE"))
+                Return_Value.Add(Initialize_Channel(PLA_SERVO_ANGLE_READING, "PLA_SERVO_ANGLE_READING"))
+                Return_Value.Add(Initialize_Channel(PLA_SERVO_READING, "PLA_SERVO_READING"))
+                Return_Value.Add(Initialize_Channel(PLA_STORE_IDLE_ANGLE_BTN, "PLA_STORE_IDLE_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_STORE_MIN_ANGLE_BTN, "PLA_STORE_MIN_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_STORE_MIN_STOP_ANGLE_BTN, "PLA_STORE_MIN_STOP_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_STORE_MAX_ANGLE_BTN, "PLA_STORE_MAX_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_STORE_MAX_STOP_ANGLE_BTN, "PLA_STORE_MAX_STOP_ANGLE_BTN"))
+
+                Return_Value.Add(Initialize_Channel(PLA_IDLE_POS_DEG, "PLA_IDLE_POS_DEG"))
+                Return_Value.Add(Initialize_Channel(PLA_MAX_STOP_POS_DEG, "PLA_MAX_STOP_POS_DEG"))
+                Return_Value.Add(Initialize_Channel(PLA_MIN_STOP_POS_DEG, "PLA_MIN_STOP_POS_DEG"))
+
+                Return_Value.Add(Initialize_Channel(MOR_COMPUTE_BTN, "MOR_COMPUTE_BTN"))
+                Return_Value.Add(Initialize_Channel(MOR_COMPUTE_DONE, "MOR_COMPUTE_DONE"))
+                Return_Value.Add(Initialize_Channel(MOR_ENGAGE_BTN, "MOR_ENGAGE_BTN"))
+                Return_Value.Add(Initialize_Channel(MOR_IDLE_POS_DONE, "MOR_IDLE_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(MOR_LEVER_POS, "MOR_LEVER_POS"))
+                Return_Value.Add(Initialize_Channel(MOR_MAX_POS_DONE, "MOR_MAX_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(MOR_MAX_RIG_POS, "MOR_MAX_RIG_POS"))
+                Return_Value.Add(Initialize_Channel(MOR_MAX_STOP_POS_DONE, "MOR_MAX_STOP_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(MOR_MIN_POS_DONE, "MOR_MIN_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(MOR_MIN_RIG_POS, "MOR_MIN_RIG_POS"))
+                Return_Value.Add(Initialize_Channel(MOR_MIN_STOP_POS_DONE, "MOR_MIN_STOP_POS_DONE"))
+                Return_Value.Add(Initialize_Channel(MOR_RESET_BTN, "MOR_RESET_BTN"))
+                Return_Value.Add(Initialize_Channel(MOR_RETURN_TO_IDLE_CMD, "MOR_RETURN_TO_IDLE_CMD"))
+                Return_Value.Add(Initialize_Channel(MOR_RIGGING_DONE, "MOR_RIGGING_DONE"))
+                Return_Value.Add(Initialize_Channel(MOR_SERVO_ANGLE_READING, "MOR_SERVO_ANGLE_READING"))
+                Return_Value.Add(Initialize_Channel(MOR_SERVO_ANGLE_READING_OPC, "MOR_SERVO_ANGLE_READING_OPC"))
+                Return_Value.Add(Initialize_Channel(MOR_SERVO_READING, "MOR_SERVO_READING"))
+                Return_Value.Add(Initialize_Channel(MOR_STORE_IDLE_ANGLE_BTN, "MOR_STORE_IDLE_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(MOR_STORE_MIN_ANGLE_BTN, "MOR_STORE_MIN_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(MOR_STORE_MIN_STOP_ANGLE_BTN, "MOR_STORE_MIN_STOP_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(MOR_STORE_MAX_ANGLE_BTN, "MOR_STORE_MAX_ANGLE_BTN"))
+                Return_Value.Add(Initialize_Channel(MOR_STORE_MAX_STOP_ANGLE_BTN, "MOR_STORE_MAX_STOP_ANGLE_BTN"))
+
+                Return_Value.Add(Initialize_Channel(MOR_IDLE_POS_DEG, "MOR_IDLE_POS_DEG"))
+                Return_Value.Add(Initialize_Channel(MOR_MAX_STOP_POS_DEG, "MOR_MAX_STOP_POS_DEG"))
+                Return_Value.Add(Initialize_Channel(MOR_MIN_STOP_POS_DEG, "MOR_MIN_STOP_POS_DEG"))
+
+                Return_Value.Add(Initialize_Channel(CLP_RVDT_E1Y0_VDC, "CLP_RVDT_E1Y0_VDC"))
+                Return_Value.Add(Initialize_Channel(CLP_RVDT_E1Y1_VDC, "CLP_RVDT_E1Y1_VDC"))
+                Return_Value.Add(Initialize_Channel(CLP_RVDT_E2Y0_VDC, "CLP_RVDT_E2Y0_VDC"))
+                Return_Value.Add(Initialize_Channel(CLP_RVDT_E2Y1_VDC, "CLP_RVDT_E2Y1_VDC"))
+
+                Return_Value.Add(Initialize_Channel(CLP_RVDT_E1_MIN_VDC, "CLP_RVDT_E1_MIN_VDC"))
+                Return_Value.Add(Initialize_Channel(CLP_RVDT_E1_MAX_VDC, "CLP_RVDT_E1_MAX_VDC"))
+                Return_Value.Add(Initialize_Channel(CLP_RVDT_E2_MIN_VDC, "CLP_RVDT_E2_MIN_VDC"))
+                Return_Value.Add(Initialize_Channel(CLP_RVDT_E2_MAX_VDC, "CLP_RVDT_E2_MAX_VDC"))
+
+                Return_Value.Add(Initialize_Channel(CLP_CAPTURE_RVDT_MIN_BTN, "CLP_CAPTURE_RVDT_MIN_BTN"))
+                Return_Value.Add(Initialize_Channel(CLP_CAPTURE_RVDT_MAX_BTN, "CLP_CAPTURE_RVDT_MAX_BTN"))
+                Return_Value.Add(Initialize_Channel(CLP_COMPUTE_RVDT_BTN, "CLP_COMPUTE_RVDT_BTN"))
+                Return_Value.Add(Initialize_Channel(CLP_SEND_BTN, "CLP_SEND_BTN"))
+                Return_Value.Add(Initialize_Channel(CLP_TRANSFORMER_RATIO, "CLP_TRANSFORMER_RATIO"))
+
+                Return_Value.Add(Initialize_Channel(PLA_RVDT_E1Y0_VDC, "PLA_RVDT_E1Y0_VDC"))
+                Return_Value.Add(Initialize_Channel(PLA_RVDT_E1Y1_VDC, "PLA_RVDT_E1Y1_VDC"))
+                Return_Value.Add(Initialize_Channel(PLA_RVDT_E2Y0_VDC, "PLA_RVDT_E2Y0_VDC"))
+                Return_Value.Add(Initialize_Channel(PLA_RVDT_E2Y1_VDC, "PLA_RVDT_E2Y1_VDC"))
+
+                Return_Value.Add(Initialize_Channel(PLA_RVDT_E1_MIN_VDC, "PLA_RVDT_E1_MIN_VDC"))
+                Return_Value.Add(Initialize_Channel(PLA_RVDT_E1_MAX_VDC, "PLA_RVDT_E1_MAX_VDC"))
+                Return_Value.Add(Initialize_Channel(PLA_RVDT_E2_MIN_VDC, "PLA_RVDT_E2_MIN_VDC"))
+                Return_Value.Add(Initialize_Channel(PLA_RVDT_E2_MAX_VDC, "PLA_RVDT_E2_MAX_VDC"))
+
+                Return_Value.Add(Initialize_Channel(PLA_CAPTURE_RVDT_MIN_BTN, "PLA_CAPTURE_RVDT_MIN_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_CAPTURE_RVDT_MAX_BTN, "PLA_CAPTURE_RVDT_MAX_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_COMPUTE_RVDT_BTN, "PLA_COMPUTE_RVDT_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_SEND_BTN, "PLA_SEND_BTN"))
+                Return_Value.Add(Initialize_Channel(PLA_TRANSFORMER_RATIO, "PLA_TRANSFORMER_RATIO"))
+
+                Return_Value.Add(Initialize_Channel(PLA_RESOLVER_LEVER0, "PLA_RESOLVER_LEVER0"))
+                Return_Value.Add(Initialize_Channel(PLA_RESOLVER_LEVER1, "PLA_RESOLVER_LEVER1"))
+                Return_Value.Add(Initialize_Channel(PLA_RESOLVER_ANGLE0, "PLA_RESOLVER_ANGLE0"))
+                Return_Value.Add(Initialize_Channel(PLA_RESOLVER_ANGLE1, "PLA_RESOLVER_ANGLE1"))
+
+
+                Return_Value.Add(Initialize_Channel(CLP_RESOLVER_LEVER0, "CLP_RESOLVER_LEVER0"))
+                Return_Value.Add(Initialize_Channel(CLP_RESOLVER_LEVER1, "CLP_RESOLVER_LEVER1"))
+                Return_Value.Add(Initialize_Channel(CLP_RESOLVER_ANGLE0, "CLP_RESOLVER_ANGLE0"))
+                Return_Value.Add(Initialize_Channel(CLP_RESOLVER_ANGLE1, "CLP_RESOLVER_ANGLE1"))
+
+
+                Return_Value.Add(Initialize_Channel(THROTTLE_INSTANCE, "THROTTLE_INSTANCE"))
+
+                Return_Value.Add(Initialize_Channel(CLOSE_RVDT_RESOLVER_CONFIG_WINDOW_BTN, "CLOSE_RVDT_RESOLVER_CONFIG_WINDOW_BTN"))
+                Return_Value.Add(Initialize_Channel(RVDT_RESOLVER_SAVE_BTN, "RVDT_RESOLVER_SAVE_BTN"))
+
+                Return_Value.Add(Initialize_Object(FrameCtrl_FCU_Rigging, "FCU_Rigging_Screen.PT6A_68_RIG_AUTO"))
+                Return_Value.Add(Initialize_Object(PT6A_68_RA_Name, "FCU_Rigging_Screen.PT6A_68_RA_LBL"))
+
+                Select Case CELProject.EngineFamily
+
+                    Case "PW200"
+                        Return_Value.Add(MyBase.InitializeChannel(DYNO_SPEED_100_PCT_RPM, "DYNO_SPEED_100_PCT_RPM"))
+                End Select
+
+#If CELDAS200 Then
+                Select Case CELProject.EngineFamily
+
+                    Case "PT6C", "PW200", "PW210"
+
+                        FrameCtrl_FCU_Rigging.Visible = False
+                        PT6A_68_RA_Name.Visible = False
+
+                    Case "PT6A"
+                        Return_Value.Add(Initialize_Channel(USER_AUTO_RIGGING, "USER_AUTO_RIGGING"))
+                        FrameCtrl_FCU_Rigging.Visible = True
+                        PT6A_68_RA_Name.Visible = True
+
+                End Select
+#End If
+                If Return_Value.Contains(False) Then
+                    Return False
+                Else
+                    Return True
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: Throttle_Sequence.Init_Channels: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.Message)
+                Return False
+            End Try
+        End Function
+
+        Private Function Init_RVDT_Channels_Value() As Boolean
+            Try
+
+                'RVDT
+                PLA_RVDT_E1Y0_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RVDT_E1Y0_VDC"))
+                PLA_RVDT_E1Y1_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RVDT_E1Y1_VDC"))
+                PLA_RVDT_E2Y0_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RVDT_E2Y0_VDC"))
+                PLA_RVDT_E2Y1_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RVDT_E2Y1_VDC"))
+
+                PLA_RVDT_E1_MIN_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RVDT_E1_MIN_VDC"))
+                PLA_RVDT_E1_MAX_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RVDT_E1_MAX_VDC"))
+                PLA_RVDT_E2_MIN_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RVDT_E2_MIN_VDC"))
+                PLA_RVDT_E2_MAX_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RVDT_E2_MAX_VDC"))
+
+                CLP_RVDT_E1Y0_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RVDT_E1Y0_VDC"))
+                CLP_RVDT_E1Y1_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RVDT_E1Y1_VDC"))
+                CLP_RVDT_E2Y0_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RVDT_E2Y0_VDC"))
+                CLP_RVDT_E2Y1_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RVDT_E2Y1_VDC"))
+
+                CLP_RVDT_E1_MIN_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RVDT_E1_MIN_VDC"))
+                CLP_RVDT_E1_MAX_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RVDT_E1_MAX_VDC"))
+                CLP_RVDT_E2_MIN_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RVDT_E2_MIN_VDC"))
+                CLP_RVDT_E2_MAX_VDC.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RVDT_E2_MAX_VDC"))
+
+                ReDim PLA_RVDT_LEVER_POSITIONS(1)
+                ReDim PLA_RVDT_E1_SCALING_FACTORS(1)
+                ReDim PLA_RVDT_E2_SCALING_FACTORS(1)
+                ReDim CLP_RVDT_LEVER_POSITIONS(1)
+                ReDim CLP_RVDT_E1_SCALING_FACTORS(1)
+                ReDim CLP_RVDT_E2_SCALING_FACTORS(1)
+
+                'RESOLVER
+                PLA_RESOLVER_LEVER0.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RESOLVER_LEVER0"))
+                PLA_RESOLVER_LEVER1.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RESOLVER_LEVER1"))
+                PLA_RESOLVER_ANGLE0.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RESOLVER_ANGLE0"))
+                PLA_RESOLVER_ANGLE1.Value = New KineticaRT.Values.Double(Custom_Parameters("PLA_RESOLVER_ANGLE1"))
+
+                CLP_RESOLVER_LEVER0.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RESOLVER_LEVER0"))
+                CLP_RESOLVER_LEVER1.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RESOLVER_LEVER1"))
+                CLP_RESOLVER_ANGLE0.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RESOLVER_ANGLE0"))
+                CLP_RESOLVER_ANGLE1.Value = New KineticaRT.Values.Double(Custom_Parameters("CLP_RESOLVER_ANGLE1"))
+
+                Init_RVDT_Channels_Value = True
+
+            Catch Ex As Exception
+                MessageBox.Show("Throttle_Sequence.Init_RVDT_Channels_Value: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.Message, "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        'TODO A RETIRER
+        Private Function Initialize_Channel(ByRef Channel As Object, ByVal ChannelName As String) As Boolean
+            Try
+                Channel = GetChannel(ChannelName)
+                If Channel Is Nothing Then
+                    MessageBox.Show("Initialize_Channel - " + ChannelName + " Is Nothing")
+                    Return False
+                End If
+                Initialize_Channel = True
+            Catch Ex As Exception
+                MessageBox.Show("Throttle_Sequence.Initialize_Channel: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.Message, "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        'TODO A RETIRER
+        Private Function Initialize_Object(ByRef Channel As Object, ByVal ChannelName As String) As Boolean
+            Try
+                Channel = GetObject(ChannelName)
+                If Channel Is Nothing Then
+                    MessageBox.Show("Initialize_Object - " + ChannelName + " Is Nothing")
+                    Return False
+                End If
+                Initialize_Object = True
+            Catch Ex As Exception
+                MessageBox.Show("Throttle_Sequence.Initialize_Object: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.Message, "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        Private Sub OnComputeBtn(ByVal sender As IChannel, ByVal newVal As Value)
+            Dim throttleInstance As ThrottleInstanceName
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    If sender Is PLA_COMPUTE_BTN Then
+                        throttleInstance = ThrottleInstanceName.PLA
+                    ElseIf sender Is CLA_COMPUTE_BTN Then
+                        throttleInstance = ThrottleInstanceName.CLA
+                    ElseIf sender Is MOR_COMPUTE_BTN Then
+                        throttleInstance = ThrottleInstanceName.MOR
+                    Else
+                        MessageBox.Show("Throttle_Sequence.OnComputeBtn: " & vbCrLf & vbCrLf &
+                                        "Unexpected sender",
+                                        "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        Return
+                    End If
+
+                    Dim msg As String = CByte(throttleInstance).ToString()
+
+                    Dim msgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                    msgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                    CEL.STM.Convert.Flatten(msg, msgData)
+                    If CELProject.DataAcquisitionMode = CELDAS.eDataAcquisitionMode.RUN_FOR_TRUE Then
+                        STMSession.SendMsg("Throttle.Compute", msgData)
+                    Else
+                        If sender Is PLA_COMPUTE_BTN Then
+                            PLA_COMPUTE_DONE.Value = Values.True
+                            PLA_RIGGING_DONE.Value = Values.True
+                        ElseIf sender Is CLA_COMPUTE_BTN Then
+                            CLA_COMPUTE_DONE.Value = Values.True
+                            CLA_RIGGING_DONE.Value = Values.True
+                        ElseIf sender Is MOR_COMPUTE_BTN Then
+                            MOR_COMPUTE_DONE.Value = Values.True
+                            MOR_RIGGING_DONE.Value = Values.True
+                        End If
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnComputeBtn(" & throttleInstance.ToString() & "): " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+                sender.Value = Values.False
+            End Try
+        End Sub
+
+        Private Sub OnEngageBtn(ByVal sender As IChannel, ByVal newVal As Value)
+            Dim msgName As String = ""
+            Dim throttleInstance As ThrottleInstanceName
+            Try
+                If sender Is PLA_ENGAGE_BTN Then
+                    throttleInstance = ThrottleInstanceName.PLA
+                ElseIf sender Is CLA_ENGAGE_BTN Then
+                    throttleInstance = ThrottleInstanceName.CLA
+                ElseIf sender Is MOR_ENGAGE_BTN Then
+                    throttleInstance = ThrottleInstanceName.MOR
+                Else
+                    MessageBox.Show("Throttle_Sequence.OnEngageBtn: " & vbCrLf & vbCrLf &
+                                    "Unexpected sender",
+                                    "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Return
+                End If
+
+                If CELProject.IsTrue(newVal) Then
+                    msgName = "Throttle.Engage"
+                Else
+                    msgName = "Throttle.Disengage"
+                End If
+
+                Dim msg As String = CByte(throttleInstance).ToString()
+
+                Dim msgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                msgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                CEL.STM.Convert.Flatten(msg, msgData)
+                STMSession.SendMsg(msgName, msgData)
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnEngageBtn: " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnPulse(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Try
+                'We send the keep alive message only when the on rising pulse
+                If CELProject.IsTrue(newVal) And CELProject.IsTrue(CRIO_CONNECTED.Value) Then
+
+                    Dim msg As String = CByte(ThrottleInstanceName.PLA).ToString()  'it can be PLA or CLA or MOR, it's not important
+
+                    Dim msgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                    msgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                    CEL.STM.Convert.Flatten(msg, msgData)
+
+                    STMSession.SendMsg("Throttle.KeepAlive", msgData)
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnPulse: " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnResetBtn(ByVal sender As IChannel, ByVal newVal As Value)
+            Dim throttleInstance As ThrottleInstanceName
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    If sender Is PLA_RESET_BTN Then
+                        throttleInstance = ThrottleInstanceName.PLA
+                    ElseIf sender Is CLA_RESET_BTN Then
+                        throttleInstance = ThrottleInstanceName.CLA
+                    ElseIf sender Is MOR_RESET_BTN Then
+                        throttleInstance = ThrottleInstanceName.MOR
+                    Else
+                        MessageBox.Show("Throttle_Sequence.OnResetBtn: " & vbCrLf & vbCrLf &
+                                        "Unexpected sender",
+                                        "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        Return
+                    End If
+
+                    Dim msg = CByte(throttleInstance).ToString()
+
+                    Dim msgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                    msgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                    CEL.STM.Convert.Flatten(msg, msgData)
+                    If CELProject.DataAcquisitionMode = CELDAS.eDataAcquisitionMode.RUN_FOR_TRUE Then
+                        STMSession.SendMsg("Throttle.ResetRigging", msgData)
+                    Else
+                        If sender Is PLA_RESET_BTN Then
+                            PLA_COMPUTE_DONE.Value = Values.False
+                            PLA_IDLE_POS_DONE.Value = Values.False
+                            PLA_LEVER_POS.Value = New KineticaRT.Values.Double(0.0)
+                            PLA_MAX_POS_DONE.Value = Values.False
+                            PLA_MAX_STOP_POS_DONE.Value = Values.False
+                            PLA_MIN_POS_DONE.Value = Values.False
+                            PLA_MIN_STOP_POS_DONE.Value = Values.False
+                            PLA_RIGGING_DONE.Value = Values.False
+                            PLA_SERVO_READING.Value = New KineticaRT.Values.Double(0.0)
+                            PLA_SERVO_ANGLE_READING.Value = New KineticaRT.Values.Double(0.0)
+                            PLA_MIN_RIG_POS.Value = New KineticaRT.Values.Double(0.0)
+                        ElseIf sender Is CLA_RESET_BTN Then
+                            CLA_COMPUTE_DONE.Value = Values.False
+                            CLA_IDLE_POS_DONE.Value = Values.False
+                            CLA_LEVER_POS.Value = New KineticaRT.Values.Double(0.0)
+                            CLA_MAX_POS_DONE.Value = Values.False
+                            CLA_MAX_STOP_POS_DONE.Value = Values.False
+                            CLA_MIN_POS_DONE.Value = Values.False
+                            CLA_MIN_STOP_POS_DONE.Value = Values.False
+                            CLA_RIGGING_DONE.Value = Values.False
+                            CLA_SERVO_READING.Value = New KineticaRT.Values.Double(0.0)
+                            CLA_SERVO_ANGLE_READING.Value = New KineticaRT.Values.Double(0.0)
+                            CLA_MIN_RIG_POS.Value = New KineticaRT.Values.Double(0.0)
+                            CLA_MIN_RIG_POS.Value = New KineticaRT.Values.Double(0.0)
+                        ElseIf sender Is MOR_RESET_BTN Then
+                            MOR_COMPUTE_DONE.Value = Values.False
+                            MOR_IDLE_POS_DONE.Value = Values.False
+                            MOR_LEVER_POS.Value = New KineticaRT.Values.Double(0.0)
+                            MOR_MAX_POS_DONE.Value = Values.False
+                            MOR_MAX_STOP_POS_DONE.Value = Values.False
+                            MOR_MIN_POS_DONE.Value = Values.False
+                            MOR_MIN_STOP_POS_DONE.Value = Values.False
+                            MOR_RIGGING_DONE.Value = Values.False
+                            MOR_SERVO_READING.Value = New KineticaRT.Values.Double(0.0)
+                            MOR_SERVO_ANGLE_READING.Value = New KineticaRT.Values.Double(0.0)
+                            MOR_MIN_RIG_POS.Value = New KineticaRT.Values.Double(0.0)
+                            MOR_MIN_RIG_POS.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnResetBtn: " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+                sender.Value = Values.False
+            End Try
+        End Sub
+
+        Private Sub ResetRigging()
+            Dim PLAInstance As ThrottleInstanceName = ThrottleInstanceName.PLA
+            Dim CLAInstance As ThrottleInstanceName = ThrottleInstanceName.CLA
+            Dim MORInstance As ThrottleInstanceName = ThrottleInstanceName.MOR
+
+            Try
+
+                If CELProject.IsTrue(CRIO_CONNECTED.Value) Then
+
+                    Dim plamsg = CByte(PLAInstance).ToString()
+                    Dim plamsgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                    plamsgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                    CEL.STM.Convert.Flatten(plamsg, plamsgData)
+                    STMSession.SendMsg("Throttle.ResetRigging", plamsgData)
+
+                    Dim clamsg = CByte(CLAInstance).ToString()
+                    Dim clamsgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                    clamsgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                    CEL.STM.Convert.Flatten(clamsg, clamsgData)
+                    STMSession.SendMsg("Throttle.ResetRigging", clamsgData)
+
+                    Dim mormsg = CByte(MORInstance).ToString()
+                    Dim mormsgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                    mormsgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                    CEL.STM.Convert.Flatten(mormsg, mormsgData)
+                    STMSession.SendMsg("Throttle.ResetRigging", mormsgData)
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.ResetRigging: " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnReturnToIdleCmd(ByVal sender As IChannel, ByVal newVal As Value)
+            Dim throttleInstance As ThrottleInstanceName
+            Dim stmMessage As String
+            Try
+                If sender Is CLA_RETURN_TO_IDLE_CMD Then
+                    throttleInstance = ThrottleInstanceName.CLA
+                ElseIf sender Is MOR_RETURN_TO_IDLE_CMD Then
+                    throttleInstance = ThrottleInstanceName.MOR
+                ElseIf sender Is PLA_RETURN_TO_IDLE_CMD Then
+                    throttleInstance = ThrottleInstanceName.PLA
+                Else
+                    MessageBox.Show("Throttle_Sequence.OnReturnToIdleCmd: " & vbCrLf & vbCrLf &
+                                    "Unexpected sender",
+                                    "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Return
+                End If
+
+                If CELProject.IsTrue(newVal) Then
+                    stmMessage = "Throttle.ActivateGoToIdlePosition"
+                Else
+                    stmMessage = "Throttle.DeactivateGoToIdlePosition"
+                End If
+
+                Dim msg = CByte(throttleInstance).ToString()
+                Dim msgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+
+                msgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                CEL.STM.Convert.Flatten(msg, msgData)
+                STMSession.SendMsg(stmMessage, msgData)
+
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnReturnToIdleCmd(" & throttleInstance.ToString() & "): " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnStoreIdleAngleBtn(ByVal sender As IChannel, ByVal newVal As Value)
+            Dim angle As String = "0.0"
+            Dim throttleInstance As ThrottleInstanceName
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    If sender Is CLA_STORE_IDLE_ANGLE_BTN Then
+                        CLA_IDLE_POS_DEG.Value = CLA_SERVO_ANGLE_READING.Value
+                        angle = CLA_IDLE_POS_DEG.Value.ToString()
+                        throttleInstance = ThrottleInstanceName.CLA
+                    ElseIf sender Is MOR_STORE_IDLE_ANGLE_BTN Then
+                        MOR_IDLE_POS_DEG.Value = MOR_SERVO_ANGLE_READING.Value
+                        angle = MOR_IDLE_POS_DEG.Value.ToString()
+                        throttleInstance = ThrottleInstanceName.MOR
+                    ElseIf sender Is PLA_STORE_IDLE_ANGLE_BTN Then
+                        PLA_IDLE_POS_DEG.Value = PLA_SERVO_ANGLE_READING.Value
+                        angle = PLA_IDLE_POS_DEG.Value.ToString()
+                        throttleInstance = ThrottleInstanceName.PLA
+                    Else
+                        MessageBox.Show("Throttle_Sequence.OnStoreIdleAngleBtn: " & vbCrLf & vbCrLf &
+                                        "Unexpected sender",
+                                        "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        Return
+                    End If
+
+                    Dim msg As String = CByte(throttleInstance).ToString & ";" & angle
+                    Dim msgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+
+                    msgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                    CEL.STM.Convert.Flatten(msg, msgData)
+                    If CELProject.DataAcquisitionMode = CELDAS.eDataAcquisitionMode.RUN_FOR_TRUE Then
+                        STMSession.SendMsg("Throttle.StoreIdlePosition", msgData)
+                    Else
+                        If sender Is PLA_STORE_IDLE_ANGLE_BTN Then
+                            PLA_IDLE_POS_DONE.Value = Values.True
+                            PLA_IDLE_POS_DEG.Value = New KineticaRT.Values.Double(26.0)
+                            PLA_LEVER_POS.Value = New KineticaRT.Values.Double(26.0)
+                            PLA_SERVO_READING.Value = New KineticaRT.Values.Double(26.0)
+                            PLA_SERVO_ANGLE_READING.Value = New KineticaRT.Values.Double(26.0)
+                        ElseIf sender Is CLA_STORE_IDLE_ANGLE_BTN Then
+                            CLA_IDLE_POS_DONE.Value = Values.True
+                            CLA_IDLE_POS_DEG.Value = New KineticaRT.Values.Double(26.0)
+                            CLA_LEVER_POS.Value = New KineticaRT.Values.Double(26.0)
+                            CLA_SERVO_READING.Value = New KineticaRT.Values.Double(26.0)
+                            CLA_SERVO_ANGLE_READING.Value = New KineticaRT.Values.Double(26.0)
+                        ElseIf sender Is MOR_STORE_IDLE_ANGLE_BTN Then
+                            MOR_IDLE_POS_DONE.Value = Values.True
+                            MOR_IDLE_POS_DEG.Value = New KineticaRT.Values.Double(26.0)
+                            MOR_LEVER_POS.Value = New KineticaRT.Values.Double(26.0)
+                            MOR_SERVO_READING.Value = New KineticaRT.Values.Double(26.0)
+                            MOR_SERVO_ANGLE_READING.Value = New KineticaRT.Values.Double(26.0)
+                        End If
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnStoreIdleAngleBtn(" & throttleInstance.ToString() & "): " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+                sender.Value = KineticaRT.Values.Values.False
+            End Try
+        End Sub
+
+        Private Sub OnStoreMaxMinAngleBtn(ByVal sender As IChannel, ByVal newVal As Value)
+            Dim angle As String = "0.0"
+            Dim msgName As String = ""
+            Dim throttleInstance As ThrottleInstanceName
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    If sender Is PLA_STORE_MAX_ANGLE_BTN Then
+                        angle = PLA_MAX_RIG_POS.Value.ToString()
+                        msgName = "Throttle.StoreMaxPosition"
+                        throttleInstance = ThrottleInstanceName.PLA
+                    ElseIf sender Is PLA_STORE_MIN_ANGLE_BTN Then
+                        angle = PLA_MIN_RIG_POS.Value.ToString()
+                        msgName = "Throttle.StoreMinPosition"
+                        throttleInstance = ThrottleInstanceName.PLA
+                    ElseIf sender Is CLA_STORE_MAX_ANGLE_BTN Then
+                        angle = CLA_MAX_RIG_POS.Value.ToString()
+                        msgName = "Throttle.StoreMaxPosition"
+                        throttleInstance = ThrottleInstanceName.CLA
+                    ElseIf sender Is CLA_STORE_MIN_ANGLE_BTN Then
+                        angle = CLA_MIN_RIG_POS.Value.ToString()
+                        msgName = "Throttle.StoreMinPosition"
+                        throttleInstance = ThrottleInstanceName.CLA
+                    ElseIf sender Is MOR_STORE_MAX_ANGLE_BTN Then
+                        angle = MOR_MAX_RIG_POS.Value.ToString()
+                        msgName = "Throttle.StoreMaxPosition"
+                        throttleInstance = ThrottleInstanceName.MOR
+                    ElseIf sender Is MOR_STORE_MIN_ANGLE_BTN Then
+                        angle = MOR_MIN_RIG_POS.Value.ToString()
+                        msgName = "Throttle.StoreMinPosition"
+                        throttleInstance = ThrottleInstanceName.MOR
+                    Else
+                        MessageBox.Show("Throttle_Sequence.OnStoreMaxMinAngleBtn: " & vbCrLf & vbCrLf &
+                                        "Unexpected sender",
+                                        "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        Return
+                    End If
+
+                    Dim msg As String = CByte(throttleInstance).ToString & ";" & angle
+
+                    Dim msgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                    msgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                    CEL.STM.Convert.Flatten(msg, msgData)
+                    If CELProject.DataAcquisitionMode = CELDAS.eDataAcquisitionMode.RUN_FOR_TRUE Then
+                        STMSession.SendMsg(msgName, msgData)
+                    Else
+                        If sender Is PLA_STORE_MAX_ANGLE_BTN Then
+                            PLA_MAX_POS_DONE.Value = Values.True
+                            PLA_LEVER_POS.Value = New KineticaRT.Values.Double(0.0)
+                        ElseIf sender Is PLA_STORE_MIN_ANGLE_BTN Then
+                            PLA_MIN_POS_DONE.Value = Values.True
+                            PLA_LEVER_POS.Value = PLA_MAX_RIG_POS.Value
+                        ElseIf sender Is CLA_STORE_MAX_ANGLE_BTN Then
+                            CLA_MAX_POS_DONE.Value = Values.True
+                            CLA_LEVER_POS.Value = New KineticaRT.Values.Double(0.0)
+                        ElseIf sender Is CLA_STORE_MIN_ANGLE_BTN Then
+                            CLA_MIN_POS_DONE.Value = Values.True
+                            CLA_LEVER_POS.Value = CLA_MAX_RIG_POS.Value
+                        ElseIf sender Is MOR_STORE_MAX_ANGLE_BTN Then
+                            MOR_MAX_POS_DONE.Value = Values.True
+                            MOR_LEVER_POS.Value = New KineticaRT.Values.Double(0.0)
+                        ElseIf sender Is MOR_STORE_MIN_ANGLE_BTN Then
+                            MOR_MIN_POS_DONE.Value = Values.True
+                            MOR_LEVER_POS.Value = MOR_MAX_RIG_POS.Value
+                        End If
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnStoreMaxMinAngleBtn(" & throttleInstance.ToString() & "): " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+                sender.Value = Values.False
+            End Try
+
+        End Sub
+
+        Private Sub OnStoreMaxMinStopBtn(ByVal sender As IChannel, ByVal newVal As Value)
+            Dim msgName As String = ""
+            Dim throttleInstance As ThrottleInstanceName
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    If sender Is PLA_STORE_MAX_STOP_ANGLE_BTN Then
+                        msgName = "Throttle.StoreMaxStopPosition"
+                        PLA_MAX_STOP_POS_DEG.Value = PLA_SERVO_ANGLE_READING.Value
+                        throttleInstance = ThrottleInstanceName.PLA
+                    ElseIf sender Is PLA_STORE_MIN_STOP_ANGLE_BTN Then
+                        msgName = "Throttle.StoreMinStopPosition"
+                        PLA_MIN_STOP_POS_DEG.Value = PLA_SERVO_ANGLE_READING.Value
+                        throttleInstance = ThrottleInstanceName.PLA
+                    ElseIf sender Is CLA_STORE_MAX_STOP_ANGLE_BTN Then
+                        msgName = "Throttle.StoreMaxStopPosition"
+                        CLA_MAX_STOP_POS_DEG.Value = CLA_SERVO_ANGLE_READING.Value
+                        throttleInstance = ThrottleInstanceName.CLA
+                    ElseIf sender Is CLA_STORE_MIN_STOP_ANGLE_BTN Then
+                        msgName = "Throttle.StoreMinStopPosition"
+                        CLA_MIN_STOP_POS_DEG.Value = CLA_SERVO_ANGLE_READING.Value
+                        throttleInstance = ThrottleInstanceName.CLA
+                    ElseIf sender Is MOR_STORE_MAX_STOP_ANGLE_BTN Then
+                        msgName = "Throttle.StoreMaxStopPosition"
+                        MOR_MAX_STOP_POS_DEG.Value = MOR_SERVO_ANGLE_READING.Value
+                        throttleInstance = ThrottleInstanceName.MOR
+                    ElseIf sender Is MOR_STORE_MIN_STOP_ANGLE_BTN Then
+                        msgName = "Throttle.StoreMinStopPosition"
+                        MOR_MIN_STOP_POS_DEG.Value = MOR_SERVO_ANGLE_READING.Value
+                        throttleInstance = ThrottleInstanceName.MOR
+                    Else
+                        MessageBox.Show("Throttle_Sequence.OnStoreMaxMinStopBtn: " & vbCrLf & vbCrLf &
+                                        "Unexpected sender",
+                                        "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        Return
+                    End If
+
+                    Dim msg As String = CByte(throttleInstance).ToString
+
+                    Dim msgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                    msgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+                    CEL.STM.Convert.Flatten(msg, msgData)
+                    If CELProject.DataAcquisitionMode = CELDAS.eDataAcquisitionMode.RUN_FOR_TRUE Then
+                        STMSession.SendMsg(msgName, msgData)
+                    Else
+                        If sender Is PLA_STORE_MAX_STOP_ANGLE_BTN Then
+                            PLA_MAX_STOP_POS_DONE.Value = Values.True
+                            PLA_LEVER_POS.Value = New KineticaRT.Values.Double(0.0)
+                        ElseIf sender Is PLA_STORE_MIN_STOP_ANGLE_BTN Then
+                            PLA_MIN_STOP_POS_DONE.Value = Values.True
+                            PLA_MAX_STOP_POS_DEG.Value = PLA_MAX_RIG_POS.Value
+                            PLA_LEVER_POS.Value = PLA_MAX_RIG_POS.Value
+                            PLA_SERVO_ANGLE_READING.Value = PLA_MAX_RIG_POS.Value
+                        ElseIf sender Is CLA_STORE_MAX_STOP_ANGLE_BTN Then
+                            CLA_MAX_STOP_POS_DONE.Value = Values.True
+                            CLA_LEVER_POS.Value = New KineticaRT.Values.Double(0.0)
+                        ElseIf sender Is CLA_STORE_MIN_STOP_ANGLE_BTN Then
+                            CLA_MIN_STOP_POS_DONE.Value = Values.True
+                            CLA_MAX_STOP_POS_DEG.Value = CLA_MAX_RIG_POS.Value
+                            CLA_LEVER_POS.Value = CLA_MAX_RIG_POS.Value
+                            CLA_SERVO_ANGLE_READING.Value = CLA_MAX_RIG_POS.Value
+                        ElseIf sender Is MOR_STORE_MAX_STOP_ANGLE_BTN Then
+                            MOR_MAX_STOP_POS_DONE.Value = Values.True
+                            MOR_LEVER_POS.Value = New KineticaRT.Values.Double(0.0)
+                        ElseIf sender Is MOR_STORE_MIN_STOP_ANGLE_BTN Then
+                            MOR_MIN_STOP_POS_DONE.Value = Values.True
+                            MOR_MAX_STOP_POS_DEG.Value = MOR_MAX_RIG_POS.Value
+                            MOR_LEVER_POS.Value = MOR_MAX_RIG_POS.Value
+                            MOR_SERVO_ANGLE_READING.Value = MOR_MAX_RIG_POS.Value
+                        End If
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnStoreMaxMinStopBtn(" & throttleInstance.ToString() & "): " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+                sender.Value = Values.False
+            End Try
+
+        End Sub
+
+        Private Sub OnRVDTResolverCoefficients(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+
+                'Update Custom Parameters Dictionnary with new value
+                If Custom_Parameters.Contains(sender.Name.ToString) Then
+                    Custom_Parameters(sender.Name.ToString) = newVal.ToString
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnRVDTConfigure: " & vbCrLf & vbCrLf &
+                                "Error message: " & vbCrLf & ex.ToString,
+                                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub SendConfigTocRIO(ByVal LeverConfig As String)
+            Try
+                Dim msg As String = ""
+                Dim msgData As System.Collections.Generic.IList(Of System.ArraySegment(Of Byte))
+                msgData = New System.Collections.Generic.List(Of System.ArraySegment(Of Byte))
+
+
+                If LeverConfig.Contains("PLA") Then
+
+                    If CELProject.EngineConfiguration.PLALeverConfig = "RVDT" Then
+                        msg = "0" & ";" & PLA_RVDT_E1Y1_VDC.Value.ToString & ";" & PLA_RVDT_E1Y0_VDC.Value.ToString & ";" & PLA_RVDT_E2Y1_VDC.Value.ToString & ";" & PLA_RVDT_E2Y0_VDC.Value.ToString
+                        CEL.STM.Convert.Flatten(msg, msgData)
+                        STMSession.SendMsg("RVDT.Configure", msgData)
+                    ElseIf CELProject.EngineConfiguration.PLALeverConfig = "Resolver" Then
+                        msg = "0" & ";" & PLA_TRANSFORMER_RATIO.Value.ToString & ";" & PLA_RESOLVER_LEVER0.Value.ToString & ";" & PLA_RESOLVER_ANGLE0.Value.ToString & ";" & PLA_RESOLVER_LEVER1.Value.ToString & ";" & PLA_RESOLVER_ANGLE1.Value.ToString
+                        CEL.STM.Convert.Flatten(msg, msgData)
+                        STMSession.SendMsg("Resolver.Configure", msgData)
+                    End If
+
+                ElseIf LeverConfig.Contains("CLP") Then
+
+                    If CELProject.EngineConfiguration.CLPLeverConfig = "RVDT" Then
+                        msg = "1" & ";" & CLP_RVDT_E1Y1_VDC.Value.ToString & ";" & CLP_RVDT_E1Y0_VDC.Value.ToString & ";" & CLP_RVDT_E2Y1_VDC.Value.ToString & ";" & CLP_RVDT_E2Y0_VDC.Value.ToString
+                        CEL.STM.Convert.Flatten(msg, msgData)
+                        STMSession.SendMsg("RVDT.Configure", msgData)
+                    ElseIf CELProject.EngineConfiguration.CLPLeverConfig = "Resolver" Then
+                        msg = "1" & ";" & CLP_TRANSFORMER_RATIO.Value.ToString & ";" & CLP_RESOLVER_LEVER0.Value.ToString & ";" & CLP_RESOLVER_ANGLE0.Value.ToString & ";" & CLP_RESOLVER_LEVER1.Value.ToString & ";" & CLP_RESOLVER_ANGLE1.Value.ToString
+                        CEL.STM.Convert.Flatten(msg, msgData)
+                        STMSession.SendMsg("Resolver.Configure", msgData)
+                    End If
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.SendConfigTocRIO: " & vbCrLf & vbCrLf &
+                "Error message: " & vbCrLf & ex.ToString,
+                "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        '*GOV*
+        Private Sub OnCLACloseThrottleCalib_Btn(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+
+                If CELProject.IsTrue(newVal) Then
+
+                    If (CELProject.IsTrue(newVal)) Then
+
+                        CELProject.ActivateForm(GOVFormName, CELProject.DefaultParentWindow, False, False)
+
+                    End If
+
+                    CLA_CLOSE_THROTTLE_CALIB_BTN.Value = Values.False
+
+                    ShowDynoWarningMessage()
+
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Critical.Engine_Sequence.OnCLACloseThrottleCalib_Btn: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & ex.ToString, "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        '*GOV*
+        Private Sub OnRVDT_RESOLVER_CONFIG_WINDOW(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+
+
+
+                If (CELProject.IsTrue(newVal)) Then
+
+                    CELProject.ActivateForm(RVDTResolverConfigFormName, CELProject.DefaultParentWindow, False, False)
+
+                End If
+
+                CLOSE_RVDT_RESOLVER_CONFIG_WINDOW_BTN.Value = Values.False
+
+            Catch ex As Exception
+                MessageBox.Show("Critical.Engine_Sequence.OnCLACloseThrottleCalib_Btn: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & ex.ToString, "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnCaptureRVDT(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    If sender.Name.Contains("MIN") And sender.Name.Contains("PLA") Then
+                        PLA_RVDT_E1_SCALING_FACTORS(0) = PLA_RVDT_E1_MIN_VDC.Value.ToDouble / CELProject.EngineConfiguration.LeverExcitation
+                        PLA_RVDT_E2_SCALING_FACTORS(0) = PLA_RVDT_E2_MIN_VDC.Value.ToDouble / CELProject.EngineConfiguration.LeverExcitation
+                        PLA_RVDT_LEVER_POSITIONS(0) = PLA_LEVER_POS.Value.ToDouble
+                    ElseIf sender.Name.Contains("MAX") And sender.Name.Contains("PLA") Then
+                        PLA_RVDT_E1_SCALING_FACTORS(1) = PLA_RVDT_E1_MAX_VDC.Value.ToDouble / CELProject.EngineConfiguration.LeverExcitation
+                        PLA_RVDT_E2_SCALING_FACTORS(1) = PLA_RVDT_E2_MAX_VDC.Value.ToDouble / CELProject.EngineConfiguration.LeverExcitation
+                        PLA_RVDT_LEVER_POSITIONS(1) = PLA_LEVER_POS.Value.ToDouble
+                    ElseIf sender.Name.Contains("MIN") And sender.Name.Contains("CLP") Then
+                        CLP_RVDT_E1_SCALING_FACTORS(0) = CLP_RVDT_E1_MIN_VDC.Value.ToDouble / CELProject.EngineConfiguration.LeverExcitation
+                        CLP_RVDT_E2_SCALING_FACTORS(0) = CLP_RVDT_E2_MIN_VDC.Value.ToDouble / CELProject.EngineConfiguration.LeverExcitation
+                        CLP_RVDT_LEVER_POSITIONS(0) = CLA_LEVER_POS.Value.ToDouble
+                    ElseIf sender.Name.Contains("MAX") And sender.Name.Contains("CLP") Then
+                        CLP_RVDT_E1_SCALING_FACTORS(1) = CLP_RVDT_E1_MAX_VDC.Value.ToDouble / CELProject.EngineConfiguration.LeverExcitation
+                        CLP_RVDT_E2_SCALING_FACTORS(1) = CLP_RVDT_E2_MAX_VDC.Value.ToDouble / CELProject.EngineConfiguration.LeverExcitation
+                        CLP_RVDT_LEVER_POSITIONS(1) = CLA_LEVER_POS.Value.ToDouble
+                    End If
+
+                End If
+            Catch ex As Exception
+
+            End Try
+        End Sub
+
+        Private Sub OnComputeRVDT(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    If sender.Name.Contains("PLA") Then
+
+                        Dim PLAE1CurveFit As Double() = CELProject.LeastSquaresLine(PLA_RVDT_LEVER_POSITIONS, PLA_RVDT_E1_SCALING_FACTORS)
+                        Dim PLAE2CurveFit As Double() = CELProject.LeastSquaresLine(PLA_RVDT_LEVER_POSITIONS, PLA_RVDT_E2_SCALING_FACTORS)
+
+                        PLA_RVDT_E1Y0_VDC.Value = New KineticaRT.Values.Double((CELProject.EngineConfiguration.PLAMinRange * PLAE1CurveFit(0) + PLAE1CurveFit(1)) * PLA_TRANSFORMER_RATIO.Value.ToDouble)
+                        PLA_RVDT_E1Y1_VDC.Value = New KineticaRT.Values.Double((CELProject.EngineConfiguration.PLAMaxRange * PLAE1CurveFit(0) + PLAE1CurveFit(1)) * PLA_TRANSFORMER_RATIO.Value.ToDouble)
+                        PLA_RVDT_E2Y0_VDC.Value = New KineticaRT.Values.Double((CELProject.EngineConfiguration.PLAMinRange * PLAE2CurveFit(0) + PLAE2CurveFit(1)) * PLA_TRANSFORMER_RATIO.Value.ToDouble)
+                        PLA_RVDT_E2Y1_VDC.Value = New KineticaRT.Values.Double((CELProject.EngineConfiguration.PLAMaxRange * PLAE2CurveFit(0) + PLAE2CurveFit(1)) * PLA_TRANSFORMER_RATIO.Value.ToDouble)
+
+                    ElseIf sender.Name.Contains("CLP") Then
+
+                        Dim CLPE1CurveFit As Double() = CELProject.LeastSquaresLine(CLP_RVDT_LEVER_POSITIONS, CLP_RVDT_E1_SCALING_FACTORS)
+                        Dim CLPE2CurveFit As Double() = CELProject.LeastSquaresLine(CLP_RVDT_LEVER_POSITIONS, CLP_RVDT_E2_SCALING_FACTORS)
+
+                        CLP_RVDT_E1Y0_VDC.Value = New KineticaRT.Values.Double((CELProject.EngineConfiguration.CLPMinRange * CLPE1CurveFit(0) + CLPE1CurveFit(1)) * CLP_TRANSFORMER_RATIO.Value.ToDouble)
+                        CLP_RVDT_E1Y1_VDC.Value = New KineticaRT.Values.Double((CELProject.EngineConfiguration.CLPMaxRange * CLPE1CurveFit(0) + CLPE1CurveFit(1)) * CLP_TRANSFORMER_RATIO.Value.ToDouble)
+                        CLP_RVDT_E2Y0_VDC.Value = New KineticaRT.Values.Double((CELProject.EngineConfiguration.CLPMinRange * CLPE2CurveFit(0) + CLPE2CurveFit(1)) * CLP_TRANSFORMER_RATIO.Value.ToDouble)
+                        CLP_RVDT_E2Y1_VDC.Value = New KineticaRT.Values.Double((CELProject.EngineConfiguration.CLPMaxRange * CLPE2CurveFit(0) + CLPE2CurveFit(1)) * CLP_TRANSFORMER_RATIO.Value.ToDouble)
+
+                    End If
+
+                End If
+            Catch ex As Exception
+
+            End Try
+        End Sub
+
+        Private Sub OnSendRVDTResolver(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    If sender.Name.Contains("PLA") Then
+                        SendConfigTocRIO("PLA")
+                    ElseIf sender.Name.Contains("CLP") Then
+                        SendConfigTocRIO("CLP")
+                    End If
+
+                End If
+            Catch ex As Exception
+
+            End Try
+        End Sub
+
+        Private Sub OnRVDTResolverSave(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+
+                If CELProject.IsTrue(newVal) Then
+
+                    CELProject.LoadSave_Custom_Parameters(Custom_Parameters, True)
+                    RVDT_RESOLVER_SAVE_BTN.Value = Values.False
+
+                End If
+            Catch ex As Exception
+
+            End Try
+        End Sub
+
+        Private Sub OnResetState(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    sender.Value = Values.False
+                End If
+            Catch ex As Exception
+
+            End Try
+        End Sub
+
+
+        Private Sub RVDTResolverSelection()
+            Try
+                If CELProject.EngineConfiguration.PLALeverConfig = "RVDT" Then
+                    PLA_RVDT_VSB_SOURCE.Value = Values.True
+                ElseIf CELProject.EngineConfiguration.PLALeverConfig = "Resolver" Then
+                    PLA_RVDT_VSB_SOURCE.Value = Values.False
+                End If
+                If CELProject.EngineConfiguration.CLPLeverConfig = "RVDT" Then
+                    CLP_RVDT_VSB_SOURCE.Value = Values.True
+                ElseIf CELProject.EngineConfiguration.CLPLeverConfig = "Resolver" Then
+                    CLP_RVDT_VSB_SOURCE.Value = Values.False
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Critical.Engine_Sequence.RVDTResolverSelection: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & ex.ToString, "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+
+        '* FCU *
+        Private Sub OnPLACloseThrottleCalib_Btn(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+
+                If CELProject.IsTrue(newVal) Then
+
+                    CELProject.ActivateForm(FCUFormName, CELProject.DefaultParentWindow, False, False)
+
+                    PLA_CLOSE_THROTTLE_CALIB_BTN.Value = Values.False
+                    ShowDynoWarningMessage()
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Critical.Engine_Sequence.OnPLACloseThrottleCalib_Btn: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & ex.ToString, "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+#If 0 Then
+        '* MOR *
+        Private Sub OnMORCloseThrottleCalib_Btn(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+
+                If CELProject.IsTrue(newVal) Then
+
+                    CELProject.ActivateForm(MORFormName, CELProject.DefaultParentWindow, False, False)
+
+                    MOR_CLOSE_THROTTLE_CALIB_BTN.Value = Values.False
+                    ShowDynoWarningMessage()
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Critical.Engine_Sequence.OnMORCloseThrottleCalib_Btn: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & ex.ToString, "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+#End If
+
+        Private Sub OnUSER_AUTO_RIGGING(ByVal sender As IChannel, ByVal newVal As Value)
+            'Used Only for PT6A-68
+            'The manual says that auto rigging button must be pressed at least 2 seconds
+            Try
+
+                If CELProject.IsTrue(newVal) Then
+
+                    Thread.Sleep(2500)
+                    USER_AUTO_RIGGING.Value = Values.False
+
+                End If
+
+            Catch ex As Exception
+
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionInitialized(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnTestSessionInitialized: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionOpened(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionOpened(newStatus)
+
+            Catch ex As Exception
+
+                MessageBox.Show("Throttle_Sequence.OnTestSessionOpened: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionRunning(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                'Load up in memory some constant table (from database)
+                If CELProject.EngineModel <> "DAS CALIBRATION" And CELProject.EngineModel <> "SYSTEM CHECK" And
+                    CELProject.HierarchyType = CELDAS.eHierarchyType.Master Then
+                    CELProject.LoadSave_Custom_Parameters(Custom_Parameters, False)
+
+                    If Init_Channels() Then
+                        If Init_RVDT_Channels_Value() Then
+
+                            AddHandler CLA_CLOSE_THROTTLE_CALIB_BTN.ValueChanged, AddressOf OnCLACloseThrottleCalib_Btn
+                            AddHandler CLA_COMPUTE_BTN.ValueChanged, AddressOf OnComputeBtn
+                            AddHandler CLA_ENGAGE_BTN.ValueChanged, AddressOf OnEngageBtn
+                            AddHandler CLA_RESET_BTN.ValueChanged, AddressOf OnResetBtn
+                            AddHandler CLA_RETURN_TO_IDLE_CMD.ValueChanged, AddressOf OnReturnToIdleCmd
+                            AddHandler CLA_STORE_IDLE_ANGLE_BTN.ValueChanged, AddressOf OnStoreIdleAngleBtn
+                            AddHandler CLA_STORE_MIN_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                            AddHandler CLA_STORE_MIN_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+                            AddHandler CLA_STORE_MAX_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                            AddHandler CLA_STORE_MAX_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+
+                            AddHandler PLA_CLOSE_THROTTLE_CALIB_BTN.ValueChanged, AddressOf OnPLACloseThrottleCalib_Btn
+                            AddHandler PLA_COMPUTE_BTN.ValueChanged, AddressOf OnComputeBtn
+                            AddHandler PLA_ENGAGE_BTN.ValueChanged, AddressOf OnEngageBtn
+                            AddHandler PLA_RESET_BTN.ValueChanged, AddressOf OnResetBtn
+                            AddHandler PLA_RETURN_TO_IDLE_CMD.ValueChanged, AddressOf OnReturnToIdleCmd
+                            AddHandler PLA_STORE_IDLE_ANGLE_BTN.ValueChanged, AddressOf OnStoreIdleAngleBtn
+                            AddHandler PLA_STORE_MIN_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                            AddHandler PLA_STORE_MIN_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+                            AddHandler PLA_STORE_MAX_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                            AddHandler PLA_STORE_MAX_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+
+                            AddHandler PULSE.ValueChanged, AddressOf OnPulse
+
+                            AddHandler MOR_COMPUTE_BTN.ValueChanged, AddressOf OnComputeBtn
+                            AddHandler MOR_ENGAGE_BTN.ValueChanged, AddressOf OnEngageBtn
+                            AddHandler MOR_RESET_BTN.ValueChanged, AddressOf OnResetBtn
+                            AddHandler MOR_RETURN_TO_IDLE_CMD.ValueChanged, AddressOf OnReturnToIdleCmd
+                            AddHandler MOR_STORE_IDLE_ANGLE_BTN.ValueChanged, AddressOf OnStoreIdleAngleBtn
+                            AddHandler MOR_STORE_MIN_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                            AddHandler MOR_STORE_MIN_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+                            AddHandler MOR_STORE_MAX_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                            AddHandler MOR_STORE_MAX_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+
+                            AddHandler CLOSE_RVDT_RESOLVER_CONFIG_WINDOW_BTN.ValueChanged, AddressOf OnRVDT_RESOLVER_CONFIG_WINDOW
+
+                            AddHandler CLP_CAPTURE_RVDT_MIN_BTN.ValueChanged, AddressOf OnCaptureRVDT
+                            AddHandler CLP_CAPTURE_RVDT_MAX_BTN.ValueChanged, AddressOf OnCaptureRVDT
+                            AddHandler CLP_COMPUTE_RVDT_BTN.ValueChanged, AddressOf OnComputeRVDT
+                            AddHandler CLP_SEND_BTN.ValueChanged, AddressOf OnSendRVDTResolver
+
+                            AddHandler CLP_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler CLP_RVDT_E1Y1_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler CLP_RVDT_E2Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler CLP_RVDT_E2Y1_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+
+                            AddHandler PLA_CAPTURE_RVDT_MIN_BTN.ValueChanged, AddressOf OnCaptureRVDT
+                            AddHandler PLA_CAPTURE_RVDT_MAX_BTN.ValueChanged, AddressOf OnCaptureRVDT
+                            AddHandler PLA_COMPUTE_RVDT_BTN.ValueChanged, AddressOf OnComputeRVDT
+                            AddHandler PLA_SEND_BTN.ValueChanged, AddressOf OnSendRVDTResolver
+
+                            AddHandler PLA_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler PLA_RVDT_E1Y1_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler PLA_RVDT_E2Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler PLA_RVDT_E2Y1_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+
+                            AddHandler PLA_RESOLVER_LEVER0.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler PLA_RESOLVER_LEVER1.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler PLA_RESOLVER_ANGLE0.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler PLA_RESOLVER_ANGLE1.ValueChanged, AddressOf OnRVDTResolverCoefficients
+
+                            AddHandler CLP_RESOLVER_LEVER0.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler CLP_RESOLVER_LEVER1.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler CLP_RESOLVER_ANGLE0.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                            AddHandler CLP_RESOLVER_ANGLE1.ValueChanged, AddressOf OnRVDTResolverCoefficients
+
+                            AddHandler RVDT_RESOLVER_SAVE_BTN.ValueChanged, AddressOf OnRVDTResolverSave
+
+                            AddHandler STMSession.Connected, AddressOf Me.OnSTMSessionConnected
+                            AddHandler STMSession.Closed, AddressOf Me.OnSTMSessionClosed
+                            AddHandler STMSession.Error, AddressOf Me.OnSTMSessionError
+                            AddHandler STMSession.MetaDataReceived, AddressOf Me.OnSTMSessionMetaDataReceived
+                            AddHandler STMSession.NewDataReceived, AddressOf Me.OnSTMSessionNewDataReceived
+
+                            If CELProject.DataAcquisitionMode = CELDAS.eDataAcquisitionMode.RUN_FOR_TRUE Then
+                                AddHandler STMSessionReconnectTimer.Elapsed, AddressOf Me.OnSTMReconnectTimerElapsed
+
+                                ' Set RVDT/Resolver
+                                RVDTResolverSelection()
+
+                                Me.ConnectSTMSession()
+
+#If CELDAS200 Then
+                                Select Case CELProject.EngineModel
+
+                                    Case "PT6A-68"
+                                        AddHandler USER_AUTO_RIGGING.ValueChanged, AddressOf OnUSER_AUTO_RIGGING
+
+                                End Select
+#End If
+                            Else
+                                CRIO_CONNECTED.Value = Values.True
+                                CLA_RIGGING_DONE.Value = Values.True
+                                PLA_RIGGING_DONE.Value = Values.True
+                            End If
+                        End If
+                    End If
+                End If
+
+
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnTestSessionRunning: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionClosing(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                If CELProject.EngineModel <> "DAS CALIBRATION" And CELProject.EngineModel <> "SYSTEM CHECK" And
+                    CELProject.HierarchyType = CELDAS.eHierarchyType.Master Then
+
+                    If (Not CLA_CLOSE_THROTTLE_CALIB_BTN Is Nothing) Then
+                        RemoveHandler CLA_CLOSE_THROTTLE_CALIB_BTN.ValueChanged, AddressOf OnCLACloseThrottleCalib_Btn
+                    End If
+                    If (Not CLA_COMPUTE_BTN Is Nothing) Then
+                        RemoveHandler CLA_COMPUTE_BTN.ValueChanged, AddressOf OnComputeBtn
+                    End If
+                    If (Not CLA_RESET_BTN Is Nothing) Then
+                        RemoveHandler CLA_RESET_BTN.ValueChanged, AddressOf OnResetBtn
+                    End If
+                    If (Not CLA_RETURN_TO_IDLE_CMD Is Nothing) Then
+                        RemoveHandler CLA_RETURN_TO_IDLE_CMD.ValueChanged, AddressOf OnReturnToIdleCmd
+                    End If
+                    If (Not CLA_STORE_IDLE_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler CLA_STORE_IDLE_ANGLE_BTN.ValueChanged, AddressOf OnStoreIdleAngleBtn
+                    End If
+                    If (Not CLA_STORE_MIN_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler CLA_STORE_MIN_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                    End If
+                    If (Not CLA_STORE_MIN_STOP_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler CLA_STORE_MIN_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+                    End If
+                    If (Not CLA_STORE_MAX_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler CLA_STORE_MAX_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                    End If
+                    If (Not CLA_STORE_MAX_STOP_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler CLA_STORE_MAX_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+                    End If
+
+                    If (Not PLA_CLOSE_THROTTLE_CALIB_BTN Is Nothing) Then
+                        RemoveHandler PLA_CLOSE_THROTTLE_CALIB_BTN.ValueChanged, AddressOf OnPLACloseThrottleCalib_Btn
+                    End If
+                    If (Not PLA_RESET_BTN Is Nothing) Then
+                        RemoveHandler PLA_RESET_BTN.ValueChanged, AddressOf OnResetBtn
+                    End If
+                    If (Not PLA_RETURN_TO_IDLE_CMD Is Nothing) Then
+                        RemoveHandler PLA_RETURN_TO_IDLE_CMD.ValueChanged, AddressOf OnReturnToIdleCmd
+                    End If
+                    If (Not PLA_STORE_IDLE_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler PLA_STORE_IDLE_ANGLE_BTN.ValueChanged, AddressOf OnStoreIdleAngleBtn
+                    End If
+                    If (Not PLA_COMPUTE_BTN Is Nothing) Then
+                        RemoveHandler PLA_COMPUTE_BTN.ValueChanged, AddressOf OnComputeBtn
+                    End If
+                    If (Not PLA_STORE_MIN_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler PLA_STORE_MIN_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                    End If
+                    If (Not PLA_STORE_MIN_STOP_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler PLA_STORE_MIN_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+                    End If
+                    If (Not PLA_STORE_MAX_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler PLA_STORE_MAX_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                    End If
+                    If (Not PLA_STORE_MAX_STOP_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler PLA_STORE_MAX_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+                    End If
+
+                    If (Not MOR_RESET_BTN Is Nothing) Then
+                        RemoveHandler MOR_RESET_BTN.ValueChanged, AddressOf OnResetBtn
+                    End If
+                    If (Not MOR_RETURN_TO_IDLE_CMD Is Nothing) Then
+                        RemoveHandler MOR_RETURN_TO_IDLE_CMD.ValueChanged, AddressOf OnReturnToIdleCmd
+                    End If
+                    If (Not MOR_STORE_IDLE_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler MOR_STORE_IDLE_ANGLE_BTN.ValueChanged, AddressOf OnStoreIdleAngleBtn
+                    End If
+                    If (Not MOR_COMPUTE_BTN Is Nothing) Then
+                        RemoveHandler MOR_COMPUTE_BTN.ValueChanged, AddressOf OnComputeBtn
+                    End If
+                    If (Not MOR_STORE_MIN_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler MOR_STORE_MIN_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                    End If
+                    If (Not MOR_STORE_MIN_STOP_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler MOR_STORE_MIN_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+                    End If
+                    If (Not MOR_STORE_MAX_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler MOR_STORE_MAX_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinAngleBtn
+                    End If
+                    If (Not MOR_STORE_MAX_STOP_ANGLE_BTN Is Nothing) Then
+                        RemoveHandler MOR_STORE_MAX_STOP_ANGLE_BTN.ValueChanged, AddressOf OnStoreMaxMinStopBtn
+                    End If
+
+                    If (Not CLOSE_RVDT_RESOLVER_CONFIG_WINDOW_BTN Is Nothing) Then
+                        RemoveHandler CLOSE_RVDT_RESOLVER_CONFIG_WINDOW_BTN.ValueChanged, AddressOf OnRVDT_RESOLVER_CONFIG_WINDOW
+                    End If
+                    If (Not CLP_RVDT_E1Y0_VDC Is Nothing) Then
+                        RemoveHandler PLA_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                    End If
+                    If (Not CLP_RVDT_E1Y1_VDC Is Nothing) Then
+                        RemoveHandler PLA_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                    End If
+                    If (Not CLP_RVDT_E2Y0_VDC Is Nothing) Then
+                        RemoveHandler PLA_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                    End If
+                    If (Not CLP_RVDT_E2Y1_VDC Is Nothing) Then
+                        RemoveHandler PLA_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                    End If
+                    If (Not PLA_RVDT_E1Y0_VDC Is Nothing) Then
+                        RemoveHandler PLA_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                    End If
+                    If (Not PLA_RVDT_E1Y1_VDC Is Nothing) Then
+                        RemoveHandler PLA_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                    End If
+                    If (Not PLA_RVDT_E2Y0_VDC Is Nothing) Then
+                        RemoveHandler PLA_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                    End If
+                    If (Not PLA_RVDT_E2Y1_VDC Is Nothing) Then
+                        RemoveHandler PLA_RVDT_E1Y0_VDC.ValueChanged, AddressOf OnRVDTResolverCoefficients
+                    End If
+                    If (Not RVDT_RESOLVER_SAVE_BTN Is Nothing) Then
+                        RemoveHandler RVDT_RESOLVER_SAVE_BTN.ValueChanged, AddressOf OnRVDTResolverSave
+                    End If
+
+                    If (Not USER_AUTO_RIGGING Is Nothing) Then
+                        RemoveHandler USER_AUTO_RIGGING.ValueChanged, AddressOf OnUSER_AUTO_RIGGING
+                    End If
+
+                    DisconnectSTMSession()
+
+                    RemoveHandler STMSessionReconnectTimer.Elapsed, AddressOf Me.OnSTMReconnectTimerElapsed
+                    RemoveHandler STMSession.NewDataReceived, AddressOf Me.OnSTMSessionNewDataReceived
+                    RemoveHandler STMSession.MetaDataReceived, AddressOf Me.OnSTMSessionMetaDataReceived
+                    RemoveHandler STMSession.Error, AddressOf Me.OnSTMSessionError
+                    RemoveHandler STMSession.Closed, AddressOf Me.OnSTMSessionClosed
+                    RemoveHandler STMSession.Connected, AddressOf Me.OnSTMSessionConnected
+
+                    'Init_Channels_Value()
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Throttle_Sequence.OnTestSessionClosing: " & vbCrLf & vbCrLf & "Error message: " & vbCrLf & ex.ToString, "UNEXPECTED ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+
+        End Sub
+
+        Private Sub ShowDynoWarningMessage()
+
+            Dim message As String = "Ensure proper configuration is loaded on the dynamometer controller"
+
+            Dim DefaultDynoWarningMsg As String =
+                "** Ensure the proper engine type loaded on the right corner of the display" & vbCrLf &
+                "** Place the dynamometer controller switch to enable" & vbCrLf &
+                "** Confirm that FLIGHT is DESELECTED" & vbCrLf &
+                "** Place the dynamometer controller switch to disable" & vbCrLf &
+                "** Confirm that the speed demand on the dynamometer controller correspond to the value at the DAS Control Screen"
+
+            Select Case CELProject.EngineModel
+                Case "T56-A-14", "T56-A-15LFE", "T56-A-15GFE"
+
+                    message =
+                        "** Ensure the dynamometer is loaded in F63 mode" & vbCrLf &
+                        "** Position the PLA lever to idle" & vbCrLf &
+                        "** Place the dynamometer controller switch to enable" & vbCrLf &
+                        "** Set inlet valve control to AUTO, outlet valve to SPEED and select FLIGHT" & vbCrLf &
+                        "** Place the dynamometer controller switch to disable" & vbCrLf &
+                        "** Ensure the status shows ACTIVE"
+
+                Case "PT6A-68", "PW123AF"
+                Case "PT6A-41", "PT6A-42"
+                Case "PT6T-3", "PT6T-3B", "PT6T-6_SIKOR", "PT6T-6_BELL", "PT6T-6B"
+                Case "PT6C-67C"
+
+                    message =
+                        "** Ensure the proper engine model is loaded on the dynamometer controller" & vbCrLf &
+                        "** Torque Mode : dynamometer must be set in manual, inlet valve in manual and then, in Flight Simulator Mode (Torque)" & vbCrLf &
+                        "** Speed Mode : dynamometer must be set, in remote mode, at a Speed Demand of 21000 RPM"
+
+                Case "PW206A", "PW206B", "PW206B2", "PW206B3", "PW206C", "PW206E", "PW207D", "PW207D1", "PW207D2", "PW207C", "PW207E", "PW207K"
+
+                    message =
+                        "** Ensure the proper engine model is loaded on the dynamometer controller" & vbCrLf &
+                        "** Torque Mode : dynamometer must be set in manual, inlet valve in manual and then, in Flight Simulator Mode (Torque)" & vbCrLf &
+                        "** Speed Mode : dynamometer must be set, in remote mode, at a Speed Demand of " & DYNO_SPEED_100_PCT_RPM.Value.ToString & " RPM"
+
+            End Select
+
+            MessageBox.Show(message, "WARNING MESSAGE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Sub
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+
+        '************
+        '* Channels *
+        '************
+
+        Private CRIO_CONNECTED As IBooleanChannel
+        Private CRIO_PLA_DRIVE_FAULT As KineticaRT.Channels.IBooleanChannel
+        Private CRIO_PLA_DRIVE_WARNING As KineticaRT.Channels.IBooleanChannel
+        Private CRIO_CLA_DRIVE_FAULT As KineticaRT.Channels.IBooleanChannel
+        Private CRIO_CLA_DRIVE_WARNING As KineticaRT.Channels.IBooleanChannel
+        Private CRIO_MOR_DRIVE_FAULT As KineticaRT.Channels.IBooleanChannel
+        Private CRIO_MOR_DRIVE_WARNING As KineticaRT.Channels.IBooleanChannel
+        Private CLP_RVDT_VSB_SOURCE As IBooleanChannel
+        Private PLA_RVDT_VSB_SOURCE As IBooleanChannel
+        Private PULSE As IChannel
+
+
+        Private PLA_CLOSE_THROTTLE_CALIB_BTN As IBooleanChannel
+        Private PLA_COMPUTE_BTN As IBooleanChannel
+        Private PLA_COMPUTE_DONE As IBooleanChannel
+        Private PLA_ENGAGE_BTN As IBooleanChannel
+        Private PLA_IDLE_POS_DONE As IChannel
+        Private PLA_LEVER_POS As IChannel
+        Private PLA_MAX_POS_DONE As IBooleanChannel
+        Private PLA_MAX_RIG_POS As IChannel
+        Private PLA_MAX_STOP_POS_DONE As IBooleanChannel
+        Private PLA_MIN_POS_DONE As IBooleanChannel
+        Private PLA_MIN_RIG_POS As IChannel
+        Private PLA_MIN_STOP_POS_DONE As IBooleanChannel
+        Private PLA_RESET_BTN As IBooleanChannel
+        Private PLA_RETURN_TO_IDLE_CMD As IBooleanChannel
+        Private PLA_RIGGING_DONE As IBooleanChannel
+        Private PLA_SERVO_ANGLE_READING As IChannel
+        Private PLA_SERVO_READING As IChannel
+        Private PLA_STORE_IDLE_ANGLE_BTN As IBooleanChannel
+        Private PLA_STORE_MIN_ANGLE_BTN As IBooleanChannel
+        Private PLA_STORE_MIN_STOP_ANGLE_BTN As IBooleanChannel
+        Private PLA_STORE_MAX_ANGLE_BTN As IBooleanChannel
+        Private PLA_STORE_MAX_STOP_ANGLE_BTN As IBooleanChannel
+
+        Private PLA_IDLE_POS_DEG As INumericChannel
+        Private PLA_MAX_STOP_POS_DEG As INumericChannel
+        Private PLA_MIN_STOP_POS_DEG As INumericChannel
+
+        Private CLA_CLOSE_THROTTLE_CALIB_BTN As IBooleanChannel
+        Private CLA_COMPUTE_BTN As IBooleanChannel
+        Private CLA_COMPUTE_DONE As IBooleanChannel
+        Private CLA_ENGAGE_BTN As IBooleanChannel
+        Private CLA_IDLE_POS_DONE As IChannel
+        Private CLA_LEVER_POS As IChannel
+        Private CLA_MAX_POS_DONE As IBooleanChannel
+        Private CLA_MAX_RIG_POS As IChannel
+        Private CLA_MAX_STOP_POS_DONE As IBooleanChannel
+        Private CLA_MIN_POS_DONE As IBooleanChannel
+        Private CLA_MIN_RIG_POS As IChannel
+        Private CLA_MIN_STOP_POS_DONE As IBooleanChannel
+        Private CLA_RETURN_TO_IDLE_CMD As IBooleanChannel
+        Private CLA_RESET_BTN As IBooleanChannel
+        Private CLA_RIGGING_DONE As IBooleanChannel
+        Private CLA_SERVO_ANGLE_READING As IChannel
+        Private CLA_SERVO_READING As IChannel
+        Private CLA_STORE_IDLE_ANGLE_BTN As IBooleanChannel
+        Private CLA_STORE_MIN_ANGLE_BTN As IBooleanChannel
+        Private CLA_STORE_MIN_STOP_ANGLE_BTN As IBooleanChannel
+        Private CLA_STORE_MAX_ANGLE_BTN As IBooleanChannel
+        Private CLA_STORE_MAX_STOP_ANGLE_BTN As IBooleanChannel
+
+        Private CLA_IDLE_POS_DEG As INumericChannel
+        Private CLA_MAX_STOP_POS_DEG As INumericChannel
+        Private CLA_MIN_STOP_POS_DEG As INumericChannel
+
+        Private MOR_COMPUTE_BTN As IBooleanChannel
+        Private MOR_COMPUTE_DONE As IBooleanChannel
+        Private MOR_ENGAGE_BTN As IBooleanChannel
+        Private MOR_IDLE_POS_DONE As IChannel
+        Private MOR_LEVER_POS As IChannel
+        Private MOR_MAX_POS_DONE As IBooleanChannel
+        Private MOR_MAX_RIG_POS As IChannel
+        Private MOR_MAX_STOP_POS_DONE As IBooleanChannel
+        Private MOR_MIN_POS_DONE As IBooleanChannel
+        Private MOR_MIN_RIG_POS As IChannel
+        Private MOR_MIN_STOP_POS_DONE As IBooleanChannel
+        Private MOR_RETURN_TO_IDLE_CMD As IBooleanChannel
+        Private MOR_RESET_BTN As IBooleanChannel
+        Private MOR_RIGGING_DONE As IBooleanChannel
+        Private MOR_SERVO_ANGLE_READING As IChannel
+        Private MOR_SERVO_ANGLE_READING_OPC As IChannel
+        Private MOR_SERVO_READING As IChannel
+        Private MOR_STORE_IDLE_ANGLE_BTN As IBooleanChannel
+        Private MOR_STORE_MIN_ANGLE_BTN As IBooleanChannel
+        Private MOR_STORE_MIN_STOP_ANGLE_BTN As IBooleanChannel
+        Private MOR_STORE_MAX_ANGLE_BTN As IBooleanChannel
+        Private MOR_STORE_MAX_STOP_ANGLE_BTN As IBooleanChannel
+
+        Private MOR_IDLE_POS_DEG As INumericChannel
+        Private MOR_MAX_STOP_POS_DEG As INumericChannel
+        Private MOR_MIN_STOP_POS_DEG As INumericChannel
+
+        Private CLP_RVDT_E1Y0_VDC As INumericChannel
+        Private CLP_RVDT_E1Y1_VDC As INumericChannel
+        Private CLP_RVDT_E2Y0_VDC As INumericChannel
+        Private CLP_RVDT_E2Y1_VDC As INumericChannel
+
+        Private CLP_RVDT_E1_MIN_VDC As INumericChannel
+        Private CLP_RVDT_E1_MAX_VDC As INumericChannel
+        Private CLP_RVDT_E2_MIN_VDC As INumericChannel
+        Private CLP_RVDT_E2_MAX_VDC As INumericChannel
+
+        Private CLP_RVDT_LEVER_POSITIONS As Double()
+        Private CLP_RVDT_E1_SCALING_FACTORS As Double()
+        Private CLP_RVDT_E2_SCALING_FACTORS As Double()
+
+        Private CLP_CAPTURE_RVDT_MIN_BTN As IBooleanChannel
+        Private CLP_CAPTURE_RVDT_MAX_BTN As IBooleanChannel
+        Private CLP_COMPUTE_RVDT_BTN As IBooleanChannel
+        Private CLP_SEND_BTN As IBooleanChannel
+        Private CLP_TRANSFORMER_RATIO As INumericChannel
+
+        Private PLA_RVDT_E1Y0_VDC As INumericChannel
+        Private PLA_RVDT_E1Y1_VDC As INumericChannel
+        Private PLA_RVDT_E2Y0_VDC As INumericChannel
+        Private PLA_RVDT_E2Y1_VDC As INumericChannel
+
+        Private PLA_RVDT_E1_MIN_VDC As INumericChannel
+        Private PLA_RVDT_E1_MAX_VDC As INumericChannel
+        Private PLA_RVDT_E2_MIN_VDC As INumericChannel
+        Private PLA_RVDT_E2_MAX_VDC As INumericChannel
+
+        Private PLA_RVDT_LEVER_POSITIONS As Double()
+        Private PLA_RVDT_E1_SCALING_FACTORS As Double()
+        Private PLA_RVDT_E2_SCALING_FACTORS As Double()
+
+        Private PLA_CAPTURE_RVDT_MIN_BTN As IBooleanChannel
+        Private PLA_CAPTURE_RVDT_MAX_BTN As IBooleanChannel
+        Private PLA_COMPUTE_RVDT_BTN As IBooleanChannel
+        Private PLA_SEND_BTN As IBooleanChannel
+        Private PLA_TRANSFORMER_RATIO As INumericChannel
+
+        Private PLA_RESOLVER_LEVER0 As INumericChannel
+        Private PLA_RESOLVER_LEVER1 As INumericChannel
+        Private PLA_RESOLVER_ANGLE0 As INumericChannel
+        Private PLA_RESOLVER_ANGLE1 As INumericChannel
+
+        Private CLP_RESOLVER_LEVER0 As INumericChannel
+        Private CLP_RESOLVER_LEVER1 As INumericChannel
+        Private CLP_RESOLVER_ANGLE0 As INumericChannel
+        Private CLP_RESOLVER_ANGLE1 As INumericChannel
+
+        Private CLOSE_RVDT_RESOLVER_CONFIG_WINDOW_BTN As IBooleanChannel
+        Private DYNO_SPEED_100_PCT_RPM As INumericChannel
+        Private RVDT_RESOLVER_SAVE_BTN As IBooleanChannel
+
+        Private THROTTLE_INSTANCE As INumericChannel
+        Private USER_AUTO_RIGGING As IBooleanChannel
+
+        '*********************
+        '* Forms and Control *
+        '*********************	
+
+        Private FrameCtrl_FCU_Rigging As KineticaRT.Controls.Control
+        Private FrameCtrl_PLU_Rigging As KineticaRT.Controls.Control
+
+        Private PT6A_68_RA_Name As System.Windows.Forms.Label
+        '********
+        '* Misc *
+        '********
+
+        Private Custom_Parameters As New System.Collections.Specialized.OrderedDictionary
+
+        Private Function CLP_RESOLVER_TRANSFORMER_RATIO() As Object
+            Throw New NotImplementedException
+        End Function
+
+    End Class
+End Namespace

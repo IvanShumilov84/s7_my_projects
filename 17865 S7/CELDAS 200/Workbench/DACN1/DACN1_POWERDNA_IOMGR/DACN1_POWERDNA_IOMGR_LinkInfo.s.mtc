@@ -1,0 +1,5 @@
+[MEMORY]
+Offset0=0xC800
+Offset1=0xD000
+Offset2=0xD000
+Offset3=0xD000

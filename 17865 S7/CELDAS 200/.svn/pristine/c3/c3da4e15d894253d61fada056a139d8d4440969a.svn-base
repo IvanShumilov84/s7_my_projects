@@ -1,0 +1,3014 @@
+Imports System
+Imports System.Collections
+Imports System.Reflection
+Imports System.Text
+Imports System.Threading
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Windows.Forms
+Imports KineticaRT
+Imports KineticaRT.Sequence
+Imports KineticaRT.Values
+Imports KineticaRT.Controls.Frame
+'Imports Excel
+Imports Microsoft.Office.Interop
+Imports System.Data
+Imports System.Data.OleDb
+Imports Microsoft.VisualBasic
+
+Imports CEL.HMI
+
+Namespace StudioDemonstration
+
+    Public Class PW308C_Sequence
+        Inherits CEL.KineticaRT.Sequence.Sequence
+
+        'Private CELProject As New CELDAS(Me)
+        Private CELProject As CELDAS = CELDAS.Instance()
+
+
+        '********************************************************************
+        '* Constant Declaration *********************************************
+        '********************************************************************
+        'Private Const PROJECT_NUMBER As String = "08618"
+
+        Public WINDOW_NAME() As String = {"Welcome_Screen", _
+        "Archiving", _
+        "PW308C_Screen", _
+        "EEC PW308C", _
+        "AirStart_Control_Screen"}
+
+
+
+
+        Private Enum eFlowMass
+            LbByMin
+            KgByMin
+            KgBySec
+        End Enum
+        Private Enum eLength
+            Inch
+            Centimeter
+        End Enum
+        Private Enum ePressure
+            PSI
+            Kilopascal
+            InchesOfMercury
+            InchesH20
+        End Enum
+        Private Enum eRepairType
+            Heavy = 0
+            LightMedium = 1
+        End Enum
+        Private Enum eTemperature
+            Celsius
+            Fahrenheit
+        End Enum
+        'Private Enum eTest_Mgr_Cmd
+        '    Open = 1
+        '    Load = 2
+        '    Initialize = 3
+        '    Run = 4
+        '    Close = 5
+        '    Idle = -99
+        'End Enum
+        Private Enum eTest_Mgr_Status
+            Opening = 1
+            Opened = 2
+            Loading = 3
+            Loaded = 4
+            Initializing = 5
+            Initialized = 6
+            Running = 7
+            Closing = 8
+            Closed = 9
+            Idling = -999
+        End Enum
+
+        '********************************************************************
+        '* DLL Declaration  *************************************************
+        '********************************************************************
+
+        Declare Function EndTask Lib "user32.dll" (ByVal hWnd As IntPtr) As Integer
+        Declare Function FindWindow Lib "user32.dll" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As IntPtr
+        Declare Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hWnd As IntPtr, ByRef lpdwProcessId As Integer) As Integer
+        Declare Function SetLastError Lib "kernel32.dll" (ByVal dwErrCode As Integer) As IntPtr
+
+        '********************************************************************
+        '* Variable Declaration *********************************************
+        '********************************************************************
+
+        '********************************************************************
+        '* Public Methods ***************************************************
+        '********************************************************************
+
+        '******************
+        '* OpenConnection *
+        '******************
+
+        'Public Overloads Function OpenConnection(ByVal ConnectionString As String, ByRef Connection As ADODB.Connection, Optional ByVal PopupError As Boolean = True) As Boolean
+        '    OpenConnection = False
+        '    Try
+        '        If Not IsNothing(Connection) Then
+        '            If Connection.State = 1 Then Return True 'Already Open
+        '        End If
+        '        CloseConnection(Connection)
+        '        Connection = New ADODB.Connection()
+        '        Connection.Open(ConnectionString)
+        '        OpenConnection = True
+        '    Catch ex As Exception
+        '        If PopupError Then
+        '            MessageBox.Show("Error: Unable to open database. " & Ex.ToString(), "CELDAS™ 200", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        '        End If
+        '    End Try
+        'End Function
+
+        'Public Overloads Function OpenConnection(ByVal ConnectionString As String, ByRef Connection As OleDbConnection, Optional ByVal PopupError As Boolean = True) As Boolean
+        '    OpenConnection = False
+        '    Try
+        '        If Not IsNothing(Connection) Then
+        '            If Connection.State = 1 Then Return True 'Already Open
+        '        End If
+        '        CloseConnection(Connection)
+        '        Connection = New OleDbConnection(ConnectionString)
+        '        Connection.Open()
+        '        OpenConnection = True
+        '    Catch ex As Exception
+        '        If PopupError Then
+        '            MessageBox.Show("Error: Unable to open database. " & Ex.ToString(), "CELDAS™ 200", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        '        End If
+        '    End Try
+        'End Function
+
+        '*******************
+        '* CloseConnection *
+        '*******************
+
+        'Public Overloads Function CloseConnection(ByRef Connection As ADODB.Connection) As Boolean
+        '    CloseConnection = False
+        '    Try
+        '        Connection.Close()
+        '        CloseConnection = True
+        '    Catch
+        '    Finally
+        '        Connection = Nothing
+        '    End Try
+        'End Function
+
+        'Public Overloads Function CloseConnection(ByRef Connection As OleDBConnection) As Boolean
+        '    CloseConnection = False
+        '    Try
+        '        Connection.Close()
+        '        CloseConnection = True
+        '    Catch
+        '    Finally
+        '        Connection = Nothing
+        '    End Try
+        'End Function
+
+        '*************
+        '* Recordset *
+        '*************
+
+        'Public Function OpenRecordset(ByRef rs As ADODB.Recordset, ByVal strSQL As String, ByVal Connection As ADODB.Connection, Optional ByVal rsReadOnly As Boolean = True, Optional ByVal Cursor As ADODB.CursorTypeEnum = ADODB.CursorTypeEnum.adOpenUnspecified) As Boolean
+        '    CloseRecordset(rs)
+        '    rs = New ADODB.Recordset
+
+        '    Try
+        '        If rsReadOnly Then
+        '            If Cursor = ADODB.CursorTypeEnum.adOpenUnspecified Then
+        '                rs.Open(strSQL, Connection, ADODB.CursorTypeEnum.adOpenForwardOnly, ADODB.LockTypeEnum.adLockReadOnly)
+        '            Else
+        '                rs.Open(strSQL, Connection, Cursor, ADODB.LockTypeEnum.adLockReadOnly)
+        '            End If
+
+        '        Else
+        '            rs.Open(strSQL, Connection, ADODB.CursorTypeEnum.adOpenDynamic, ADODB.LockTypeEnum.adLockOptimistic)
+        '        End If
+        '        OpenRecordset = Not rs.EOF
+        '    Catch e As Exception
+        '        OpenRecordset = False
+        '    End Try
+        'End Function
+
+        'Public Function CloseRecordset(ByRef rs As ADODB.Recordset) As Boolean
+        '    CloseRecordset = False
+        '    Try
+        '        rs.Close()
+        '        CloseRecordset = True
+        '    Catch
+        '    Finally
+        '        rs = Nothing
+        '    End Try
+        'End Function
+
+        'Public Function RecordCount(ByVal rs As ADODB.Recordset) As Int64
+        '    RecordCount = -1
+        '    Do While Not rs.EOF
+        '        RecordCount += 1
+        '        rs.MoveNext()
+        '    Loop
+
+        '    If RecordCount <> -1 Then RecordCount += 1
+
+        '    rs.MoveFirst()
+        'End Function
+
+        '***********
+        '* Connect *
+        '***********
+
+        Public Overloads Overrides Sub Connect()
+            If Me.Connected = False Then
+                MyBase.Connect()
+
+                'Verify the connection to the channels
+                If Init_Channels() = False Then
+                    MessageBox.Show("ENGINE SEQUENCE: Connect() - missing channels")
+                    Return
+                End If
+                Me.Connected = True
+            End If
+        End Sub
+
+
+        '****************
+        '* Disconnect() *
+        '****************
+        Public Overloads Overrides Sub Disconnect()
+            If Me.Connected = True Then
+                MyBase.disconnect()
+                ExitThread = True
+                If Not (PW300WorkerThread Is Nothing) Then
+                    If Not (PW300WorkerThread.Join(500)) Then
+                        If PW300WorkerThread.IsAlive Then
+                            PW300WorkerThread.Abort()
+                            PW300WorkerThread.Join()
+                        End If
+                    End If
+                    PW300WorkerThread = Nothing
+                End If
+                'Kill the Event Archiver Thread if still alive
+                If Not (EventArchiverThread Is Nothing) Then
+                    If Not (EventArchiverThread.Join(500)) Then
+                        If EventArchiverThread.IsAlive Then
+                            EventArchiverThread.Abort()
+                            EventArchiverThread.Join()
+                        End If
+                    End If
+                    EventArchiverThread = Nothing
+                End If
+                Me.Connected = False
+            End If
+        End Sub
+
+
+        '********************************************************************
+        '* Private Methods **************************************************
+        '********************************************************************
+
+        '*******************
+        '* ActivateForm	   *
+        '*******************
+        Private Sub ActivateForm(ByVal FormName As String, ByVal OwnerName As String, ByVal Activate As Boolean)
+
+            Try
+
+                Dim i, j As Integer
+
+                If (Activate = True) Then
+                    For i = 0 To WINDOW_NAME.GetUpperBound(0)
+                        If WINDOW_NAME(i) = FormName Then
+                            If OwnerName <> "" Then
+                                EngineWindow(i).FormBorderStyle = FormBorderStyle.FixedSingle
+                                EngineWindow(i).Refresh()
+                                EngineWindow(i).BringToFront()
+
+                                For j = 0 To WINDOW_NAME.GetUpperBound(0)
+                                    If WINDOW_NAME(j) = OwnerName Then
+                                        EngineWindow(i).Owner = EngineWindow(j)
+                                        ' EngineWindow(j).BringToFront
+                                        ' EngineWindow(j).Refresh
+
+                                        Exit For
+                                    End If
+                                Next
+                            End If
+
+                            EngineWindow(i).Visible = True
+                            EngineWindow(i).Activate()
+                            Exit For
+                        End If
+                        If (i - 1) = WINDOW_NAME.GetUpperBound(0) Then
+                            MessageBox.Show("ERROR: " & FormName & " Window could not be found.", "CELDAS™ 200", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+                        End If
+                    Next
+                Else 'Deactivate
+                    For i = 0 To WINDOW_NAME.GetUpperBound(0)
+                        If WINDOW_NAME(i) = FormName Then
+                            EngineWindow(i).Visible = False
+                            EngineWindow(i).Refresh()
+                        ElseIf WINDOW_NAME(i) = OwnerName Then
+                            EngineWindow(i).FormBorderStyle = FormBorderStyle.FixedSingle
+                            EngineWindow(i).Refresh()
+                            EngineWindow(i).BringToFront()
+                        End If
+
+                        If (i - 1) = WINDOW_NAME.GetUpperBound(0) Then
+                            MessageBox.Show("ERROR: " & FormName & " Window could not be found.", "CELDAS™ 200", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+                        End If
+                    Next
+                End If
+
+            Catch
+
+            End Try
+
+        End Sub
+
+        '***************************
+        '* ConvertSecondsToTime	   *
+        '***************************
+        Private Function ConvertSecondsToTime(ByVal dSeconds As Double) As String
+            ConvertSecondsToTime = Format(DateAdd("s", dSeconds, "00:00:00"), "HH:mm:ss")
+        End Function
+
+
+
+
+        '*****************************
+        '* EnsureProcessKilled() 	 *
+        '*****************************
+        Public Sub EnsureProcessKilled(ByVal MainWindowHandle As IntPtr, ByVal Caption As String)
+            Try
+                SetLastError(0)
+                ' for Excel versions <10, this won't be set yet
+                If IntPtr.Equals(MainWindowHandle, IntPtr.Zero) Then MainWindowHandle = FindWindow(Nothing, Caption)
+                If IntPtr.Equals(MainWindowHandle, IntPtr.Zero) Then Exit Sub ' at this point, presume the window has been closed.
+
+                Dim iRes, iProcID As Integer
+                iRes = GetWindowThreadProcessId(MainWindowHandle, iProcID)
+                If iProcID = 0 Then ' can’t get Process ID
+                    If EndTask(MainWindowHandle) <> 0 Then Exit Sub ' success
+                    'Throw New ApplicationException("Failed to close.")
+                End If
+                Dim proc As System.Diagnostics.Process
+                proc = System.Diagnostics.Process.GetProcessById(iProcID)
+                proc.CloseMainWindow()
+                proc.Refresh()
+                If proc.HasExited Then Exit Sub
+                proc.Kill()
+            Catch ex As Exception
+                'Do nothing
+            End Try
+        End Sub
+
+
+        '******************************
+        '* Fill_Characterizer_Table() *
+        '******************************
+        Private Function Fill_Characterizer_Table(ByVal Flowmeter_ID As Integer, ByVal Source_Type As String) As Boolean
+            Dim i As Integer
+
+            Fill_Characterizer_Table = False
+
+            Try
+                If Source_Type = "Voltage" Then 'Warning: First entry in table should be 0.0
+                    For i = 0 To 50
+                        X_Characterizer(Flowmeter_ID, i) = Flowmeter_Voltage(Flowmeter_ID, i)
+                    Next
+                ElseIf Source_Type = "Frequency" Then 'Warning: First entry in table should be 0.0
+                    For i = 0 To 50
+                        X_Characterizer(Flowmeter_ID, i) = Flowmeter_Frequency(Flowmeter_ID, i)
+                    Next
+                End If
+
+                For i = 0 To 50 'Warning: First entry in table should be 0.0
+                    Y_Characterizer(Flowmeter_ID, i) = Flowmeter_USGPM(Flowmeter_ID, i)
+                Next
+
+                Fill_Characterizer_Table = True
+
+            Catch Ex As Exception
+            Finally
+            End Try
+
+        End Function
+
+        '*****************************
+        '* Flowmeter_Characterizer() *
+        '*****************************
+        Private Function Flowmeter_Characterizer(ByVal Flowmeter_ID As Integer, ByVal Source As Double) As Double
+            Dim Flow As Double
+            Dim i, j As Integer
+            Dim Offset As Double
+            Dim Slope As Double
+
+            Try
+
+                If Source <= X_Characterizer(Flowmeter_ID, 0) Then
+                    Slope = 0.0
+                    Offset = 0.0
+
+                    Flow = Slope * Source + Offset
+                ElseIf Source >= X_Characterizer(Flowmeter_ID, 50) Then
+                    For i = 49 To 0 Step -1
+                        If X_Characterizer(Flowmeter_ID, i) <> X_Characterizer(Flowmeter_ID, 50) Then
+                            Exit For
+                        End If
+                    Next
+                    Slope = (Y_Characterizer(Flowmeter_ID, 50) - Y_Characterizer(Flowmeter_ID, i)) / (X_Characterizer(Flowmeter_ID, 50) - X_Characterizer(Flowmeter_ID, i))
+                    Offset = Y_Characterizer(Flowmeter_ID, 50) - Slope * X_Characterizer(Flowmeter_ID, 50)
+
+                    Flow = Slope * Source + Offset
+                Else
+                    For i = 0 To 50
+                        If ((Source >= X_Characterizer(Flowmeter_ID, i)) And (Source <= X_Characterizer(Flowmeter_ID, i + 1))) Then
+                            'Exit For
+                            j = i
+                            i = 70
+                        End If
+                    Next
+
+                    Slope = (Y_Characterizer(Flowmeter_ID, j + 1) - Y_Characterizer(Flowmeter_ID, j)) / (X_Characterizer(Flowmeter_ID, j + 1) - X_Characterizer(Flowmeter_ID, j))
+                    Flow = (Slope * Source) + (Y_Characterizer(Flowmeter_ID, j) - Slope * X_Characterizer(Flowmeter_ID, j))
+                End If
+
+                Flowmeter_Characterizer = Flow
+            Catch Ex As Exception
+
+            Finally
+            End Try
+
+        End Function
+
+
+
+
+
+        '**************************
+        '* Init_Channels()        *
+        '**************************
+        Private Function Init_Channels() As Boolean
+            Dim i As Integer
+            Dim Return_Value As New ArrayList()
+
+            Return_Value.Clear()
+
+            'Initialise Channels
+            'Return_Value.Add(MyBase.InitializeChannel(Close_Test, "Close_Test"))
+            'Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_Cmd, "Test_Mgr_Cmd"))
+            'Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_User_Security_Lvl, "Test_Mgr_User_Security_Lvl"))
+            'Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_Status, "Test_Mgr_Status"))
+
+            'For i = 0 To Test_Mgr_UUT_Answer.GetUpperBound(0) - 1
+            '    Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Answer(i), "Test_Mgr_UUT_Answer" + (i + 1).ToString()))
+            'Next
+            'For i = 0 To Test_Mgr_UUT_Calib_Constant.GetUpperBound(0) - 1 '#v1.01# ft 2006/09/12 used to calculate Bleed air (WB)
+            '    Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Calib_Constant(i), "Test_Mgr_UUT_Calib_Constant" + (i + 1).ToString()))
+            'Next
+            'For i = 0 To Test_Mgr_UUT_Choice.GetUpperBound(0) - 1
+            '    Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Choice(i), "Test_Mgr_UUT_Choice" + (i + 1).ToString()))
+            'Next
+            'Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Model, "Test_Mgr_UUT_Model"))
+            'For i = 0 To Test_Mgr_UUT_Option.GetUpperBound(0) - 1
+            '    Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Option(i), "Test_Mgr_UUT_Option" + (i + 1).ToString()))
+            'Next
+
+            'Initialise Object
+            For i = 0 To WINDOW_NAME.GetUpperBound(0)
+                Return_Value.Add(Initialize_Object(EngineWindow(i), WINDOW_NAME(i)))
+            Next
+
+
+            If Return_Value.Contains(False) Then
+                Return False
+            Else
+                Return True
+            End If
+        End Function
+
+
+        '********************************
+        '* Init_Engine_Channels_Value() *
+        '********************************
+        Private Sub Init_Engine_Channels_Value()
+            'Dim i As Integer
+
+            Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                'Not For "DAS CALIBRATION"
+                Case "PW307A", "PW308A ANC", "PW308C ANC"
+
+                    If Not (PLAY_BUTTON Is Nothing) Then
+                        PLAY_BUTTON.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    Log_FolderName = "C:\" + CELProject.Test_Mgr_UUT_Model.Value.ToString() + "\" + CELProject.Test_Mgr_UUT_Answer(0).Value.ToString() + "\" + CELProject.Test_Mgr_UUT_Answer(1).Value.ToString() + "\Log\"
+
+                    If Not (AIR_PRESSURE_STARTER_VALUE Is Nothing) Then
+                        AIR_PRESSURE_STARTER_VALUE.Value = KineticaRT.Values.Values.Zero
+                    End If
+
+                    If Not (EEC_CHN_DISABLE_CHA Is Nothing) Then
+                        EEC_CHN_DISABLE_CHA.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (EEC_CHN_DISABLE_CHB Is Nothing) Then
+                        EEC_CHN_DISABLE_CHB.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (EEC_CHN_DISABLE_NONE Is Nothing) Then
+                        EEC_CHN_DISABLE_NONE.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    If Not (EEC_LANE_A Is Nothing) Then
+                        EEC_LANE_A.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (EEC_LANE_B Is Nothing) Then
+                        EEC_LANE_B.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (EEC_LANE_BOTH Is Nothing) Then
+                        EEC_LANE_BOTH.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    For index As Integer = 0 To T6B_DELETE.GetUpperBound(0) - 1
+                        If Not (T6B_DELETE(index) Is Nothing) Then
+                            T6B_DELETE(index).Value = KineticaRT.Values.Values.False
+                        End If
+                    Next
+
+                    For index As Integer = 0 To T6E_DELETE.GetUpperBound(0) - 1
+                        If Not (T6E_DELETE(index) Is Nothing) Then
+                            T6E_DELETE(index).Value = KineticaRT.Values.Values.False
+                        End If
+                    Next
+
+                    For index As Integer = 0 To T6G_DELETE.GetUpperBound(0) - 1
+                        If Not (T6G_DELETE(index) Is Nothing) Then
+                            T6G_DELETE(index).Value = KineticaRT.Values.Values.False
+                        End If
+                    Next
+
+                    For index As Integer = 0 To T6K_DELETE.GetUpperBound(0) - 1
+                        If Not (T6K_DELETE(index) Is Nothing) Then
+                            T6K_DELETE(index).Value = KineticaRT.Values.Values.False
+                        End If
+                    Next
+
+                    If Not (T6B_COUNT Is Nothing) Then
+                        T6B_COUNT.Value = KineticaRT.Values.Values.Zero
+                    End If
+
+                    If Not (T6E_COUNT Is Nothing) Then
+                        T6E_COUNT.Value = KineticaRT.Values.Values.Zero
+                    End If
+
+                    If Not (T6G_COUNT Is Nothing) Then
+                        T6G_COUNT.Value = KineticaRT.Values.Values.Zero
+                    End If
+
+                    If Not (T6K_COUNT Is Nothing) Then
+                        T6K_COUNT.Value = KineticaRT.Values.Values.Zero
+                    End If
+
+                    If (CELProject.Test_Mgr_UUT_Model.Value.ToString() <> "PW307A") Then
+                        For index As Integer = 0 To TT1_DELETE.GetUpperBound(0) - 1
+                            If Not (TT1_DELETE(index) Is Nothing) Then
+                                TT1_DELETE(index).Value = KineticaRT.Values.Values.False
+                            End If
+                        Next
+                    End If
+
+                    If Not (EEC_WOW Is Nothing) Then
+                        EEC_WOW.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    If Not (BUZZER Is Nothing) Then
+                        BUZZER.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (RVDT_OSC_LANE_B Is Nothing) Then
+                        RVDT_OSC_LANE_B.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (DOUT99 Is Nothing) Then
+                        DOUT99.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    If Not (DOUT100 Is Nothing) Then
+                        DOUT100.Value = KineticaRT.Values.Values.True
+                    End If
+                    ts = New System.TimeSpan(0, 0, 0, 0, 0) 'init operating time to 0 at open test only
+            End Select
+
+            Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                Case "PW307A"
+                    If Not (DOUT64 Is Nothing) Then
+                        DOUT64.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (EEC_SHUTDOWN Is Nothing) Then
+                        EEC_SHUTDOWN.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    If Not (EEC_LINEAR_TLA Is Nothing) Then
+                        EEC_LINEAR_TLA.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    If Not (EEC_DEV_SOFT Is Nothing) Then
+                        EEC_DEV_SOFT.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    If Not (EEC_ENG_POS_3 Is Nothing) Then
+                        EEC_ENG_POS_3.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    '
+                    ' EEC_AUTO_IGN is in Fact Continuous Ignition Off/On
+                    '
+                    If Not (EEC_AUTO_IGN Is Nothing) Then
+                        EEC_AUTO_IGN.Value = KineticaRT.Values.Values.False
+                    End If
+                    If Not (DOUT14 Is Nothing) Then
+                        DOUT14.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (DOUT58 Is Nothing) Then
+                        DOUT58.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (MOPD_ENG_CHA_DELETE) Is Nothing Then
+                        MOPD_ENG_CHA_DELETE.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (MOPD_ENG_CHB_DELETE) Is Nothing Then
+                        MOPD_ENG_CHB_DELETE.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (MOT_CHA_DELETE) Is Nothing Then
+                        MOT_CHA_DELETE.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (MOT_CHB_DELETE) Is Nothing Then
+                        MOT_CHB_DELETE.Value = KineticaRT.Values.Values.False
+                    End If
+
+                Case "PW308A ANC"
+                    If Not (ARINC_L101_DEMAND Is Nothing) Then
+                        ARINC_L101_DEMAND.Value = New KineticaRT.Values.Double("0")
+                    End If
+
+                    If Not (ARINC_L102_DEMAND Is Nothing) Then
+                        ARINC_L102_DEMAND.Value = New KineticaRT.Values.Double("0")
+                    End If
+
+                    If Not (ARINC_L103_DEMAND Is Nothing) Then
+                        ARINC_L103_DEMAND.Value = New KineticaRT.Values.Double("0")
+                    End If
+
+                    If Not (EEC_IGNITION_AUTO Is Nothing) Then
+                        EEC_IGNITION_AUTO.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    If Not (EEC_IGNITION_CONT Is Nothing) Then
+                        EEC_IGNITION_CONT.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (TT1_COUNT Is Nothing) Then
+                        TT1_COUNT.Value = New KineticaRT.Values.Double("0")
+                    End If
+
+                    If Not (DOUT14 Is Nothing) Then
+                        DOUT14.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    If Not (DOUT64 Is Nothing) Then
+                        DOUT64.Value = KineticaRT.Values.Values.True
+                    End If
+
+                    If Not (DOUT58 Is Nothing) Then
+                        DOUT58.Value = KineticaRT.Values.Values.True
+                    End If
+                Case "PW308C ANC"
+                    If Not (EEC_BIT_0 Is Nothing) Then
+                        EEC_BIT_0.Value = KineticaRT.Values.Values.True
+                    End If
+                    If Not (EEC_BIT_1 Is Nothing) Then
+                        EEC_BIT_1.Value = KineticaRT.Values.Values.True
+                    End If
+                    If Not (EEC_IGNITION_AUTO Is Nothing) Then
+                        EEC_IGNITION_AUTO.Value = KineticaRT.Values.Values.True
+                    End If
+                    If Not (EEC_IGNITION_CONT Is Nothing) Then
+                        EEC_IGNITION_CONT.Value = KineticaRT.Values.Values.False
+                    End If
+                    If Not (EEC_IGNITION_OFF Is Nothing) Then
+                        EEC_IGNITION_OFF.Value = KineticaRT.Values.Values.False
+                    End If
+                    If Not (TT1_COUNT Is Nothing) Then
+                        TT1_COUNT.Value = New KineticaRT.Values.Double("0")
+                    End If
+
+                    If Not (DOUT64 Is Nothing) Then
+                        DOUT64.Value = KineticaRT.Values.Values.False
+                    End If
+                    If Not (EEC_LEFT_ENG_ID Is Nothing) Then
+                        EEC_LEFT_ENG_ID.Value = KineticaRT.Values.Values.True
+                    End If
+                    If Not (DOUT14 Is Nothing) Then
+                        DOUT14.Value = KineticaRT.Values.Values.False
+                    End If
+
+                    If Not (DOUT58 Is Nothing) Then
+                        DOUT58.Value = KineticaRT.Values.Values.False
+                    End If
+            End Select
+        End Sub
+
+
+        '*************************
+        '* MyBase.InitializeChannel()  *
+        '*************************
+        Private Function Initialize_Channel(ByRef Channel As Object, ByVal ChannelName As String) As Boolean
+            Channel = GetChannel(ChannelName)
+            If Channel Is Nothing Then
+                MessageBox.Show("Initialize_Channel - " + ChannelName + " Is Nothing")
+                Initialize_Channel = False
+            Else
+                Initialize_Channel = True
+            End If
+        End Function
+
+        '********************************
+        '* Initialize_Engine_Controls() *
+        '********************************
+        Private Sub Initialize_Engine_Controls()
+
+            'Select Case Test_Mgr_UUT_Model.Value.ToString()
+
+            '    Case "DAS CALIBRATION"
+            '        Dim Return_Value As New ArrayList()
+
+            '        Return_Value.Clear()
+            '        Return_Value.Add(Initialize_Object(Ctrl_Frame, "Calibration.Frame1"))
+            '        NewCalibReport_Button = Ctrl_Frame.FindObject("NewCalibReport")
+            '        If NewCalibReport_Button Is Nothing Then
+            '            MessageBox.Show("Initialize_Object - NewCalibReport_Button Is Nothing")
+            '            Return_Value.Add(False)
+            '        Else
+            '            Return_Value.Add(True)
+            '        End If
+
+            '        If Test_Mgr_User_Security_Lvl.Value.ToString() = "Operator" Then
+            '            NewCalibReport_Button.InputEnabled() = False
+            '        Else
+            '            NewCalibReport_Button.InputEnabled() = True
+            '        End If
+            'End Select
+        End Sub
+
+
+        '**************************
+        '* Initialize_Object()    *
+        '**************************
+        Private Function Initialize_Object(ByRef Channel As Object, ByVal ChannelName As String) As Boolean
+            Channel = GetObject(ChannelName)
+
+            If Channel Is Nothing Then
+                MessageBox.Show("Initialize_Object - " + ChannelName + " Is Nothing")
+                Initialize_Object = False
+            Else
+                Initialize_Object = True
+            End If
+        End Function
+
+
+        '*****************************
+        '* Fuel_Used_Calc()          *
+        '*****************************
+        Private Sub Fuel_Used_Calc()
+            Try
+
+                If (Engine_Running = True) Then
+                    '****************************************************************************************************
+                    '* WF(lbs/hour)  SG(Kg/liter)  (gallon/liter)*(hour/minute)*(kilogram/pounds)=0.001997 gallons/min  *
+                    '* calculation rate 2400 times per minute (threadsleeep(25))                                        *
+                    '**************************************************************************************************** 
+
+                    If (SG_READ.Value.ToDouble() > 0) Then
+                        Current_Fuel_Used = Current_Fuel_Used + (WF.Value.ToDouble() / SG_READ.Value.ToDouble() * 0.001997 * 0.000417)
+                    End If
+
+                End If
+
+                FUEL_USED_GM.Value = New KineticaRT.Values.Double(Current_Fuel_Used)
+
+            Catch ex As Exception
+                MessageBox.Show("Fuel_Used_Calc: " & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+            End Try
+
+        End Sub
+
+
+        '******************
+        '* PrintReport	  *
+        '******************
+        Private Sub PrintReport(ByVal excelWorkbook As Excel.Workbook)
+            Dim Result As DialogResult
+
+            Dim excelSheets As Excel.Sheets
+            Dim currentSheet As String
+            Dim excelWorksheet As Excel.Worksheet
+
+            ' The following gets the Worksheets collection
+            excelSheets = excelWorkbook.Worksheets
+
+            Result = System.Windows.Forms.MessageBox.Show("Do you want to print last report ?", "Log Report", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+            If (Result = DialogResult.Yes) Then
+                currentSheet = "Sheet1"
+                excelWorksheet = excelSheets.Item(currentSheet)
+                excelWorksheet.PrintOut()
+
+                currentSheet = "Sheet2"
+                excelWorksheet = excelSheets.Item(currentSheet)
+                excelWorksheet.PrintOut()
+
+                currentSheet = "Sheet3"
+                excelWorksheet = excelSheets.Item(currentSheet)
+                excelWorksheet.PrintOut()
+            End If
+        End Sub
+
+
+        Private Sub PrintReport(ByVal excelWorksheet As Excel.Worksheet)
+            Dim Result As DialogResult
+
+            Result = MessageBox.Show("Print last full log report?", "Log Report", MessageBoxButtons.YesNo)
+            If (Result = DialogResult.Yes) Then
+                excelWorksheet.PrintOut()
+            End If
+        End Sub
+
+
+        '*********************
+        '* Read_Flowmeters() *
+        '*********************
+        'Function Read_Flowmeters()
+        '    Dim Cmd As OleDbCommand
+        '    Dim ConnectionString As String
+        '    Dim Data_Point As Integer
+        '    Dim Flowmeter_ID As Integer
+        '    Dim i, j As Integer
+        '    Dim Nbr_Points(10) As Integer
+        '    Dim Reader As OleDbDataReader
+        '    Dim SelectString As String
+        '    Dim TestSession_Connection As OleDbConnection
+
+        '    For i = 0 To 10
+        '        Nbr_Points(i) = 0
+        '    Next
+
+        '    'Connect to the TestSession Database
+        '    'ConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source=" + TestSession_DatabaseName + ";Jet OLEDB:System database=" + TestSession_DatabaseWorkgroup + "; User ID=" + TestSession_DatabaseUserID + "; Password=" + TestSession_DatabasePassword
+        '    TestSession_Connection = New OleDbConnection(CELProject.Database.)
+
+        '    'Open the connection.
+        '    Try
+        '        TestSession_Connection.Open()
+        '    Catch exception As System.Exception
+        '        System.Diagnostics.Trace.WriteLine(exception.Message) 'Probably not found the file.
+        '    End Try
+
+        '    'Get the Trip for the selected engine
+        '    SelectString = "SELECT * FROM Flowmeter, Flowmeter_Information WHERE Flowmeter.Flowmeter_ID = Flowmeter_Information.ID ORDER BY Flowmeter.Flowmeter_ID, [Flowmeter.Data Point]"
+        '    Cmd = New OleDbCommand(SelectString, TestSession_Connection)
+        '    Reader = Cmd.ExecuteReader()
+
+        '    While (Reader.Read())
+        '        Flowmeter_ID = System.Convert.ToInt16(Reader.Item("Flowmeter_ID"))
+        '        Data_Point = System.Convert.ToInt16(Reader.Item("Data Point"))
+
+        '        Nbr_Points(Flowmeter_ID) += 1
+
+        '        Flowmeter_Frequency(Flowmeter_ID, Data_Point) = System.Convert.ToDouble(Reader.Item("Frequency").ToString())
+        '        Flowmeter_Voltage(Flowmeter_ID, Data_Point) = System.Convert.ToDouble(Reader.Item("Voltage").ToString())
+        '        Flowmeter_USGPM(Flowmeter_ID, Data_Point) = System.Convert.ToDouble(Reader.Item("USGPM").ToString())
+        '    End While
+        '    Reader.Close()
+
+
+        '    For i = 0 To 10 - 1
+        '        For j = Nbr_Points(i) To 50 - 1
+        '            Flowmeter_Frequency(i, j + 1) = Flowmeter_Frequency(i, j)
+        '            Flowmeter_Voltage(i, j + 1) = Flowmeter_Voltage(i, j)
+        '            Flowmeter_USGPM(i, j + 1) = Flowmeter_USGPM(i, j)
+        '        Next
+        '    Next
+
+        '    TestSession_Connection.Close()
+        '    Return True
+        'End Function
+
+
+
+        '********************************************************************
+        '* Handlers *********************************************************
+        '********************************************************************
+
+
+        '*******************
+        '* OnArchive()     *
+        '*******************
+        'Private Sub OnArchive(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+        '    Dim ChannelCollection As KineticaRT.ChannelCollection
+        '    Dim Destination As String
+        '    Dim FileName As String
+        '    Dim myOpenFileDialog As OpenFileDialog
+        '    Dim Source As String
+
+        '    Try
+        '        If sender.Name = "PLAY_BUTTON" Then
+        '            If (CELProject.IsTrue(newVal)) Then
+        '                myOpenFileDialog = New OpenFileDialog()
+        '                myOpenFileDialog.InitialDirectory = "C:\" + Test_Mgr_UUT_Model.Value.ToString() + "\" + Test_Mgr_UUT_Answer(0).ToString() + "\" + Test_Mgr_UUT_Answer(1).ToString() + "\Archive"
+        '                myOpenFileDialog.Filter = "csv files (*.csv)|*.csv"
+        '                myOpenFileDialog.FilterIndex = 1
+        '                myOpenFileDialog.RestoreDirectory = True
+        '                myOpenFileDialog.Multiselect = False
+
+        '                If myOpenFileDialog.ShowDialog() = DialogResult.OK Then
+        '                    FileName = myOpenFileDialog.FileName()
+
+        '                    Try
+        '                        File.Delete("C:\My Projects\KineticaRT\Prj" + PROJECT_NUMBER + "_HMI_Critical\PrjExt\Archive.csv")
+        '                        File.Copy(FileName, "C:\My Projects\KineticaRT\Prj" + PROJECT_NUMBER + "_HMI_Critical\PrjExt\Archive.csv")
+
+        '                        PlayBack_Archive_Flag = True
+        '                        Record_Archive_Flag = False
+
+        '                        EVENT_ARCHIVE_RECORD.Value = KineticaRT.Values.Values.False
+        '                        ARCHIVE_PLAY_BTN.Value = KineticaRT.Values.Values.True
+
+        '                    Catch Ex As Exception
+        '                        MessageBox.Show("OnArchive.Play.Copy: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        '                    Finally
+        '                    End Try
+        '                Else
+
+        '                    PLAY_BUTTON.Value = KineticaRT.Values.Values.False
+        '                End If
+
+        '                myOpenFileDialog.Dispose()
+        '            End If
+        '        ElseIf sender.Name = "ARCHIVE_RECORD" Then
+        '            ARCHIVE.LatchedTrigger = True 'Allow to make a regular Manual Record Without Pre and Post Buffer
+        '            PlayBack_Archive_Flag = False
+        '            Record_Archive_Flag = True
+
+        '        ElseIf sender.Name = "ARCHIVE_STOP_BTN" Then
+        '            If (CELProject.IsTrue(newVal) And Record_Archive_Flag = True) Then
+
+        '                PlayBack_Archive_Flag = False
+        '                Record_Archive_Flag = False
+
+        '                Source = "C:\My Projects\KineticaRT\Prj" + PROJECT_NUMBER + "_HMI_Critical\PrjExt\Archive.csv"
+        '                Destination = "C:\" + Test_Mgr_UUT_Model.Value.ToString() + "\" + Test_Mgr_UUT_Answer(0).ToString() + "\" + _
+        '                 Test_Mgr_UUT_Answer(1).ToString() + "\Archive\Archive " + Format(Now, "yyyy-MM-dd HH'h'mm'm'ss's'") + ".csv"
+        '                Try
+        '                    File.Copy(Source, Destination, True)
+        '                Catch Ex As Exception
+        '                    MessageBox.Show("OnArchive.Stop.Copy: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        '                End Try
+
+        '            ElseIf (CELProject.IsTrue(newVal) And PlayBack_Archive_Flag = True) Then
+
+        '                PLAY_BUTTON.Value = KineticaRT.Values.Values.False
+
+
+        '                ChannelCollection = GetObject(Test_Mgr_UUT_Model.Value.ToString())
+        '                If Not (ChannelCollection Is Nothing) Then
+        '                    ChannelCollection.Disconnect()
+        '                    ChannelCollection.Connect()
+        '                End If
+
+        '                ChannelCollection = GetObject(Test_Mgr_UUT_Model.Value.ToString() + "_Arinc_Uart")
+        '                If Not (ChannelCollection Is Nothing) Then
+        '                    ChannelCollection.Disconnect()
+        '                    ChannelCollection.Connect()
+        '                End If
+
+        '                ChannelCollection = GetObject(Test_Mgr_UUT_Model.Value.ToString() + "_Channels")
+        '                If Not (ChannelCollection Is Nothing) Then
+        '                    ChannelCollection.Disconnect()
+        '                    ChannelCollection.Connect()
+        '                End If
+
+        '                'Warning these flags must stay after ChannelCollection.Disconnect() and  ChannelCollection.Connect()
+        '                'Because of the EventArchiverThread that will start recording once the flag is ressetted
+        '                PlayBack_Archive_Flag = False
+        '                Record_Archive_Flag = False
+
+        '            End If
+        '        End If
+        '    Catch Ex As Exception
+        '        MessageBox.Show("OnArchive: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        '    End Try
+        'End Sub
+
+
+        '************************
+        '* EventArchiveThread() * 'Logger Événementiel
+        '************************
+        'Private Sub EventArchiveThread()
+        '    Dim Source As String
+        '    Dim Destination As String
+
+        '    Try
+        '        Do While Not ExitThread
+        '            Thread.Sleep(25)
+
+        '            Select Case Test_Mgr_Status.Value.ToString()
+        '                Case eTest_Mgr_Status.Running
+        '                    If (PlayBack_Archive_Flag = True Or ARCHIVE_PLAY_BTN.Value.Equals(KineticaRT.Values.Values.True)) Then
+        '                        If EVENT_ARCHIVE.Stop = False Then 'Check if already stopped
+        '                            EVENT_ARCHIVE.Stop = True 'If playback is running then stop recording
+        '                        End If
+        '                    ElseIf EVENT_ARCHIVE.Record = False And EventArchiveNeedSave = False Then 'Wait the file to be copied first, then restart Recording (See OnEventArchivePropertyChanged for file copy)
+        '                        'Thread.Sleep(300) 'Necessaire lorsque DELETE CHANNNEL ==> Disconnect Connect
+        '                        EVENT_ARCHIVE.Record = True
+        '                    ElseIf EVENT_ARCHIVE.Record = True And EVENT_ARCHIVE.Triggered = True Then 'Wait the file to be copied first, then restart Recording (See OnEventArchivePropertyChanged for file copy)
+        '                        EVENT_ARCHIVE_RECORD.Value = KineticaRT.Values.Values.True 'Update for flashing led Event Recording
+        '                    Else
+        '                        EVENT_ARCHIVE_RECORD.Value = KineticaRT.Values.Values.False 'Update for flashing led Event Recording
+        '                    End If
+
+        '                Case eTest_Mgr_Status.Closing, eTest_Mgr_Status.Closed, eTest_Mgr_Status.Idling
+        '                    If EVENT_ARCHIVE.Stop = False Then
+        '                        '								EVENT_ARCHIVE.LatchedTrigger = True 'Keep Trigger Latched Note MLeduc: Commented out this line because when a test session was closed and another was open, the Event Logger would not stop when trigger condition was removed.
+        '                        EVENT_ARCHIVE.Triggered = False     'Stop Recording
+        '                        EVENT_ARCHIVE.Stop = True           'Stop recording
+        '                    End If
+        '                    ExitThread = True
+        '            End Select
+
+        '            If EVENT_ARCHIVE.VALUE.ToString() = "Stopped" And EventArchiveNeedSave = True Then
+        '                'UpdateArchiveButtonColor()
+        '                'Source = "C:\My Projects\KineticaRT\Prj" + PROJECT_NUMBER + "_HMI\PrjExt\EventArchive.csv"
+        '                Source = "PrjExt\EventArchive.csv"
+        '                Destination = "C:\" + Test_Mgr_UUT_Model.Value.ToString() + "\" + Test_Mgr_UUT_Answer(0).ToString() + "\" + _
+        '                       Test_Mgr_UUT_Answer(1).ToString() + "\Archive\EventArchive " + Format(Now, "yyyy-MM-dd HH'h'mm'm'ss's'") + ".csv"
+
+        '                Dim InUse As Integer = 50
+        '                Dim LineCount As Integer = 0
+        '                If (File.Exists(Source)) Then
+        '                    Do
+        '                        Try
+        '                            Dim sr As StreamReader = File.OpenText(Source)
+        '                            'loop until the end
+        '                            While Not (sr.ReadLine() Is Nothing)
+        '                                LineCount += 1
+        '                                If LineCount > 1 Then Exit While
+        '                            End While
+        '                            sr.Close()
+        '                            InUse = 0
+        '                        Catch ex As exception
+        '                            Thread.Sleep(50) 'Wait 50 ms before trying again
+        '                            InUse -= 1
+        '                            LineCount = 0
+        '                        End Try
+        '                    Loop While InUse > 0
+        '                Else
+        '                    MessageBox.Show("EventArchiveThread: File " & Source & " doesn`t exists", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        '                    LineCount = 0
+        '                End If
+        '                Try
+        '                    If LineCount > 1 Then 'Keep file with more than 1 line only
+        '                        File.Copy(Source, Destination, True)
+        '                    End If
+        '                Catch Ex As Exception
+        '                    MessageBox.Show("OnEventArchivePropertyChanged.Copy: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        '                End Try
+        '                'Thread.Sleep(500) 'Let Event_Archive_WorkerThread to finish properly
+        '                EventArchiveNeedSave = False
+        '            End If
+        '        Loop
+        '    Catch ex As Exception
+        '        MessageBox.Show("EventArchiveThread: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        '    End Try
+        'End Sub
+
+        'Private Sub OnEventArchivePropertyChanged(ByVal Sender As Object, ByVal e As System.ComponentModel.PropertyChangedEventArgs)
+        '    Try
+        '        'Triggered  = True when  a Trigger limit has been exceeded
+        '        If e.PropertyName = "Triggered" Then
+        '            If EVENT_ARCHIVE.Triggered = True Then
+        '                EventArchiveNeedSave = True
+        '            ElseIf EventArchiveNeedSave = True And EVENT_ARCHIVE.Stop = False Then
+        '                EVENT_ARCHIVE.Stop = True
+        '                'Do not add code after EVENT_ARCHIVE.Stop = True ==> The current thread will be aborted
+        '            End If
+        '        End If
+        '    Catch tAbort As ThreadAbortException
+        '        ' When we set EVENT_ARCHIVE.Stop to True, KineticaRT abort an internal thread which raises
+        '        ' ThreadAbortException. Just ignore this Exception as it is harmless although, it is not good practice to
+        '        ' abort a thread...
+        '    Catch ex As Exception
+        '        MessageBox.Show("Engine_Sequence: OnEventArchivePropertyChanged: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        '    End Try
+        'End Sub
+
+
+        '*************
+        '* OnAlarm() *
+        '*************
+        Private Sub OnAlarm(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+
+                If ((OVERTEMP.Value.ToString.ToUpper = "TRUE" _
+                 Or N1_OVERSPEED.Value.ToString.ToUpper = "TRUE" _
+                 Or N2_OVERSPEED.Value.ToString.ToUpper = "TRUE" _
+                 Or LOW_FUEL_PRESSURE.Value.ToString.ToUpper = "TRUE" _
+                 Or LOW_MOP_DP.Value.ToString.ToUpper = "TRUE" _
+                 Or HIGH_MOP_DP.Value.ToString.ToUpper = "TRUE" _
+                 Or FUEL_FILTER_BYPASS.Value.ToString.ToUpper = "TRUE" _
+                 Or OIL_FILTER_BYPASS.Value.ToString.ToUpper = "TRUE" _
+                 Or MOT_CHIP.Value.ToString.ToUpper = "TRUE") _
+                 And ENGINE_AT_REST.Value.ToString.ToUpper = "FALSE" _
+                 Or ESTOP.Value.ToString.ToUpper = "TRUE") Then
+
+                    BUZZER.Value = Kineticart.Values.Values.True
+                Else
+                    BUZZER.Value = Kineticart.Values.Values.False
+                End If
+            Catch ex As Exception
+                MessageBox.Show("AlarmBuzzer: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '**********************
+        '* OnChn_Disable()    *
+        '**********************
+        Private Sub OnChn_Disable(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (CELProject.IsTrue(newVal)) Then
+                    If (sender.Name = "EEC_CHN_DISABLE_CHA") Then
+                        EEC_CHN_DISABLE_CHB.Value = KineticaRT_ZERO
+                        EEC_CHN_DISABLE_NONE.Value = KineticaRT_ZERO
+                    ElseIf (sender.Name = "EEC_CHN_DISABLE_CHB") Then
+                        EEC_CHN_DISABLE_CHA.Value = KineticaRT_ZERO
+                        EEC_CHN_DISABLE_NONE.Value = KineticaRT_ZERO
+                    ElseIf (sender.Name = "EEC_CHN_DISABLE_NONE") Then
+                        EEC_CHN_DISABLE_CHA.Value = KineticaRT_ZERO
+                        EEC_CHN_DISABLE_CHB.Value = KineticaRT_ZERO
+                    End If
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnChn_Disable: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '********************
+        '* OnCloseTest()    *
+        '********************
+        Private Sub OnClose_Test(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (CELProject.IsTrue(newVal)) Then
+                    Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                        'Not For "DAS CALIBRATION"
+                        Case "PW307A", "PW308A ANC", "PW308C ANC"
+                            If Not (AIR_PRESSURE_STARTER_VALUE Is Nothing) Then
+                                AIR_PRESSURE_STARTER_VALUE.Value = KineticaRT.Values.Values.Zero
+                            End If
+                    End Select
+                    Thread.Sleep(100)
+                    'Close Test
+                    CELProject.Test_Mgr_Cmd.Value = New KineticaRT.Values.Text(CELDAS.eTest_Mgr_Cmd.Close)
+                End If
+
+                CELProject.CLOSE_TEST_BTN.Value = KineticaRT.Values.Values.False
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnClose_Test: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+
+
+
+
+
+
+        '*******************
+        '* OnEmerStop()    *
+        '*******************
+        Private Sub OnEmerStop(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (newVal.ToString.ToUpper = "TRUE") Then
+
+                    Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                        Case "PW307A", "PW308A ANC", "PW308C ANC"
+
+                            AIR_BALANCING.Value = KineticaRT.Values.Values.False
+                            FUEL_PUMP.Value = KineticaRT.Values.Values.False
+                            FUEL_ARMING.Value = KineticaRT.Values.Values.False
+                            EEC_START.Value = KineticaRT.Values.Values.False
+                            IGNITER_A.Value = KineticaRT.Values.Values.False
+                            IGNITER_B.Value = KineticaRT.Values.Values.False
+                            MOTORING.Value = KineticaRT.Values.Values.False
+                    End Select
+
+
+                    Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                        Case "PW307A"
+
+                            EEC_START.Value = KineticaRT.Values.Values.False
+                            EEC_SHUTDOWN.Value = KineticaRT.Values.Values.True
+                            EEC_MOTOR.Value = KineticaRT.Values.Values.False
+
+                        Case "PW308A ANC", "PW308C ANC"
+
+                            EEC_NORMAL_SDN.Value = KineticaRT.Values.Values.True
+
+                    End Select
+
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnEmerStop: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '*******************
+        '* OnFire_Signal() *
+        '*******************
+        Private Sub OnFire_Signal(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (newVal.ToString.ToUpper = "FALSE") Then
+                    FUEL_PUMP.Value = KineticaRT_ZERO
+                    ESTOP.Value = New KineticaRT.Values.Double(1)
+                ElseIf (newVal.ToString.ToUpper = "TRUE") Then
+                    ESTOP.Value = KineticaRT_ZERO
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnFire_Signal: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '*********************
+        '* OnFlowmeter()     *
+        '*********************
+        Private Sub OnFlowmeter()
+            Try
+                WF_CAL.Value = New KineticaRT.Values.Double(Flowmeter_Characterizer(1, WF_RAW.Value.ToDouble()))
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnFlowmeter: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '**********************
+        '* OnIgnition_Sw()    *
+        '**********************
+        Private Sub OnIgnition_Sw(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                    Case "PW308A ANC"
+                        If (CELProject.IsTrue(newVal)) Then
+                            If (sender.Name = "EEC_IGNITION_AUTO") Then
+                                EEC_IGNITION_CONT.Value = KineticaRT_ZERO
+                            ElseIf (sender.Name = "EEC_IGNITION_CONT") Then
+                                EEC_IGNITION_AUTO.Value = KineticaRT_ZERO
+                            End If
+                        End If
+
+                    Case "PW308C ANC"
+                        If (CELProject.IsTrue(newVal)) Then
+                            If (sender.Name = "EEC_IGNITION_AUTO") Then
+                                EEC_IGNITION_CONT.Value = KineticaRT_ZERO
+                                EEC_IGNITION_OFF.Value = KineticaRT_ZERO
+                            ElseIf (sender.Name = "EEC_IGNITION_CONT") Then
+                                EEC_IGNITION_AUTO.Value = KineticaRT_ZERO
+                                EEC_IGNITION_OFF.Value = KineticaRT_ZERO
+                            ElseIf (sender.Name = "EEC_IGNITION_OFF") Then
+                                EEC_IGNITION_AUTO.Value = KineticaRT_ZERO
+                                EEC_IGNITION_CONT.Value = KineticaRT_ZERO
+                            End If
+                        End If
+                End Select
+
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnIgnition_Sw: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '**********************
+        '* OnLane_Change()    *
+        '**********************
+        Private Sub OnLane_Change(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (CELProject.IsTrue(newVal)) Then
+                    If (sender.Name = "EEC_LANE_A") Then
+                        EEC_LANE_B.Value = KineticaRT_ZERO
+                        EEC_LANE_BOTH.Value = KineticaRT_ZERO
+                        RVDT_OSC_LANE_B.Value = KineticaRT.Values.Values.False
+                    ElseIf (sender.Name = "EEC_LANE_B") Then
+                        EEC_LANE_A.Value = KineticaRT_ZERO
+                        EEC_LANE_BOTH.Value = KineticaRT_ZERO
+                        RVDT_OSC_LANE_B.Value = KineticaRT.Values.Values.True
+                    ElseIf (sender.Name = "EEC_LANE_BOTH") Then
+                        EEC_LANE_A.Value = KineticaRT_ZERO
+                        EEC_LANE_B.Value = KineticaRT_ZERO
+                    End If
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnLane_Change: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '********************
+        '* OnLBDisable()    *
+        '********************
+        Private Sub OnLBDisable(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (newVal Is KineticaRT.Values.Values.False) Then
+                    LB_STAGE1.Value = KineticaRT_ZERO
+                    LB_STAGE2.Value = KineticaRT_ZERO
+                    LB_STAGE3.Value = KineticaRT_ZERO
+                    LB_STAGE4.Value = KineticaRT_ZERO
+                    LB_STAGE5.Value = KineticaRT_ZERO
+                    If CELProject.Test_Mgr_UUT_Model.Value.ToString() = "PW308A ANC" Then
+                        LB_STAGE6.Value = KineticaRT_ZERO
+                    End If
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnLBDisable: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '*******************
+        '* OnNormalShutdown()    *
+        '*******************
+        Private Sub OnNormalShutdown(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (newVal.ToString.ToUpper = "TRUE") Then
+
+                    Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                        Case "PW307A", "PW308A ANC", "PW308C ANC"
+
+                            EEC_START.Value = KineticaRT.Values.Values.False
+                            IGNITER_A.Value = KineticaRT.Values.Values.False
+                            IGNITER_B.Value = KineticaRT.Values.Values.False
+
+                    End Select
+
+
+                    Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                        Case "PW308A ANC", "PW308C ANC"
+
+                            EEC_NORMAL_SDN.Value = KineticaRT.Values.Values.True
+
+                    End Select
+
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnShutdown: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '*************************
+        '* OnResetEngineTime()    *
+        '*************************
+        Private Sub OnResetEngineTime(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            If (CELProject.IsTrue(newVal)) Then
+                Previous_ts = New System.TimeSpan(0)
+                ts = New System.TimeSpan(0)
+                Engine_Running = False
+                OPERATING_TIME.Value = New KineticaRT.Values.Text(ts.Hours.ToString.PadLeft(2, "0") & ":" & ts.Minutes.ToString.PadLeft(2, "0") & ":" & ts.Seconds.ToString.PadLeft(2, "0"))
+                'Reset Button
+                ENGINE_TIME_RESET.Value = KineticaRT.Values.Values.False
+            End If
+        End Sub
+
+
+        '*************************
+        '* OnResetFuelUsed()    *
+        '*************************
+        Private Sub OnResetFuelUsed(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            If (CELProject.IsTrue(newVal)) Then
+                FUEL_USED_GM.Value = New KineticaRT.Values.Double(0.0)
+                Current_Fuel_Used = 0.0
+                'Reset Button
+                FUEL_USED_RESET.Value = KineticaRT.Values.Values.False
+            End If
+        End Sub
+
+
+        '*************************
+        '*OnResetSpinButtons()    *
+        '*************************
+        Private Sub OnResetSpinButtons(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            If (CELProject.IsTrue(newVal)) Then
+                EEC_DRY_SPIN.Value = KineticaRT.Values.Values.False
+                EEC_WET_SPIN.Value = KineticaRT.Values.Values.False
+                EEC_WET_THEN_DRYSPIN.Value = KineticaRT.Values.Values.False
+                EEC_TRIM_PLUG_CHANGE.Value = KineticaRT.Values.Values.False
+            End If
+        End Sub
+
+
+        '*******************
+        '* OnStandbyShutdown()    *
+        '*******************
+        Private Sub OnStandbyShutdown(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (newVal.ToString.ToUpper = "TRUE") Then
+                    EEC_START.Value = KineticaRT.Values.Values.False
+                    IGNITER_A.Value = KineticaRT.Values.Values.False
+                    IGNITER_B.Value = KineticaRT.Values.Values.False
+                    EEC_STANDBY_SDN.Value = KineticaRT.Values.Values.True
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnShutdown: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+
+        '*****************************
+        '* OnSTOP_TIMER_CND_BUTTON() *
+        '*****************************
+        Private Sub OnSTOP_TIMER_CND_BUTTON(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (CELProject.IsTrue(newVal)) Then
+                    OPC_STOP_TIMER_CND.Value = N2_RPM.Value
+                    STOP_TIMER_CND_BUTTON.Value = KineticaRT.Values.Values.False
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnSTOP_TIMER_CND_BUTTON: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '*****************************
+        '* OnTare() *
+        '*****************************
+        Private Sub OnTare(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (CELProject.IsTrue(newVal)) Then
+
+
+                    OPC_MOP_OFFSET.Value = MOP.Value
+                    OPC_P_AGB_OFFSET.Value = P_AGB.Value.Subtract(PSN.Value)
+                    OPC_P1A_1_OFFSET.Value = P1A_1.Value.Subtract(PSN.Value)
+                    OPC_P1A_2_OFFSET.Value = P1A_2.Value.Subtract(PSN.Value)
+                    OPC_P3_OFFSET.Value = PS3.Value.Subtract(PSN.Value)
+                    OPC_S1A_1_OFFSET.Value = S1A_1.Value.Subtract(PSN.Value)
+                    OPC_S1A_2_OFFSET.Value = S1A_2.Value.Subtract(PSN.Value)
+                    OPC_S1A_3_OFFSET.Value = S1A_3.Value.Subtract(PSN.Value)
+                    OPC_S1A_4_OFFSET.Value = S1A_4.Value.Subtract(PSN.Value)
+                    OPC_THRUST_OFFSET.Value = THRUST.Value
+                    OPC_P_MOTIVE_OFFSET.Value = P_MOTIVE.Value
+
+
+                Else
+
+                    OPC_MOP_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_P_AGB_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_P1A_1_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_P1A_2_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_P3_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_S1A_1_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_S1A_2_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_S1A_3_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_S1A_4_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_THRUST_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                    OPC_P_MOTIVE_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Engine_Sequence: OnTare: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+
+        '*****************************
+        '* Operating_Time_Calc()    *
+        '*****************************
+        Private Sub Operating_Time_Calc()
+            Try
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW307A", "PW308C ANC"
+
+                        If ((OPC_N2_ABOVE_GI.Value.ToString.ToUpper = "TRUE") And (Engine_Running = False)) Then
+                            OperatingTime_Start = Now
+                            Engine_Running = True
+                        End If
+
+                        If ((OPC_N2_ABOVE_GI.Value.ToString.ToUpper = "TRUE") Or ((FUEL_FLOW.Value.ToDouble() > 0.0) And (Engine_Running = True))) Then
+                            OperatingTime_Stop = Now
+                            Current_ts = OperatingTime_Stop.Subtract(OperatingTime_Start)
+                            ts = Current_ts.Add(Previous_ts)
+                        End If
+
+                    Case "PW308A ANC"
+
+                        If ((OPC_N2_ABOVE_95GI.Value.ToString.ToUpper = "TRUE") And (Engine_Running = False)) Then
+                            OperatingTime_Start = Now
+                            Engine_Running = True
+                        End If
+
+                        If ((OPC_N2_ABOVE_95GI.Value.ToString.ToUpper = "TRUE") Or ((FUEL_FLOW.Value.ToDouble() > 0.0) And (Engine_Running = True))) Then
+                            OperatingTime_Stop = Now
+                            Current_ts = OperatingTime_Stop.Subtract(OperatingTime_Start)
+                            ts = Current_ts.Add(Previous_ts)
+                        End If
+
+                End Select
+
+                OPERATING_TIME.Value = New KineticaRT.Values.Text(ts.Hours.ToString.Padleft(2, "0") & ":" & ts.Minutes.ToString.Padleft(2, "0") & ":" & ts.Seconds.ToString.Padleft(2, "0"))
+
+                If (Fuel_Flow.Value.ToDouble() = 0.0) Then
+                    Previous_ts = ts
+                    Engine_Running = False
+                End If
+
+
+            Catch ex As Exception
+                MessageBox.Show("Operating_Time_Calc: " & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+            End Try
+
+        End Sub
+
+        '****************************
+        '* OnMOPD_ENG_DELETE()      *
+        '****************************
+        Private Sub OnMOPD_ENG_DELETE(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+
+
+            Try
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW307A"
+
+                        If (MOPD_ENG_CHA_DELETE.Value.ToString.ToUpper = "FALSE" And MOPD_ENG_CHB_DELETE.Value.ToString.ToUpper = "TRUE") Then
+                            MOPD_ENG.Text = "MOPD_ENG_CHA"
+                            MOPD_ENG_MAX.Text = "MOPD_ENG_CHA"
+                            MOPD_ENG_MIN.Text = "MOPD_ENG_CHA"
+                        End If
+
+                        If (MOPD_ENG_CHA_DELETE.Value.ToString.ToUpper = "TRUE" And MOPD_ENG_CHB_DELETE.Value.ToString.ToUpper = "FALSE") Then
+                            MOPD_ENG.Text = "MOPD_ENG_CHB"
+                            MOPD_ENG_MAX.Text = "MOPD_ENG_CHB"
+                            MOPD_ENG_MIN.Text = "MOPD_ENG_CHB"
+                        End If
+
+                        If (MOPD_ENG_CHA_DELETE.Value.ToString.ToUpper = "FALSE" And MOPD_ENG_CHB_DELETE.Value.ToString.ToUpper = "FALSE") Then
+                            MOPD_ENG.Text = "(MOPD_ENG_CHA + MOPD_ENG_CHB)/2"
+                            MOPD_ENG_MAX.Text = "Max(MOPD_ENG_CHA,MOPD_ENG_CHB)"
+                            MOPD_ENG_MIN.Text = "Min(MOPD_ENG_CHA,MOPD_ENG_CHB)"
+                        End If
+                End Select
+            Catch Ex As Exception
+                MessageBox.Show("OnMOPD_ENG_DELETE: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            Finally
+            End Try
+
+        End Sub
+
+
+
+        '****************************
+        '* OnMOT_DELETE()           *
+        '****************************
+        Private Sub OnMOT_DELETE(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+
+
+            Try
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW307A"
+
+                        If (MOT_CHA_DELETE.Value.ToString.ToUpper = "FALSE" And MOT_CHB_DELETE.Value.ToString.ToUpper = "TRUE") Then
+                            MOT.Text = "MOT_CHA"
+                            MOT_MAX.Text = "MOT_CHA"
+                            MOT_MIN.Text = "MOT_CHA"
+                        End If
+
+                        If (MOT_CHA_DELETE.Value.ToString.ToUpper = "TRUE" And MOT_CHB_DELETE.Value.ToString.ToUpper = "FALSE") Then
+                            MOT.Text = "MOT_CHB"
+                            MOT_MAX.Text = "MOT_CHB"
+                            MOT_MIN.Text = "MOT_CHB"
+                        End If
+
+                        If (MOT_CHA_DELETE.Value.ToString.ToUpper = "FALSE" And MOT_CHB_DELETE.Value.ToString.ToUpper = "FALSE") Then
+                            MOT.Text = "(MOT_CHA + MOT_CHB)/2"
+                            MOT_MAX.Text = "Max(MOT_CHA,MOT_CHB)"
+                            MOT_MIN.Text = "Min(MOT_CHA,MOT_CHB)"
+                        End If
+                End Select
+            Catch Ex As Exception
+                MessageBox.Show("OnMOT_DELETE: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            Finally
+            End Try
+
+        End Sub
+
+
+        '*******************
+        '* OnTT1_DELETE()  *
+        '*******************
+        Private Sub OnTT1_DELETE(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Dim Avg_Text As String = ""
+            Dim Count As Integer = 0
+            Dim i As Integer
+            Dim Max_Text As String = ""
+            Dim Min_Text As String = ""
+
+            Try
+                TT1_COUNT.Value = KineticaRT.Values.Values.Zero
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW308A ANC", "PW308C ANC"
+
+                        For i = 0 To TT1_DELETE.GetUpperBound(0) - 1
+                            If (TT1_DELETE(i).Value.ToString.ToUpper = "FALSE") Then
+                                Count = Count + 1
+
+                                If Count = 1 Then
+                                    Avg_Text = "(TT1_" + (i + 1).ToString()
+                                    Max_Text = "Max(TT1_" + (i + 1).ToString()
+                                    Min_Text = "Min(TT1_" + (i + 1).ToString()
+                                Else
+                                    Avg_Text = Avg_Text + " + TT1_" + (i + 1).ToString()
+                                    Max_Text = Max_Text + ", TT1_" + (i + 1).ToString()
+                                    Min_Text = Min_Text + ", TT1_" + (i + 1).ToString()
+                                End If
+                            End If
+                        Next
+
+                        If Count = 0 Then
+                            Avg_Text = "0"
+                            Max_Text = "0"
+                            Min_Text = "0"
+                        Else
+                            Avg_Text = Avg_Text + ")/" + Count.ToString()
+                            Max_Text = Max_Text + ")"
+                            Min_Text = Min_Text + ")"
+                        End If
+
+                        TT1_AVG.Text = Avg_Text
+                        TT1_COUNT.Value = New KineticaRT.Values.Integer(TT1_DELETE.GetUpperBound(0) - Count)
+                        TT1_MAX.Text = Max_Text
+                        TT1_MIN.Text = Min_Text
+
+                End Select
+            Catch Ex As Exception
+                MessageBox.Show("OnTT1_DELETE: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            Finally
+            End Try
+
+        End Sub
+
+
+        '*******************
+        '* OnT6B_DELETE()  *
+        '*******************
+        Private Sub OnT6B_DELETE(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Dim Avg_Text As String = ""
+            Dim Count As Integer = 0
+            Dim i As Integer
+            Dim Max_Text As String = ""
+            Dim Min_Text As String = ""
+
+            Try
+                T6B_COUNT.Value = KineticaRT.Values.Values.Zero
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW307A", "PW308A ANC", "PW308C ANC"
+
+                        For i = 0 To T6B_DELETE.GetUpperBound(0) - 1
+                            If (T6B_DELETE(i).Value.ToString.ToUpper = "FALSE") Then
+                                Count = Count + 1
+
+                                If Count = 1 Then
+                                    Avg_Text = "(T6B_" + (i + 1).ToString()
+                                    Max_Text = "Max(T6B_" + (i + 1).ToString()
+                                    Min_Text = "Min(T6B_" + (i + 1).ToString()
+                                Else
+                                    Avg_Text = Avg_Text + " + T6B_" + (i + 1).ToString()
+                                    Max_Text = Max_Text + ", T6B_" + (i + 1).ToString()
+                                    Min_Text = Min_Text + ", T6B_" + (i + 1).ToString()
+                                End If
+                            End If
+                        Next
+
+                        If Count = 0 Then
+                            Avg_Text = "0"
+                            Max_Text = "0"
+                            Min_Text = "0"
+                        Else
+                            Avg_Text = Avg_Text + ")/" + Count.ToString()
+                            Max_Text = Max_Text + ")"
+                            Min_Text = Min_Text + ")"
+                        End If
+
+                        T6B_AVG.Text = Avg_Text
+                        T6B_COUNT.Value = New KineticaRT.Values.Integer(T6B_DELETE.GetUpperBound(0) - Count)
+                        T6B_MAX.Text = Max_Text
+                        T6B_MIN.Text = Min_Text
+
+                End Select
+            Catch Ex As Exception
+                MessageBox.Show("OnT6B_DELETE: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            Finally
+            End Try
+
+        End Sub
+
+
+        '*******************
+        '* OnT6E_DELETE()  *
+        '*******************
+        Private Sub OnT6E_DELETE(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Dim Avg_Text As String = ""
+            Dim Count As Integer = 0
+            Dim i As Integer
+            Dim Max_Text As String = ""
+            Dim Min_Text As String = ""
+
+            Try
+                T6E_COUNT.Value = KineticaRT.Values.Values.Zero
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW307A", "PW308A ANC", "PW308C ANC"
+
+                        For i = 0 To T6E_DELETE.GetUpperBound(0) - 1
+                            If (T6E_DELETE(i).Value.ToString.ToUpper = "FALSE") Then
+                                Count = Count + 1
+
+                                If Count = 1 Then
+                                    Avg_Text = "(T6E_" + (i + 1).ToString()
+                                    Max_Text = "Max(T6E_" + (i + 1).ToString()
+                                    Min_Text = "Min(T6E_" + (i + 1).ToString()
+                                Else
+                                    Avg_Text = Avg_Text + " + T6E_" + (i + 1).ToString()
+                                    Max_Text = Max_Text + ", T6E_" + (i + 1).ToString()
+                                    Min_Text = Min_Text + ", T6E_" + (i + 1).ToString()
+                                End If
+                            End If
+                        Next
+
+                        If Count = 0 Then
+                            Avg_Text = "0"
+                            Max_Text = "0"
+                            Min_Text = "0"
+                        Else
+                            Avg_Text = Avg_Text + ")/" + Count.ToString()
+                            Max_Text = Max_Text + ")"
+                            Min_Text = Min_Text + ")"
+                        End If
+
+                        T6E_AVG.Text = Avg_Text
+                        T6E_COUNT.Value = New KineticaRT.Values.Integer(T6E_DELETE.GetUpperBound(0) - Count)
+                        T6E_MAX.Text = Max_Text
+                        T6E_MIN.Text = Min_Text
+
+                End Select
+            Catch Ex As Exception
+                MessageBox.Show("OnT6E_DELETE: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            Finally
+            End Try
+
+        End Sub
+
+
+        '*******************
+        '* OnT6G_DELETE()  *
+        '*******************
+        Private Sub OnT6G_DELETE(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Dim Avg_Text As String = ""
+            Dim Count As Integer = 0
+            Dim i As Integer
+            Dim Max_Text As String = ""
+            Dim Min_Text As String = ""
+
+            Try
+                T6G_COUNT.Value = KineticaRT.Values.Values.Zero
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW307A", "PW308A ANC", "PW308C ANC"
+
+                        For i = 0 To T6G_DELETE.GetUpperBound(0) - 1
+                            If (T6G_DELETE(i).Value.ToString.ToUpper = "FALSE") Then
+                                Count = Count + 1
+
+                                If Count = 1 Then
+                                    Avg_Text = "(T6G_" + (i + 1).ToString()
+                                    Max_Text = "Max(T6G_" + (i + 1).ToString()
+                                    Min_Text = "Min(T6G_" + (i + 1).ToString()
+                                Else
+                                    Avg_Text = Avg_Text + " + T6G_" + (i + 1).ToString()
+                                    Max_Text = Max_Text + ", T6G_" + (i + 1).ToString()
+                                    Min_Text = Min_Text + ", T6G_" + (i + 1).ToString()
+                                End If
+                            End If
+                        Next
+
+                        If Count = 0 Then
+                            Avg_Text = "0"
+                            Max_Text = "0"
+                            Min_Text = "0"
+                        Else
+                            Avg_Text = Avg_Text + ")/" + Count.ToString()
+                            Max_Text = Max_Text + ")"
+                            Min_Text = Min_Text + ")"
+                        End If
+
+                        T6G_AVG.Text = Avg_Text
+                        T6G_COUNT.Value = New KineticaRT.Values.Integer(T6G_DELETE.GetUpperBound(0) - Count)
+                        T6G_MAX.Text = Max_Text
+                        T6G_MIN.Text = Min_Text
+
+                End Select
+            Catch Ex As Exception
+                MessageBox.Show("OnT6G_DELETE: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            Finally
+            End Try
+
+        End Sub
+
+
+        '*******************
+        '* OnT6K_DELETE()  *
+        '*******************
+        Private Sub OnT6K_DELETE(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Dim Avg_Text As String = ""
+            Dim Count As Integer = 0
+            Dim i As Integer
+            Dim Max_Text As String = ""
+            Dim Min_Text As String = ""
+
+            Try
+                T6K_COUNT.Value = KineticaRT.Values.Values.Zero
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW307A", "PW308A ANC", "PW308C ANC"
+
+                        For i = 0 To T6K_DELETE.GetUpperBound(0) - 1
+                            If (T6K_DELETE(i).Value.ToString.ToUpper = "FALSE") Then
+                                Count = Count + 1
+
+                                If Count = 1 Then
+                                    Avg_Text = "(T6K_" + (i + 1).ToString()
+                                    Max_Text = "Max(T6K_" + (i + 1).ToString()
+                                    Min_Text = "Min(T6K_" + (i + 1).ToString()
+                                Else
+                                    Avg_Text = Avg_Text + " + T6K_" + (i + 1).ToString()
+                                    Max_Text = Max_Text + ", T6K_" + (i + 1).ToString()
+                                    Min_Text = Min_Text + ", T6K_" + (i + 1).ToString()
+                                End If
+                            End If
+                        Next
+
+                        If Count = 0 Then
+                            Avg_Text = "0"
+                            Max_Text = "0"
+                            Min_Text = "0"
+                        Else
+                            Avg_Text = Avg_Text + ")/" + Count.ToString()
+                            Max_Text = Max_Text + ")"
+                            Min_Text = Min_Text + ")"
+                        End If
+
+                        T6K_AVG.Text = Avg_Text
+                        T6K_COUNT.Value = New KineticaRT.Values.Integer(T6K_DELETE.GetUpperBound(0) - Count)
+                        T6K_MAX.Text = Max_Text
+                        T6K_MIN.Text = Min_Text
+
+                End Select
+            Catch Ex As Exception
+                MessageBox.Show("OnT6K_DELETE: " & Ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            Finally
+            End Try
+
+        End Sub
+        '*************************
+        '* OnINCREASE_AIR_BUTTON()    *
+        '*************************
+        Private Sub OnINCREASE_AIR_BUTTON(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            If (CELProject.IsTrue(newVal)) Then
+                If (AIR_PRESSURE_STARTER_VALUE.Value.ToDouble() < 99) Then
+                    AIR_PRESSURE_STARTER_VALUE.Value = New KineticaRT.Values.Double(AIR_PRESSURE_STARTER_VALUE.Value.ToDouble() + 1.0)
+                Else
+                    AIR_PRESSURE_STARTER_VALUE.Value = New KineticaRT.Values.Double(100.0)
+                End If
+            End If
+        End Sub
+
+        '*************************
+        '* OnDECREASE_AIR_BUTTON()    *
+        '*************************
+        Private Sub OnDECREASE_AIR_BUTTON(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            If (CELProject.IsTrue(newVal)) Then
+
+                If (AIR_PRESSURE_STARTER_VALUE.Value.ToDouble() > 1.0) Then
+                    AIR_PRESSURE_STARTER_VALUE.Value = New KineticaRT.Values.Double(AIR_PRESSURE_STARTER_VALUE.Value.ToDouble() - 1.0)
+                Else
+                    AIR_PRESSURE_STARTER_VALUE.Value = New KineticaRT.Values.Double(0.0)
+                End If
+            End If
+        End Sub
+
+
+        '*************************
+        '* OnAIR_PRESSURE_STARTER_VALUE_CHANGE()    *
+        '*************************
+        Private Sub OnAIR_PRESSURE_STARTER_VALUE_CHANGE(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+
+
+            If (AIR_PRESSURE_STARTER_VALUE.Value.ToDouble() > 100.0) Then
+                AIR_PRESSURE_STARTER_VALUE.Value = New KineticaRT.Values.Double(100.0)
+            End If
+
+            If (AIR_PRESSURE_STARTER_VALUE.Value.ToDouble() < 0.0) Then
+                AIR_PRESSURE_STARTER_VALUE.Value = New KineticaRT.Values.Double(0.0)
+            End If
+
+        End Sub
+        '*************************
+        '* OnShowAirStartWindow()    *
+        '*************************
+        Private Sub OnShowAirStartWindow(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            If (CELProject.IsTrue(newVal)) Then
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW307A"
+                        Me.ActivateForm("AirStart_Control_Screen", "PW307A_Screen", True)
+
+                    Case "PW308A ANC"
+                        Me.ActivateForm("AirStart_Control_Screen", "PW308A_Screen", True)
+
+                    Case "PW308C ANC"
+                        Me.ActivateForm("AirStart_Control_Screen", "PW308C_Screen", True)
+
+                End Select
+                'Reset Button
+                MANUAL_AIR_BUTTON.Value = KineticaRT.Values.Values.False
+            End If
+        End Sub
+
+        '*************************************
+        '* OnCloseAirStartControlWindow()    *
+        '*************************************
+        Private Sub OnCloseAirStartWindow(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            If (CELProject.IsTrue(newVal)) Then
+                Me.ActivateForm("AirStart_Control_Screen", CELProject.Test_Mgr_UUT_Model.Value.ToString + "_Screen", False)
+
+                'Reset Button
+                CLOSE_AIR_CONTROL_BUTTON.Value = KineticaRT.Values.Values.False
+            End If
+        End Sub
+
+
+        '************************
+        '* PW300WorkingThread() * 
+        '************************
+        Private Sub PW300WorkingThread()
+
+            Try
+                Do While Not ExitThread
+                    Thread.Sleep(25)
+                    Operating_Time_Calc()
+                    Fuel_Used_Calc()
+                Loop
+
+            Catch ex As Exception
+                MessageBox.Show("PW300WorkingThread: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+
+        '******************************
+        '* OnTestSessionInitialized() *
+        '******************************
+        Protected Overrides Sub OnTestSessionInitialized(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionInitialized(newStatus)
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                    'Not For "DAS CALIBRATION"
+                    Case "PW307A", "PW308A ANC", "PW308C ANC"
+                        'TODO: dans le test session Read_Flowmeters()
+                        Fill_Characterizer_Table(1, "Frequency")
+
+                End Select
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionInitialized: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+
+
+
+        '**************************
+        '* OnTestSessionRunning() *
+        '**************************
+        Protected Overrides Sub OnTestSessionRunning(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Dim i As Integer
+            Try
+                MyBase.OnTestSessionRunning(newStatus)
+                Init_Engine_Channels()
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                    Case "PW307A"
+                        Me.ActivateForm("EEC PW307A", "PW307A_Screen", True)
+                    Case "PW308A ANC"
+                        Me.ActivateForm("EEC PW308A", "PW308A_Screen", True)
+                    Case "PW308C ANC"
+                        'ft plus de besoin Me.ActivateForm("EEC PW308C", "PW308C_Screen", True)
+                        'CELProject.Open_HMI(Test_Mgr_UUT_Model.Value.ToString())
+                End Select
+                Me.EngineWindow(0).BeginInvoke(New MethodInvoker(AddressOf Me.Initialize_Engine_Controls))
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                    'Not For "DAS CALIBRATION"
+                    Case "PW307A", "PW308A ANC", "PW308C ANC"
+                        ''Add Handlers
+                        ''Close_test Must Be first
+                        'AddHandler Close_Test.ValueChanged, AddressOf OnClose_Test
+                        'AddHandler AIR_PRESSURE_STARTER_VALUE.ValueChanged, AddressOf OnAIR_PRESSURE_STARTER_VALUE_CHANGE
+                        ''AddHandler ARCHIVE_RECORD.ValueChanged, AddressOf OnArchive
+                        ''AddHandler ARCHIVE_STOP_BTN.ValueChanged, AddressOf OnArchive
+                        'AddHandler CLOSE_AIR_CONTROL_BUTTON.ValueChanged, AddressOf OnCloseAirStartWindow
+                        'AddHandler DECREASE_AIR_BUTTON.ValueChanged, AddressOf OnDECREASE_AIR_BUTTON
+                        'AddHandler EEC_CHN_DISABLE_CHA.ValueChanged, AddressOf OnChn_Disable
+                        'AddHandler EEC_CHN_DISABLE_CHB.ValueChanged, AddressOf OnChn_Disable
+                        'AddHandler EEC_CHN_DISABLE_NONE.ValueChanged, AddressOf OnChn_Disable
+                        'AddHandler EEC_LANE_A.ValueChanged, AddressOf OnLane_Change
+                        'AddHandler EEC_LANE_B.ValueChanged, AddressOf OnLane_Change
+                        'AddHandler EEC_LANE_BOTH.ValueChanged, AddressOf OnLane_Change
+                        'AddHandler ENGINE_AT_REST.ValueChanged, AddressOf OnAlarm
+                        'AddHandler ESTOP.ValueChanged, AddressOf OnEmerStop
+                        'AddHandler ESTOP.ValueChanged, AddressOf OnAlarm
+                        'AddHandler FUEL_FILTER_BYPASS.ValueChanged, AddressOf OnAlarm
+                        'AddHandler HIGH_MOP_DP.ValueChanged, AddressOf OnAlarm
+                        'AddHandler INCREASE_AIR_BUTTON.ValueChanged, AddressOf OnINCREASE_AIR_BUTTON
+                        'AddHandler LOW_FUEL_PRESSURE.ValueChanged, AddressOf OnAlarm
+                        'AddHandler LOW_MOP_DP.ValueChanged, AddressOf OnAlarm
+                        'AddHandler MANUAL_AIR_BUTTON.ValueChanged, AddressOf OnShowAirStartWindow
+                        'AddHandler MOT_CHIP.ValueChanged, AddressOf OnAlarm
+                        'AddHandler N1_OVERSPEED.ValueChanged, AddressOf OnAlarm
+                        'AddHandler N2_OVERSPEED.ValueChanged, AddressOf OnAlarm
+                        'AddHandler OIL_FILTER_BYPASS.ValueChanged, AddressOf OnAlarm
+                        'AddHandler OVERTEMP.ValueChanged, AddressOf OnAlarm
+                        ''AddHandler PLAY_BUTTON.ValueChanged, AddressOf OnArchive
+                        'AddHandler ENGINE_TIME_RESET.ValueChanged, AddressOf OnResetEngineTime
+                        'AddHandler FUEL_USED_RESET.ValueChanged, AddressOf OnResetFuelUsed
+                        'AddHandler TARE.ValueChanged, AddressOf OnTare
+
+                        'For i = 0 To T6B_DELETE.GetUpperBound(0) - 1
+                        '    AddHandler T6B_DELETE(i).ValueChanged, AddressOf OnT6B_DELETE
+                        'Next
+                        'For i = 0 To T6E_DELETE.GetUpperBound(0) - 1
+                        '    AddHandler T6E_DELETE(i).ValueChanged, AddressOf OnT6E_DELETE
+                        'Next
+                        'For i = 0 To T6G_DELETE.GetUpperBound(0) - 1
+                        '    AddHandler T6G_DELETE(i).ValueChanged, AddressOf OnT6G_DELETE
+                        'Next
+                        'For i = 0 To T6K_DELETE.GetUpperBound(0) - 1
+                        '    AddHandler T6K_DELETE(i).ValueChanged, AddressOf OnT6K_DELETE
+                        'Next
+
+
+                        'ExitThread = False
+
+                        ' ''This Thread contols the Event Archiver
+                        ''EventArchiverThread = New Thread(AddressOf EventArchiveThread)
+                        ''EventArchiverThread.Priority = ThreadPriority.Normal
+                        ''EventArchiverThread.Name = "EventArchiverThread"
+                        ''EventArchiverThread.Start()
+
+                        'EVENT_ARCHIVE.Record = True
+
+
+
+                        'PW300WorkerThread = New Thread(AddressOf PW300WorkingThread)
+                        'PW300WorkerThread.Priority = ThreadPriority.Normal
+                        'PW300WorkerThread.Name = "EventArchiverThread"
+                        'PW300WorkerThread.Start()
+
+
+                        'OPC_MOP_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_P_AGB_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_P1A_1_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_P1A_2_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_P3_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_S1A_1_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_S1A_2_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_S1A_3_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_S1A_4_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_THRUST_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'OPC_P_MOTIVE_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        'TARE.Value = KineticaRT.Values.Values.False
+
+                End Select
+
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                    Case "PW307A"
+                        AddHandler EEC_SHUTDOWN.ValueChanged, AddressOf OnNormalShutdown
+                        AddHandler MOPD_ENG_CHA_DELETE.ValueChanged, AddressOf OnMOPD_ENG_DELETE
+                        AddHandler MOPD_ENG_CHB_DELETE.ValueChanged, AddressOf OnMOPD_ENG_DELETE
+                        AddHandler MOT_CHA_DELETE.ValueChanged, AddressOf OnMOT_DELETE
+                        AddHandler MOT_CHB_DELETE.ValueChanged, AddressOf OnMOT_DELETE
+                    Case "PW308A ANC"
+                        AddHandler EEC_IGNITION_AUTO.ValueChanged, AddressOf OnIgnition_Sw
+                        AddHandler EEC_IGNITION_CONT.ValueChanged, AddressOf OnIgnition_Sw
+                        AddHandler EEC_NORMAL_SDN.ValueChanged, AddressOf OnNormalShutdown
+                        AddHandler EEC_STANDBY_SDN.ValueChanged, AddressOf OnStandbyShutdown
+                        AddHandler EEC_POWER_ON.ValueChanged, AddressOf OnResetSpinButtons
+                        AddHandler LB_ENABLE.ValueChanged, AddressOf OnLBDisable
+                        For i = 0 To TT1_DELETE.GetUpperBound(0) - 1
+                            AddHandler TT1_DELETE(i).ValueChanged, AddressOf OnTT1_DELETE
+                        Next
+
+                    Case "PW308C ANC"
+                        'AddHandler EEC_IGNITION_AUTO.ValueChanged, AddressOf OnIgnition_Sw
+                        'AddHandler EEC_IGNITION_CONT.ValueChanged, AddressOf OnIgnition_Sw
+                        'AddHandler EEC_IGNITION_OFF.ValueChanged, AddressOf OnIgnition_Sw
+                        'AddHandler EEC_NORMAL_SDN.ValueChanged, AddressOf OnNormalShutdown
+                        'AddHandler EEC_STANDBY_SDN.ValueChanged, AddressOf OnStandbyShutdown
+                        'AddHandler LB_ENABLE.ValueChanged, AddressOf OnLBDisable
+                        'For i = 0 To TT1_DELETE.GetUpperBound(0) - 1
+                        '    AddHandler TT1_DELETE(i).ValueChanged, AddressOf OnTT1_DELETE
+                        'Next
+                End Select
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                    'Not For "DAS CALIBRATION"
+
+                    Case "PW307A", "PW308A ANC", "PW308C ANC"
+                        If Not (OPERATING_TIME.Value Is Nothing) Then
+                            If (OPERATING_TIME.Value.ToString() = "0") Then
+                                ts = New System.TimeSpan(0)
+                                OPERATING_TIME.Value = New KineticaRT.Values.Text(ts.Hours.ToString.PadLeft(2, "0") & ":" & ts.Minutes.ToString.PadLeft(2, "0") & ":" & ts.Seconds.ToString.PadLeft(2, "0"))
+                            End If
+                        Else
+                            ts = New System.TimeSpan(0)
+                            OPERATING_TIME.Value = New KineticaRT.Values.Text(ts.Hours.ToString.PadLeft(2, "0") & ":" & ts.Minutes.ToString.PadLeft(2, "0") & ":" & ts.Seconds.ToString.PadLeft(2, "0"))
+                        End If
+
+
+                        If Not (FUEL_USED_GM.Value Is Nothing) Then
+                            If (FUEL_USED_GM.Value.ToString() = "0") Then
+                                FUEL_USED_GM.Value = New KineticaRT.Values.Text("0.0")
+                            End If
+                        Else
+                            FUEL_USED_GM.Value = New KineticaRT.Values.Text("0.0")
+                        End If
+
+
+                        If Not (OPC_MOP_OFFSET.Value Is Nothing) Then
+                            If (OPC_MOP_OFFSET.Value.ToString() = "0") Then
+                                OPC_MOP_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_MOP_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_P_AGB_OFFSET.Value Is Nothing) Then
+                            If (OPC_P_AGB_OFFSET.Value.ToString() = "0") Then
+                                OPC_P_AGB_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_P_AGB_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_P1A_1_OFFSET.Value Is Nothing) Then
+                            If (OPC_P1A_1_OFFSET.Value.ToString() = "0") Then
+                                OPC_P1A_1_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_P1A_1_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_P1A_2_OFFSET.Value Is Nothing) Then
+                            If (OPC_P1A_2_OFFSET.Value.ToString() = "0") Then
+                                OPC_P1A_2_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_P1A_2_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_P3_OFFSET.Value Is Nothing) Then
+                            If (OPC_P3_OFFSET.Value.ToString() = "0") Then
+                                OPC_P3_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_P3_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_S1A_1_OFFSET.Value Is Nothing) Then
+                            If (OPC_S1A_1_OFFSET.Value.ToString() = "0") Then
+                                OPC_S1A_1_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_S1A_1_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_S1A_2_OFFSET.Value Is Nothing) Then
+                            If (OPC_S1A_2_OFFSET.Value.ToString() = "0") Then
+                                OPC_S1A_2_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_S1A_2_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_S1A_3_OFFSET.Value Is Nothing) Then
+                            If (OPC_S1A_3_OFFSET.Value.ToString() = "0") Then
+                                OPC_S1A_3_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_S1A_3_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_S1A_4_OFFSET.Value Is Nothing) Then
+                            If (OPC_S1A_4_OFFSET.Value.ToString() = "0") Then
+                                OPC_S1A_4_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_S1A_4_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_THRUST_OFFSET.Value Is Nothing) Then
+                            If (OPC_THRUST_OFFSET.Value.ToString() = "0") Then
+                                OPC_THRUST_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_THRUST_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+                        If Not (OPC_P_MOTIVE_OFFSET.Value Is Nothing) Then
+                            If (OPC_P_MOTIVE_OFFSET.Value.ToString() = "0") Then
+                                OPC_P_MOTIVE_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                            End If
+                        Else
+                            OPC_P_MOTIVE_OFFSET.Value = New KineticaRT.Values.Double(0.0)
+                        End If
+
+
+                        If Not (AIR_PRESSURE_STARTER_VALUE.Value Is Nothing) Then
+                            If (AIR_PRESSURE_STARTER_VALUE.Value.ToString() = "0") Then
+                                AIR_PRESSURE_STARTER_VALUE.Value = New KineticaRT.Values.Text("0")
+                            End If
+                        Else
+                            AIR_PRESSURE_STARTER_VALUE.Value = New KineticaRT.Values.Text("0")
+                        End If
+
+
+                End Select
+
+                Init_Engine_Channels_Value()
+
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionRunning: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        '**************************
+        '* OnTestSessionClosing() *
+        '**************************
+        Protected Overrides Sub OnTestSessionClosing(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Dim i As Integer
+            Try
+                MyBase.OnTestSessionClosing(newStatus)
+                'For All Engine
+                ExitThread = True
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                    Case "PW307A", "PW308A ANC", "PW308C ANC"
+
+                        Init_Engine_Channels_Value() 'Reinit variables before we quit
+
+                        'Stops the Event Archiver (always on)
+                        'Warning this must be done before we remove handlers!
+                        If Not (EVENT_ARCHIVE Is Nothing) Then
+                            EVENT_ARCHIVE.Stop = True
+                            EVENT_ARCHIVE.Triggered = False
+                        End If
+
+
+
+                        'Remove Handlers before Add Handlers, to remove duplicate handlers
+
+                        If Not (AIR_PRESSURE_STARTER_VALUE Is Nothing) Then
+                            RemoveHandler AIR_PRESSURE_STARTER_VALUE.ValueChanged, AddressOf OnAIR_PRESSURE_STARTER_VALUE_CHANGE
+                        End If
+                        'If Not (ARCHIVE_RECORD Is Nothing) Then
+                        '    RemoveHandler ARCHIVE_RECORD.ValueChanged, AddressOf OnArchive
+                        'End If
+                        'If Not (ARCHIVE_STOP_BTN Is Nothing) Then
+                        '    RemoveHandler ARCHIVE_STOP_BTN.ValueChanged, AddressOf OnArchive
+                        'End If
+                        If Not (CLOSE_AIR_CONTROL_BUTTON Is Nothing) Then
+                            RemoveHandler CLOSE_AIR_CONTROL_BUTTON.ValueChanged, AddressOf OnCloseAirStartWindow
+                        End If
+                        If Not (DECREASE_AIR_BUTTON Is Nothing) Then
+                            RemoveHandler DECREASE_AIR_BUTTON.ValueChanged, AddressOf OnDECREASE_AIR_BUTTON
+                        End If
+                        If Not (EEC_CHN_DISABLE_CHA Is Nothing) Then
+                            RemoveHandler EEC_CHN_DISABLE_CHA.ValueChanged, AddressOf OnChn_Disable
+                        End If
+                        If Not (EEC_CHN_DISABLE_CHB Is Nothing) Then
+                            RemoveHandler EEC_CHN_DISABLE_CHB.ValueChanged, AddressOf OnChn_Disable
+                        End If
+                        If Not (EEC_CHN_DISABLE_NONE Is Nothing) Then
+                            RemoveHandler EEC_CHN_DISABLE_NONE.ValueChanged, AddressOf OnChn_Disable
+                        End If
+                        If Not (EEC_LANE_A Is Nothing) Then
+                            RemoveHandler EEC_LANE_A.ValueChanged, AddressOf OnLane_Change
+                        End If
+                        If Not (EEC_LANE_B Is Nothing) Then
+                            RemoveHandler EEC_LANE_B.ValueChanged, AddressOf OnLane_Change
+                        End If
+                        If Not (EEC_LANE_BOTH Is Nothing) Then
+                            RemoveHandler EEC_LANE_BOTH.ValueChanged, AddressOf OnLane_Change
+                        End If
+                        If Not (ENGINE_AT_REST Is Nothing) Then
+                            RemoveHandler ENGINE_AT_REST.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (ESTOP Is Nothing) Then
+                            RemoveHandler ESTOP.ValueChanged, AddressOf OnEmerStop
+                            RemoveHandler ESTOP.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (FUEL_FILTER_BYPASS Is Nothing) Then
+                            RemoveHandler FUEL_FILTER_BYPASS.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (HIGH_MOP_DP Is Nothing) Then
+                            RemoveHandler HIGH_MOP_DP.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (INCREASE_AIR_BUTTON Is Nothing) Then
+                            RemoveHandler INCREASE_AIR_BUTTON.ValueChanged, AddressOf OnINCREASE_AIR_BUTTON
+                        End If
+                        If Not (LOW_FUEL_PRESSURE Is Nothing) Then
+                            RemoveHandler LOW_FUEL_PRESSURE.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (LOW_MOP_DP Is Nothing) Then
+                            RemoveHandler LOW_MOP_DP.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (MANUAL_AIR_BUTTON Is Nothing) Then
+                            RemoveHandler MANUAL_AIR_BUTTON.ValueChanged, AddressOf OnShowAirStartWindow
+                        End If
+                        If Not (MOT_CHIP Is Nothing) Then
+                            RemoveHandler MOT_CHIP.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (N1_OVERSPEED Is Nothing) Then
+                            RemoveHandler N1_OVERSPEED.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (N2_OVERSPEED Is Nothing) Then
+                            RemoveHandler N2_OVERSPEED.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (OIL_FILTER_BYPASS Is Nothing) Then
+                            RemoveHandler OIL_FILTER_BYPASS.ValueChanged, AddressOf OnAlarm
+                        End If
+                        If Not (OVERTEMP Is Nothing) Then
+                            RemoveHandler OVERTEMP.ValueChanged, AddressOf OnAlarm
+                        End If
+                        'If Not (PLAY_BUTTON Is Nothing) Then
+                        '    RemoveHandler PLAY_BUTTON.ValueChanged, AddressOf OnArchive
+                        'End If
+                        If Not (ENGINE_TIME_RESET Is Nothing) Then
+                            RemoveHandler ENGINE_TIME_RESET.ValueChanged, AddressOf OnResetEngineTime
+                        End If
+                        If Not (FUEL_USED_RESET Is Nothing) Then
+                            RemoveHandler FUEL_USED_RESET.ValueChanged, AddressOf OnResetFuelUsed
+                        End If
+
+                        For i = 0 To T6B_DELETE.GetUpperBound(0) - 1
+                            If Not (T6B_DELETE(i) Is Nothing) Then
+                                RemoveHandler T6B_DELETE(i).ValueChanged, AddressOf OnT6B_DELETE
+                            End If
+                        Next
+                        For i = 0 To T6E_DELETE.GetUpperBound(0) - 1
+                            If Not (T6E_DELETE(i) Is Nothing) Then
+                                RemoveHandler T6E_DELETE(i).ValueChanged, AddressOf OnT6E_DELETE
+                            End If
+                        Next
+                        For i = 0 To T6G_DELETE.GetUpperBound(0) - 1
+                            If Not (T6G_DELETE(i) Is Nothing) Then
+                                RemoveHandler T6G_DELETE(i).ValueChanged, AddressOf OnT6G_DELETE
+                            End If
+                        Next
+                        For i = 0 To T6K_DELETE.GetUpperBound(0) - 1
+                            If Not (T6K_DELETE(i) Is Nothing) Then
+                                RemoveHandler T6K_DELETE(i).ValueChanged, AddressOf OnT6K_DELETE
+                            End If
+                        Next
+
+
+
+                        'Kill the PW300Worker Thread if still alive
+                        If Not (PW300WorkerThread Is Nothing) Then
+                            If Not (PW300WorkerThread.Join(500)) Then
+                                If PW300WorkerThread.IsAlive Then
+                                    PW300WorkerThread.Abort()
+                                    PW300WorkerThread.Join()
+                                End If
+                            End If
+                            PW300WorkerThread = Nothing
+                        End If
+
+                        'Kill the Event Archiver Thread if still alive
+                        If Not (EventArchiverThread Is Nothing) Then
+                            If Not (EventArchiverThread.Join(500)) Then
+                                If EventArchiverThread.IsAlive Then
+                                    EventArchiverThread.Abort()
+                                    EventArchiverThread.Join()
+                                End If
+                            End If
+                            EventArchiverThread = Nothing
+                        End If
+                End Select
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                    Case "PW307A"
+                        If Not (EEC_SHUTDOWN Is Nothing) Then
+                            RemoveHandler EEC_SHUTDOWN.ValueChanged, AddressOf OnNormalShutdown
+                        End If
+                        If Not (TARE Is Nothing) Then
+                            RemoveHandler TARE.ValueChanged, AddressOf OnTare
+                        End If
+
+                        If Not (MOPD_ENG_CHA_DELETE Is Nothing) Then
+                            RemoveHandler MOPD_ENG_CHA_DELETE.ValueChanged, AddressOf OnMOPD_ENG_DELETE
+                        End If
+
+                        If Not (MOPD_ENG_CHB_DELETE Is Nothing) Then
+                            RemoveHandler MOPD_ENG_CHB_DELETE.ValueChanged, AddressOf OnMOPD_ENG_DELETE
+                        End If
+
+                        If Not (MOT_CHA_DELETE Is Nothing) Then
+                            RemoveHandler MOT_CHA_DELETE.ValueChanged, AddressOf OnMOT_DELETE
+                        End If
+
+                        If Not (MOT_CHB_DELETE Is Nothing) Then
+                            RemoveHandler MOT_CHB_DELETE.ValueChanged, AddressOf OnMOT_DELETE
+                        End If
+                    Case "PW308A ANC"
+                        If Not (EEC_IGNITION_AUTO Is Nothing) Then
+                            RemoveHandler EEC_IGNITION_AUTO.ValueChanged, AddressOf OnIgnition_Sw
+                        End If
+                        If Not (EEC_IGNITION_AUTO Is Nothing) Then
+                            RemoveHandler EEC_IGNITION_CONT.ValueChanged, AddressOf OnIgnition_Sw
+                        End If
+                        If Not (EEC_NORMAL_SDN Is Nothing) Then
+                            RemoveHandler EEC_NORMAL_SDN.ValueChanged, AddressOf OnNormalShutdown
+                        End If
+                        If Not (EEC_STANDBY_SDN Is Nothing) Then
+                            RemoveHandler EEC_STANDBY_SDN.ValueChanged, AddressOf OnStandbyShutdown
+                        End If
+                        If Not (EEC_POWER_ON Is Nothing) Then
+                            RemoveHandler EEC_POWER_ON.ValueChanged, AddressOf OnResetSpinButtons
+                        End If
+                        If Not (LB_ENABLE Is Nothing) Then
+                            RemoveHandler LB_ENABLE.ValueChanged, AddressOf OnLBDisable
+                        End If
+                        If Not (TARE Is Nothing) Then
+                            RemoveHandler TARE.ValueChanged, AddressOf OnTare
+                        End If
+                        For i = 0 To TT1_DELETE.GetUpperBound(0) - 1
+                            If Not (TT1_DELETE(i) Is Nothing) Then
+                                RemoveHandler TT1_DELETE(i).ValueChanged, AddressOf OnTT1_DELETE
+                            End If
+                        Next
+
+
+                    Case "PW308C ANC"
+                        'Remove Handlers before Add Handlers, to remove duplicate handlers
+                        If Not (EEC_IGNITION_AUTO Is Nothing) Then
+                            RemoveHandler EEC_IGNITION_AUTO.ValueChanged, AddressOf OnIgnition_Sw
+                        End If
+                        If Not (EEC_IGNITION_CONT Is Nothing) Then
+                            RemoveHandler EEC_IGNITION_CONT.ValueChanged, AddressOf OnIgnition_Sw
+                        End If
+                        If Not (EEC_IGNITION_OFF Is Nothing) Then
+                            RemoveHandler EEC_IGNITION_OFF.ValueChanged, AddressOf OnIgnition_Sw
+                        End If
+                        If Not (EEC_NORMAL_SDN Is Nothing) Then
+                            RemoveHandler EEC_NORMAL_SDN.ValueChanged, AddressOf OnNormalShutdown
+                        End If
+                        If Not (EEC_STANDBY_SDN Is Nothing) Then
+                            RemoveHandler EEC_STANDBY_SDN.ValueChanged, AddressOf OnStandbyShutdown
+                        End If
+                        If Not (LB_ENABLE Is Nothing) Then
+                            RemoveHandler LB_ENABLE.ValueChanged, AddressOf OnLBDisable
+                        End If
+                        If Not (TARE Is Nothing) Then
+                            RemoveHandler TARE.ValueChanged, AddressOf OnTare
+                        End If
+                        For i = 0 To TT1_DELETE.GetUpperBound(0) - 1
+                            If Not (TT1_DELETE(i) Is Nothing) Then
+                                RemoveHandler TT1_DELETE(i).ValueChanged, AddressOf OnTT1_DELETE
+                            End If
+                        Next
+
+                End Select
+
+
+
+
+                'Restore default Culture Info
+                System.Threading.Thread.CurrentThread.CurrentCulture = OldCultureInfo
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionClosing: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '*************************
+        '* OnTestSessionIdling() *
+        '*************************
+        Protected Overrides Sub OnTestSessionIdling(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionIdling(newStatus)
+                Try
+
+                Catch Ex As Exception
+                Finally
+                End Try
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionClosing: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        '**************************
+        '* Init_Engine_Channels() *
+        '**************************
+        Private Function Init_Engine_Channels() As Boolean
+            Dim i As Integer
+            Dim Return_Value As New ArrayList()
+
+            Return_Value.Clear()
+
+            Try
+
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+                    'Not For "DAS CALIBRATION"
+
+                    Case "PW307A", "PW308A ANC", "PW308C ANC"
+                        'Initialise Common Engine Channels				
+                        Return_Value.Add(MyBase.InitializeChannel(AIR_PRESSURE_STARTER_VALUE, "AIR_PRESSURE_STARTER_VALUE"))
+                        Return_Value.Add(MyBase.InitializeChannel(AIR_BALANCING, "AIR_BALANCING"))
+                        Return_Value.Add(MyBase.InitializeChannel(ARCHIVE, "ARCHIVE"))
+                        Return_Value.Add(MyBase.InitializeChannel(ARCHIVE_STOP_BTN, "ARCHIVE_STOP_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(ARCHIVE_PLAY_BTN, "ARCHIVE_PLAY_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(ARCHIVE_RECORD, "ARCHIVE_RECORD"))
+                        Return_Value.Add(MyBase.InitializeChannel(BUZZER, "BUZZER"))
+                        Return_Value.Add(MyBase.InitializeChannel(CLOSE_AIR_CONTROL_BUTTON, "CLOSE_AIR_CONTROL_BUTTON"))
+                        Return_Value.Add(MyBase.InitializeChannel(DECREASE_AIR_BUTTON, "DECREASE_AIR_BUTTON"))
+                        Return_Value.Add(MyBase.InitializeChannel(DOUT64, "DOUT64"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_CHN_DISABLE_CHA, "EEC_CHN_DISABLE_CHA"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_CHN_DISABLE_CHB, "EEC_CHN_DISABLE_CHB"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_CHN_DISABLE_NONE, "EEC_CHN_DISABLE_NONE"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_LANE_A, "EEC_LANE_A"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_LANE_B, "EEC_LANE_B"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_LANE_BOTH, "EEC_LANE_BOTH"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_START, "EEC_START"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_WOW, "EEC_WOW"))
+                        Return_Value.Add(MyBase.InitializeChannel(ENGINE_AT_REST, "ENGINE_AT_REST"))
+                        Return_Value.Add(MyBase.InitializeChannel(ESTOP, "ESTOP"))
+                        Return_Value.Add(MyBase.InitializeChannel(EVENT_ARCHIVE, "EVENT_ARCHIVE"))
+                        Return_Value.Add(MyBase.InitializeChannel(EVENT_ARCHIVE_RECORD, "EVENT_ARCHIVE_RECORD"))
+                        Return_Value.Add(MyBase.InitializeChannel(FUEL_ARMING, "FUEL_ARMING"))
+                        Return_Value.Add(MyBase.InitializeChannel(FUEL_FILTER_BYPASS, "FUEL_FILTER_BYPASS"))
+                        Return_Value.Add(MyBase.InitializeChannel(FUEL_PUMP, "FUEL_PUMP"))
+                        Return_Value.Add(MyBase.InitializeChannel(HIGH_MOP_DP, "HIGH_MOP_DP"))
+                        Return_Value.Add(MyBase.InitializeChannel(IGNITER_A, "IGNITER_A"))
+                        Return_Value.Add(MyBase.InitializeChannel(IGNITER_B, "IGNITER_B"))
+                        Return_Value.Add(MyBase.InitializeChannel(INCREASE_AIR_BUTTON, "INCREASE_AIR_BUTTON"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOW_FUEL_PRESSURE, "LOW_FUEL_PRESSURE"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOW_MOP_DP, "LOW_MOP_DP"))
+                        Return_Value.Add(MyBase.InitializeChannel(MAIN_RESET, "MAIN_RESET"))
+                        Return_Value.Add(MyBase.InitializeChannel(MANUAL_AIR_BUTTON, "MANUAL_AIR_BUTTON"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOT_CHIP, "MOT_CHIP"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOTORING, "MOTORING"))
+                        Return_Value.Add(MyBase.InitializeChannel(N1_OVERSPEED, "N1_OVERSPEED"))
+                        Return_Value.Add(MyBase.InitializeChannel(N1_RPM, "N1_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(N2_RPM, "N2_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(N2_OVERSPEED, "N2_OVERSPEED"))
+                        Return_Value.Add(MyBase.InitializeChannel(OIL_FILTER_BYPASS, "OIL_FILTER_BYPASS"))
+                        Return_Value.Add(MyBase.InitializeChannel(OVERTEMP, "OVERTEMP"))
+                        Return_Value.Add(MyBase.InitializeChannel(PLAY_BUTTON, "PLAY_BUTTON"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6B_AVG, "T6B_AVG"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6B_COUNT, "T6B_COUNT"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPERATING_TIME, "OPERATING_TIME"))
+                        Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_GM, "FUEL_USED_GM"))
+                        Return_Value.Add(MyBase.InitializeChannel(ENGINE_TIME_RESET, "ENGINE_TIME_RESET"))
+                        Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_RESET, "FUEL_USED_RESET"))
+                        Return_Value.Add(MyBase.InitializeChannel(FUEL_FLOW, "WF"))
+                        Return_Value.Add(MyBase.InitializeChannel(SG_READ, "SG_READ"))
+                        Return_Value.Add(MyBase.InitializeChannel(WF, "WF"))
+                        Return_Value.Add(MyBase.InitializeChannel(TARE, "TARE"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_MOP_OFFSET, "OPC_MOP_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_P_AGB_OFFSET, "OPC_P_AGB_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_P1A_1_OFFSET, "OPC_P1A_1_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_P1A_2_OFFSET, "OPC_P1A_2_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_P3_OFFSET, "OPC_P3_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_S1A_1_OFFSET, "OPC_S1A_1_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_S1A_2_OFFSET, "OPC_S1A_2_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_S1A_3_OFFSET, "OPC_S1A_3_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_S1A_4_OFFSET, "OPC_S1A_4_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_THRUST_OFFSET, "OPC_THRUST_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_P_MOTIVE_OFFSET, "OPC_P_MOTIVE_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOP, "MOP"))
+                        Return_Value.Add(MyBase.InitializeChannel(P_AGB, "P_AGB"))
+                        Return_Value.Add(MyBase.InitializeChannel(PSN, "PSN"))
+                        Return_Value.Add(MyBase.InitializeChannel(P1A_1, "P1A_1"))
+                        Return_Value.Add(MyBase.InitializeChannel(P1A_2, "P1A_2"))
+                        Return_Value.Add(MyBase.InitializeChannel(PS3, "PS3"))
+                        Return_Value.Add(MyBase.InitializeChannel(S1A_1, "S1A_1"))
+                        Return_Value.Add(MyBase.InitializeChannel(S1A_2, "S1A_2"))
+                        Return_Value.Add(MyBase.InitializeChannel(S1A_3, "S1A_3"))
+                        Return_Value.Add(MyBase.InitializeChannel(S1A_4, "S1A_4"))
+                        Return_Value.Add(MyBase.InitializeChannel(THRUST, "THRUST"))
+                        Return_Value.Add(MyBase.InitializeChannel(P_MOTIVE, "P_MOTIVE"))
+                        Return_Value.Add(MyBase.InitializeChannel(BOVCOM, "BOVCOM"))
+                        Return_Value.Add(MyBase.InitializeChannel(BVSTCM, "BVSTCM"))
+                        Return_Value.Add(MyBase.InitializeChannel(RVDT_OSC_LANE_B, "RVDT_OSC_LANE_B"))
+                        Return_Value.Add(MyBase.InitializeChannel(DOUT58, "DOUT58"))
+                        Return_Value.Add(MyBase.InitializeChannel(DOUT99, "DOUT99"))
+                        Return_Value.Add(MyBase.InitializeChannel(DOUT100, "DOUT100"))
+
+                        For i = 0 To T6B_DELETE.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(T6B_DELETE(i), "T6B_" + (i + 1).ToString() + "_DELETE"))
+                        Next
+                        Return_Value.Add(MyBase.InitializeChannel(T6B_MAX, "T6B_MAX"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6B_MIN, "T6B_MIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6E_AVG, "T6E_AVG"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6E_COUNT, "T6E_COUNT"))
+                        For i = 0 To T6E_DELETE.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(T6E_DELETE(i), "T6E_" + (i + 1).ToString() + "_DELETE"))
+                        Next
+                        Return_Value.Add(MyBase.InitializeChannel(T6E_MAX, "T6E_MAX"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6E_MIN, "T6E_MIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6G_AVG, "T6G_AVG"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6G_COUNT, "T6G_COUNT"))
+                        For i = 0 To T6G_DELETE.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(T6G_DELETE(i), "T6G_" + (i + 1).ToString() + "_DELETE"))
+                        Next
+                        Return_Value.Add(MyBase.InitializeChannel(T6G_MAX, "T6G_MAX"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6G_MIN, "T6G_MIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6K_AVG, "T6K_AVG"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6K_COUNT, "T6K_COUNT"))
+                        For i = 0 To T6K_DELETE.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(T6K_DELETE(i), "T6K_" + (i + 1).ToString() + "_DELETE"))
+                        Next
+                        Return_Value.Add(MyBase.InitializeChannel(T6K_MAX, "T6K_MAX"))
+                        Return_Value.Add(MyBase.InitializeChannel(T6K_MIN, "T6K_MIN"))
+                End Select
+
+
+                'Initialise Engine Channels
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "PW307A"
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_AUTO_IGN, "EEC_AUTO_IGN"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_DEV_SOFT, "EEC_DEV_SOFT"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_ENG_POS_3, "EEC_ENG_POS_3"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_LINEAR_TLA, "EEC_LINEAR_TLA"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_MOTOR, "EEC_MOTOR"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_SHUTDOWN, "EEC_SHUTDOWN"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_N2_ABOVE_GI, "OPC_N2_ABOVE_GI"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOPD_ENG_CHA_DELETE, "MOPD_ENG_CHA_DELETE"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOPD_ENG_CHB_DELETE, "MOPD_ENG_CHB_DELETE"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOPD_ENG, "MOPD_ENG"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOPD_ENG_MAX, "MOPD_ENG_MAX"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOPD_ENG_MIN, "MOPD_ENG_MIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOT_CHA_DELETE, "MOT_CHA_DELETE"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOT_CHB_DELETE, "MOT_CHB_DELETE"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOT, "MOT"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOT_MAX, "MOT_MAX"))
+                        Return_Value.Add(MyBase.InitializeChannel(MOT_MIN, "MOT_MIN"))
+                    Case "PW308A ANC"
+                        Return_Value.Add(MyBase.InitializeChannel(ARINC_L101_DEMAND, "ARINC_L101_DEMAND"))
+                        Return_Value.Add(MyBase.InitializeChannel(ARINC_L102_DEMAND, "ARINC_L102_DEMAND"))
+                        Return_Value.Add(MyBase.InitializeChannel(ARINC_L103_DEMAND, "ARINC_L103_DEMAND"))
+                        Return_Value.Add(MyBase.InitializeChannel(DOUT14, "DOUT14"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_IGNITION_AUTO, "EEC_IGNITION_AUTO"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_IGNITION_CONT, "EEC_IGNITION_CONT"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_NORMAL_SDN, "EEC_NORMAL_SDN"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_STANDBY_SDN, "EEC_STANDBY_SDN"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_ENABLE, "LB_ENABLE"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE1, "LB_STAGE1"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE2, "LB_STAGE2"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE3, "LB_STAGE3"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE4, "LB_STAGE4"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE5, "LB_STAGE5"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE6, "LB_STAGE6"))
+                        Return_Value.Add(MyBase.InitializeChannel(TT1_AVG, "TT1_AVG"))
+                        Return_Value.Add(MyBase.InitializeChannel(TT1_COUNT, "TT1_COUNT"))
+                        For i = 0 To TT1_DELETE.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(TT1_DELETE(i), "TT1_" + (i + 1).ToString() + "_DELETE"))
+                        Next
+                        Return_Value.Add(MyBase.InitializeChannel(TT1_MAX, "TT1_MAX"))
+                        Return_Value.Add(MyBase.InitializeChannel(TT1_MIN, "TT1_MIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_N2_ABOVE_95GI, "OPC_N2_ABOVE_95GI"))
+                        'Return_Value.Add(MyBase.InitializeChannel(OPC_P_MOPD_ENG_OFFSET, 	"OPC_P_MOPD_ENG_OFFSET"))
+                        Return_Value.Add(MyBase.InitializeChannel(RESET_SPIN_BUTTONS, "RESET_SPIN_BUTTONS"))
+                        Return_Value.Add(MyBase.InitializeChannel(RESET_SPIN_BUTTONS_DONE, "RESET_SPIN_BUTTONS_DONE"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_DRY_SPIN, "EEC_DRY_SPIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_WET_SPIN, "EEC_WET_SPIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_WET_THEN_DRYSPIN, "EEC_WET_THEN_DRYSPIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_TRIM_PLUG_CHANGE, "EEC_TRIM_PLUG_CHANGE"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_POWER_ON, "EEC_POWER_ON"))
+                    Case "PW308C ANC"
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_BIT_0, "EEC_BIT_0"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_BIT_1, "EEC_BIT_1"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_IGNITION_AUTO, "EEC_IGNITION_AUTO"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_IGNITION_CONT, "EEC_IGNITION_CONT"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_IGNITION_OFF, "EEC_IGNITION_OFF"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_LEFT_ENG_ID, "EEC_LEFT_ENG_ID"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_NORMAL_SDN, "EEC_NORMAL_SDN"))
+                        Return_Value.Add(MyBase.InitializeChannel(EEC_STANDBY_SDN, "EEC_STANDBY_SDN"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_ENABLE, "LB_ENABLE"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE1, "LB_STAGE1"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE2, "LB_STAGE2"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE3, "LB_STAGE3"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE4, "LB_STAGE4"))
+                        Return_Value.Add(MyBase.InitializeChannel(LB_STAGE5, "LB_STAGE5"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPC_N2_ABOVE_GI, "OPC_N2_ABOVE_GI"))
+                        Return_Value.Add(MyBase.InitializeChannel(TT1_AVG, "TT1_AVG"))
+                        Return_Value.Add(MyBase.InitializeChannel(TT1_COUNT, "TT1_COUNT"))
+                        For i = 0 To TT1_DELETE.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(TT1_DELETE(i), "TT1_" + (i + 1).ToString() + "_DELETE"))
+                        Next
+                        Return_Value.Add(MyBase.InitializeChannel(TT1_MAX, "TT1_MAX"))
+                        Return_Value.Add(MyBase.InitializeChannel(TT1_MIN, "TT1_MIN"))
+                        'Return_Value.Add(MyBase.InitializeChannel(OPC_P_MOPD_ENG_OFFSET,  "OPC_P_MOPD_ENG_OFFSET"))
+                End Select
+            Catch ex As Exception
+                MessageBox.Show("Init_Engine_Channels: " & Ex.ToString())
+                Return_Value.Add(False)
+            Finally
+
+            End Try
+
+            If Return_Value.Contains(False) Then
+                Init_Engine_Channels = False
+            Else
+                Init_Engine_Channels = True
+            End If
+        End Function
+
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+
+        '************
+        '* Channels *
+        '************
+
+        Private AIR_BALANCING As KineticaRT.Channels.Channel
+        Private AIR_PRESSURE_STARTER_VALUE As KineticaRT.Channels.NumericChannel
+        Private ARCHIVE As KineticaRT.Servers.Logging.CsvFile
+        Private ARCHIVE_STOP_BTN As KineticaRT.Logic.Channels.BooleanVariable
+        Private ARCHIVE_PLAY_BTN As KineticaRT.Logic.Channels.BooleanVariable
+        Private ARCHIVE_RECORD As KineticaRT.Logic.Channels.BooleanVariable
+        Private ARINC_L101_DEMAND As KineticaRT.Channels.NumericChannel
+        Private ARINC_L102_DEMAND As KineticaRT.Channels.NumericChannel
+        Private ARINC_L103_DEMAND As KineticaRT.Channels.NumericChannel
+        Private BOVCOM As KineticaRT.Channels.Channel
+        Private BUZZER As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private BVSTCM As KineticaRT.Channels.Channel
+        Private CLOSE_AIR_CONTROL_BUTTON As KineticaRT.Channels.Channel
+        'Private Close_Test As KineticaRT.Channels.BooleanChannel
+        Private DECREASE_AIR_BUTTON As KineticaRT.Channels.Channel
+        Private DOUT14 As KineticaRT.Servers.OpcClient.BooleanItem
+        Private DOUT58 As KineticaRT.Servers.OpcClient.BooleanItem
+        Private DOUT64 As KineticaRT.Servers.OpcClient.BooleanItem
+        Private DOUT99 As KineticaRT.Servers.OpcClient.BooleanItem
+        Private DOUT100 As KineticaRT.Servers.OpcClient.BooleanItem
+        Private EEC_AUTO_IGN As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_BIT_0 As KineticaRT.Channels.IChannel
+        Private EEC_BIT_1 As KineticaRT.Channels.IChannel
+        Private EEC_CHN_DISABLE_CHA As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_CHN_DISABLE_CHB As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_CHN_DISABLE_NONE As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_DEV_SOFT As KineticaRT.Channels.Channel
+        Private EEC_DRY_SPIN As KineticaRT.Channels.Channel
+        Private EEC_ENG_POS_3 As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_IGNITION_AUTO As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_IGNITION_CONT As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_IGNITION_OFF As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_LANE_A As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_LANE_B As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_LANE_BOTH As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_LEFT_ENG_ID As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_LINEAR_TLA As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_MOTOR As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_NORMAL_SDN As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_POWER_ON As KineticaRT.Channels.Channel
+        Private EEC_SHUTDOWN As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_STANDBY_SDN As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_START As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EEC_TRIM_PLUG_CHANGE As KineticaRT.Channels.Channel
+        Private EEC_WET_SPIN As KineticaRT.Channels.Channel
+        Private EEC_WET_THEN_DRYSPIN As KineticaRT.Channels.Channel
+        Private EEC_WOW As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private ENGINE_AT_REST As CEL.KineticaRT.Servers.Logger.BooleanExpression
+        Private ENGINE_TIME_RESET As KineticaRT.Channels.BooleanChannel
+        Private ESTOP As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private EVENT_ARCHIVE As KineticaRT.Servers.Logging.CsvFile
+        Private EVENT_ARCHIVE_RECORD As KineticaRT.Logic.Channels.BooleanVariable
+        Private FUEL_ARMING As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private FUEL_FILTER_BYPASS As KineticaRT.Channels.Channel
+        Private FUEL_FLOW As KineticaRT.Channels.Channel
+        Private FUEL_PUMP As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private FUEL_USED_GM As KineticaRT.Channels.Channel
+        Private FUEL_USED_RESET As KineticaRT.Channels.BooleanChannel
+        Private HIGH_MOP_DP As KineticaRT.Channels.Channel
+        Private IGNITER_A As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private IGNITER_B As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private INCREASE_AIR_BUTTON As KineticaRT.Channels.Channel
+        Private LB_ENABLE As KineticaRT.Channels.Channel
+        Private LB_STAGE1 As KineticaRT.Channels.Channel
+        Private LB_STAGE2 As KineticaRT.Channels.Channel
+        Private LB_STAGE3 As KineticaRT.Channels.Channel
+        Private LB_STAGE4 As KineticaRT.Channels.Channel
+        Private LB_STAGE5 As KineticaRT.Channels.Channel
+        Private LB_STAGE6 As KineticaRT.Channels.Channel
+        Private LOW_FUEL_PRESSURE As KineticaRT.Channels.Channel
+        Private LOW_MOP_DP As KineticaRT.Channels.Channel
+        Private MAIN_RESET As KineticaRT.Servers.OpcClient.BooleanItem
+        Private MANUAL_AIR_BUTTON As KineticaRT.Channels.Channel
+        Private MOP As KineticaRT.Channels.Channel
+        Private MOT_CHIP As KineticaRT.Channels.Channel
+        Private MOTORING As KineticaRT.Channels.Channel
+        Private N1_OVERSPEED As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private N1_RPM As KineticaRT.Channels.Channel
+        Private N2_OVERSPEED As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private N2_RPM As KineticaRT.Channels.Channel
+        Private OIL_FILTER_BYPASS As KineticaRT.Channels.Channel
+        Private OPERATING_TIME As KineticaRT.Channels.Channel
+        Private OPC_MOP_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_N2_ABOVE_GI As KineticaRT.Channels.Channel
+        Private OPC_N2_ABOVE_95GI As KineticaRT.Channels.Channel
+        Private OPC_P_AGB_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_P_MOPD_ENG_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_P_MOTIVE_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_P1A_1_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_P1A_2_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_P3_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_S1A_1_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_S1A_2_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_S1A_3_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_S1A_4_OFFSET As KineticaRT.Channels.Channel
+        Private OPC_STOP_TIMER_CND As KineticaRT.Servers.OpcClient.Item
+        Private OPC_THRUST_OFFSET As KineticaRT.Channels.Channel
+        Private OVERTEMP As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private P1A_1 As KineticaRT.Channels.Channel
+        Private P1A_2 As KineticaRT.Channels.Channel
+        Private P_AGB As KineticaRT.Channels.Channel
+        Private P_MOPD_ENG As KineticaRT.Channels.Channel
+        Private P_MOTIVE As KineticaRT.Channels.Channel
+        Private PLAY_BUTTON As KineticaRT.Logic.Channels.BooleanVariable
+        Private PS3 As KineticaRT.Channels.Channel
+        Private PSN As KineticaRT.Channels.Channel
+        Private RESET_SPIN_BUTTONS As KineticaRT.Channels.Channel
+        Private RESET_SPIN_BUTTONS_DONE As KineticaRT.Channels.Channel
+        Private RVDT_OSC_LANE_B As KineticaRT.Channels.Channel
+        Private S1A_1 As KineticaRT.Channels.Channel
+        Private S1A_2 As KineticaRT.Channels.Channel
+        Private S1A_3 As KineticaRT.Channels.Channel
+        Private S1A_4 As KineticaRT.Channels.Channel
+        Private SG_READ As KineticaRT.Channels.Channel
+        Private STOP_TIMER_CND_BUTTON As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private T6B_AVG As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6B_COUNT As CEL.KineticaRT.Servers.Logger.NumericThresholdLink
+        Private T6B_DELETE(6) As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private T6B_MAX As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6B_MIN As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6E_AVG As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6E_COUNT As CEL.KineticaRT.Servers.Logger.NumericThresholdLink
+        Private T6E_DELETE(6) As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private T6E_MAX As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6E_MIN As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6G_AVG As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6G_COUNT As CEL.KineticaRT.Servers.Logger.NumericThresholdLink
+        Private T6G_DELETE(6) As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private T6G_MAX As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6G_MIN As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6K_AVG As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6K_COUNT As CEL.KineticaRT.Servers.Logger.NumericThresholdLink
+        Private T6K_DELETE(6) As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private T6K_MAX As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private T6K_MIN As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private TARE As KineticaRT.Channels.Channel
+        'Private Test_Mgr_Cmd As KineticaRT.Servers.OpcClient.Item
+        'Private Test_Mgr_User_Security_Lvl As KineticaRT.Channels.TextChannel
+        'Private Test_Mgr_Status As KineticaRT.Servers.OpcClient.Item
+        'Private Test_Mgr_UUT_Answer(12) As KineticaRT.Logic.Channels.TextLink
+        'Private Test_Mgr_UUT_Choice(4) As KineticaRT.Logic.Channels.TextLink
+        'Private Test_Mgr_UUT_Calib_Constant(2) As KineticaRT.Servers.OpcClient.Item
+        ''Private Test_Mgr_UUT_Model As KineticaRT.Logic.Channels.TextLink
+        'Private Test_Mgr_UUT_Model As CEL.KineticaRT.Servers.Logger.TextLink  'TEST TEST a cause d'un bug de transfert de la valeur entre master et slave
+        'Private Test_Mgr_UUT_Option(16) As KineticaRT.Logic.Channels.TextLink
+        Private THRUST As KineticaRT.Channels.Channel
+        Private TT1_AVG As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private TT1_COUNT As CEL.KineticaRT.Servers.Logger.NumericThresholdLink
+        Private TT1_DELETE(8) As CEL.KineticaRT.Servers.Logger.BooleanLink
+        Private TT1_MAX As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private TT1_MIN As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private WF As KineticaRT.Channels.Channel
+        Private WF_CAL As KineticaRT.Channels.NumericChannel
+        Private WF_RAW As CEL.KineticaRT.Servers.Logger.NumericThresholdLink
+        Private MOPD_ENG_CHA_DELETE As KineticaRT.Channels.BooleanChannel
+        Private MOPD_ENG_CHB_DELETE As KineticaRT.Channels.BooleanChannel
+        Private MOPD_ENG As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private MOPD_ENG_MAX As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private MOPD_ENG_MIN As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private MOT_CHA_DELETE As KineticaRT.Channels.BooleanChannel
+        Private MOT_CHB_DELETE As KineticaRT.Channels.BooleanChannel
+        Private MOT As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private MOT_MAX As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        Private MOT_MIN As CEL.KineticaRT.Servers.Logger.NumericThresholdExpression
+        '*****************************
+        '* Log & Performance reports *
+        '*****************************
+        Private PERF_CLOSE_WINDOW_BTN As KineticaRT.Channels.BooleanChannel
+        Private Log_Perf_OperatingTime As KineticaRT.Channels.TextChannel
+        Private PERF_OPEN_WINDOW_BTN As KineticaRT.Channels.BooleanChannel
+
+        '*********************
+        '* Forms and Control *
+        '*********************
+        Public EngineWindow(30) As System.Windows.Forms.Form
+        Private btnNewCalibReport As KineticaRT.Studio.Controls.Button
+        Private RowIndex_Start_Log As Integer
+        'Frame
+        Private Ctrl_Frame As KineticaRT.Controls.Control
+
+        '********
+        '* Misc *
+        '********
+        'Private cnMain							As ADODB.Connection
+        Private Current_Fuel_Used As Double = 0
+        Private Current_ts As System.Timespan 'Used to calculate operating time
+        Private CurrentSpeed As Double = 0
+        Private EventArchiveNeedSave As Boolean = False
+        Private ExitThread As Boolean = False
+        Private Flowmeter_Frequency(10, 50) As Double
+        Private Flowmeter_USGPM(10, 50) As Double
+        Private Flowmeter_Voltage(10, 50) As Double
+        Private KineticaRT_ONE As KineticaRT.Values.Double = New KineticaRT.Values.Double(1)
+        Private KineticaRT_NAN As KineticaRT.Values.Double = New KineticaRT.Values.Double(Double.NaN)
+        Private KineticaRT_ZERO As KineticaRT.Values.Double = New KineticaRT.Values.Double(0)
+        Private Engine_Running As Boolean = False
+        Private Log_Condition As Integer
+        Private Log_FolderName As String
+        Private OldCultureInfo As System.Globalization.CultureInfo = System.Threading.Thread.CurrentThread.CurrentCulture
+        Private OperatingTime_Start As System.DateTime
+        Private OperatingTime_Stop As System.DateTime
+        Private PlayBack_Archive_Flag As Boolean = False
+        Private Previous_ts As System.Timespan 'Used to calculate operating time
+        Private Record_Archive_Flag As Boolean = False
+        Private ts As System.Timespan 'Used to calculate operating time
+        Private X_Characterizer(10, 50) As Double 'Used for flowmeter characterizer
+        Private Y_Characterizer(10, 50) As Double 'Used for flowmeter characterizer
+
+        '**********
+        '* Thread *
+        '**********
+        Private EventArchiverThread As Thread = Nothing
+        Private PW300WorkerThread As Thread = Nothing
+    End Class
+End Namespace

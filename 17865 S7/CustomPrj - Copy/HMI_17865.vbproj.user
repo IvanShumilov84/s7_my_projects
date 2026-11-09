@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <StartAction>Program</StartAction>
+    <StartProgram>C:\My Projects\17865 S7\CELDAS 200\HMI\PrjMaster_HMI.exe</StartProgram>
+    <StartWorkingDirectory>C:\My Projects\17865 S7\CELDAS 200\HMI</StartWorkingDirectory>
+    <StartArguments>/master /debug /password=17865 /config="C:\My Projects\17865 S7\CustomPrj\Config\Prj17865_HMI.exe.config" /ksp="C:\My Projects\17865 S7\CustomPrj\Config\Prj17865_HMI.ksp"</StartArguments>
+  </PropertyGroup>
+</Project>

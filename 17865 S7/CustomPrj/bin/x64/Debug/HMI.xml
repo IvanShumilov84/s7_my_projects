@@ -1,0 +1,38 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+HMI
+</name>
+</assembly>
+<members>
+<member name="T:PrjMaster_HMI.My.Resources.Resources">
+<summary>
+  A strongly-typed resource class, for looking up localized strings, etc.
+</summary>
+</member>
+<member name="P:PrjMaster_HMI.My.Resources.Resources.ResourceManager">
+<summary>
+  Returns the cached ResourceManager instance used by this class.
+</summary>
+</member>
+<member name="P:PrjMaster_HMI.My.Resources.Resources.Culture">
+<summary>
+  Overrides the current thread's CurrentUICulture property for all
+  resource lookups using this strongly typed resource class.
+</summary>
+</member>
+<member name="M:PrjMaster_HMI.StudioDemonstration.OpenTest_Sequence.Validate_Qnx_CSV_File">
+ <summary>
+ Validate the integrity of the CSV files on the Qnx server by comparing time of creation and size.
+ </summary>
+ <remarks>Require both file to be in their expected location for the sub to verify integrity. Will pop a msgbox if not possible.</remarks>
+</member>
+<member name="M:PrjMaster_HMI.StudioDemonstration.OpenTest_Sequence.Validate_ConfigurationFileIntegrity">
+ <summary>
+ Validate the integrity of the celdas.cfg File on the Qnx server by comparing time of creation and size.
+ </summary>
+ <remarks>Require both file to be in their expected location for the sub to verify integrity. Will pop a msgbox if not possible.</remarks>
+</member>
+</members>
+</doc>

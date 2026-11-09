@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>EntitySpaces.Loader</name>
+    </assembly>
+    <members>
+        <member name="T:EntitySpaces.Loader.esDataProviderFactory">
+            <summary>
+            Used to load the EntitySpaces data providers in a loosely coupled fashion.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Loader.esDataProviderFactory.GetDataProvider(System.String,System.String)">
+            <summary>
+            Loads and Caches the EntitySpaces DataProvider.
+            </summary>
+            <remarks>
+            The providerClass parameter determines whether or not distributed transactions are used or
+            if ADO.NET connection based transactions are used. When "DataProvider" is used the <see cref="T:EntitySpaces.Interfaces.esTransactionScope"/>
+            class is used to enforce transactions. When "DataProviderEnterprise" is used then <see cref="!:TransactionScope"/>
+            is used
+            </remarks>
+            <param name="providerName">The name of the EntitySpaces DataProvider, for example, "EntitySpaces.SqlClientProvider"</param>
+            <param name="providerClass">The class to use, either "DataProvider" or "DataProviderEnterprise"</param>
+            <returns>The approprate data provider such as "EntitySpaces.SqlClientProvider"</returns>
+        </member>
+    </members>
+</doc>

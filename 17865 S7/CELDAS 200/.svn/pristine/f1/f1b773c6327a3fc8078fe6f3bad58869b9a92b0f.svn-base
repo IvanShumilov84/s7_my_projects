@@ -1,0 +1,621 @@
+Imports CEL.HMI
+Imports Microsoft.Office.Interop
+Imports KineticaRT
+Imports KineticaRT.Channels
+Imports KineticaRT.Logic.Message
+Imports KineticaRT.Sequence
+Imports KineticaRT.Servers.OpcClient
+Imports KineticaRT.Values
+Imports Microsoft.VisualBasic
+Imports System
+Imports System.Collections
+Imports System.Collections.Generic
+Imports System.Data
+Imports System.Data.OleDb
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Runtime.InteropServices
+Imports System.Math
+Imports System.Security
+Imports System.Security.Permissions
+Imports System.Text
+Imports System.Text.RegularExpressions
+Imports System.Threading
+Imports System.Windows.Forms
+
+Imports System.Globalization
+
+Namespace StudioDemonstration
+ 	Public class Performance_Sequence
+        Inherits CEL.KineticaRT.Sequence.Sequence 
+
+        Private CELProject As CELDAS = CELDAS.Instance()
+
+        '********************************************************************
+		'* Private Variable Declaration *************************************
+		'********************************************************************	
+
+        Private Const drpDataPath As String = "C:\drp\incoming\"
+
+        '********************************************************************
+        '* Private Methods **************************************************
+        '********************************************************************
+
+        Protected Overrides Sub OnEngineWorkingThread()
+            'DoNothing
+        End Sub
+
+        '*******************
+		'* CreateHandler() *
+		'*******************
+        Private Function CreateHandler() As Boolean
+            Try
+                If CELProject.EngineFamily = "T700" Then
+                    AddHandler PERF_PERFORMANCE_RUN_BTN.ValueChanged, AddressOf OnBTN_PERFORMANCE_RUN
+                    AddHandler PERF_PERFORMANCE_SAVE_BTN.ValueChanged, AddressOf OnBTN_PERFORMANCE_SAVE
+                    AddHandler PERF_PERFORMANCE_VIEW_BTN.ValueChanged, AddressOf OnBTN_PERFORMANCE_VIEW
+                    AddHandler PwrSetting_List.SelectedIndexChanged, AddressOf OnPwrSetting_List_SelectedIndexChanged
+                End If
+
+                Return True
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : CreateHandler()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End function
+
+
+        '*******************
+		'* DeleteHandler() *
+		'*******************
+        Private Function DeleteHandler() As Boolean
+            Try
+                If Not PERF_PERFORMANCE_RUN_BTN Is Nothing Then
+                    RemoveHandler PERF_PERFORMANCE_RUN_BTN.ValueChanged, AddressOf OnBTN_PERFORMANCE_RUN
+                End If
+                If Not PERF_PERFORMANCE_SAVE_BTN Is Nothing Then
+                    RemoveHandler PERF_PERFORMANCE_SAVE_BTN.ValueChanged, AddressOf OnBTN_PERFORMANCE_SAVE
+                End If
+                If Not PERF_PERFORMANCE_VIEW_BTN Is Nothing Then
+                    RemoveHandler PERF_PERFORMANCE_VIEW_BTN.ValueChanged, AddressOf OnBTN_PERFORMANCE_VIEW
+                End If
+				If Not (PwrSetting_List Is Nothing ) Then
+					RemoveHandler PwrSetting_List.SelectedIndexChanged,	AddressOf OnPwrSetting_List_SelectedIndexChanged
+				End If
+
+                Return True
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : DeleteHandler()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        '**************************
+        '* Init_Channels()        *
+        '**************************
+		Private Function Init_Channels() As Boolean
+			Try                
+			    Dim i				As Integer
+			    Dim Return_Value 	As New ArrayList()
+
+			    Return_Value.Clear()
+
+			    'Initialise Channels
+                'Return_Value.Add(MyBase.InitializeChannel(OpenPerfWindow, "OpenPerfWindow"))
+                'Return_Value.Add(MyBase.InitializeChannel(PWR_STEP_CODE, "PWR_STEP_CODE"))
+
+                If Return_Value.Contains(False) Then
+                    Return False
+                Else
+                    Return True
+                End If
+
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : Init_Channels()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        '**************************
+        '* Init_Engine_Channels() *
+        '**************************
+        Private Function Init_Engine_Channels() As Boolean
+            Dim i As Integer
+            Dim Return_Value As New ArrayList()
+
+            Return_Value.Clear()
+
+            Try
+
+
+                Select Case CELProject.EngineFamily
+                    'Not For "DAS CALIBRATION"
+                    Case "T700"
+                        'Initialise Engine Channels				
+                        Return_Value.Add(MyBase.InitializeChannel(CONDITION_NUMBER, "CONDITION_NUMBER"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DEC_TORQUE_LBSFT, "LOG_PERF_DEC_TORQUE_LBSFT"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FHVI, "LOG_PERF_FHVI"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_LDS_CALIB_DEG, "LOG_PERF_LDS_CALIB_DEG"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_RPM, "LOG_PERF_NG_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NP_RPM, "LOG_PERF_NP_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_EXHAUST_1_PSIA, "LOG_PERF_P_EXHAUST_1_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_EXHAUST_1_PSIA, "LOG_PERF_P_EXHAUST_2_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S_INLET_1_PSIA, "LOG_PERF_P_S_INLET_1_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S_INLET_2_PSIA, "LOG_PERF_P_S_INLET_2_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S_INLET_3_PSIA, "LOG_PERF_P_S_INLET_3_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S_INLET_4_PSIA, "LOG_PERF_P_S_INLET_4_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S_INLET_5_PSIA, "LOG_PERF_P_S_INLET_5_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S_INLET_6_PSIA, "LOG_PERF_P_S_INLET_6_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S_INLET_7_PSIA, "LOG_PERF_P_S_INLET_7_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S_INLET_8_PSIA, "LOG_PERF_P_S_INLET_8_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_T_INLET_1_PSIA, "LOG_PERF_P_T_INLET_1_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_T_INLET_2_PSIA, "LOG_PERF_P_T_INLET_2_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_T_INLET_3_PSIA, "LOG_PERF_P_T_INLET_3_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_T_INLET_4_PSIA, "LOG_PERF_P_T_INLET_4_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_UPSTREAM_PSIA, "LOG_PERF_P_UPSTREAM_AVG_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_THROAT_PSIA, "LOG_PERF_P_THROAT_AVG_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PAS_CALIB_DEG, "LOG_PERF_PAS_CALIB_DEG"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_PS3_PSIA, "LOG_PERF_P_PS3_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_P3X_PSIA, "LOG_PERF_P_P3X_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_CELL_FRONT_PSIA, "LOG_PERF_P_CELL_FRONT_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_CELL_REAR_PSIA, "LOG_PERF_P_CELL_REAR_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_DISCHARGE_1_DEGR, "LOG_PERF_T_DISCHARGE_1_DEGR"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_DISCHARGE_2_DEGR, "LOG_PERF_T_DISCHARGE_2_DEGR"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_FUEL_AVG_DEGF, "LOG_PERF_T_FUEL_AVG_DEGF"))
+                        For i = 0 To LOG_PERF_T_INLET_DEGR.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_INLET_DEGR(i), "LOG_PERF_T_INLET_" + (i + 1).ToString() + "_DEGR"))
+                        Next
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T45H_DEGR, "LOG_PERF_T_T45H_DEGR"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_UPSTREAM_AVG_DEGR, "LOG_PERF_T_UPSTREAM_AVG_DEGR"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TORQUE_METER_TORQUE_LBSFT, "LOG_PERF_TORQUE_METER_TORQUE_LBSFT"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VG_CALIB_DEG, "LOG_PERF_VG_CALIB_DEG"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF1_PPH, "LOG_PERF_WF1_PPH"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF2_PPH, "LOG_PERF_WF2_PPH"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_PERFORMANCE_RUN_BTN, "PERF_PERFORMANCE_RUN_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_PERFORMANCE_SAVE_BTN, "PERF_PERFORMANCE_SAVE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_PERFORMANCE_VIEW_BTN, "PERF_PERFORMANCE_VIEW_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PWR_STEP_CODE, "PWR_STEP_CODE"))
+
+                        Return_Value.Add(MyBase.InitializeObject(Entry_Frame, CELProject.EngineFamily + "_Slave_Screen.T700_DRP_PLOT.Manual_Entry_Frame"))
+                        'Manual_Entry_Frame = Entry_Frame.FindObject("Manual_Entry_Frame")
+                        'T700_DRP_PLOT
+                        PwrSetting_List = Entry_Frame.FindObject("PwrSetting_List")
+                        If PwrSetting_List Is Nothing Then
+                            MessageBox.Show("Initialize_Object - PwrSetting_List Is Nothing")
+                            Return_Value.Add(False)
+                        Else
+                            Return_Value.Add(True)
+                        End If
+                End Select
+
+            Catch ex As Exception
+                MessageBox.Show("Init_Engine_Channels: " & ex.Message)
+                Return_Value.Add(False)
+            Finally
+
+            End Try
+
+            If Return_Value.Contains(False) Then
+                Init_Engine_Channels = False
+            Else
+                Init_Engine_Channels = True
+            End If
+        End Function
+
+		'********************************
+		'* Initialize_Engine_Controls() *
+		'********************************
+		Private Sub Initialize_Engine_Controls()
+
+			Try
+                Select Case CELProject.EngineModel
+
+                    Case "T700-401C"
+                        PwrSetting_List.Items.Clear()
+                        PwrSetting_List.Items.Add("GROUND IDLE")
+                        PwrSetting_List.Items.Add("60% MAXIMUM CONTINUOUS")
+                        PwrSetting_List.Items.Add("75% MAXIMUM CONTINUOUS")
+                        PwrSetting_List.Items.Add("MAXIMUM CONTINUOUS")
+                        PwrSetting_List.Items.Add("INTERMEDIATE RATED POWER")
+                        PwrSetting_List.Items.Add("CONTINGENCY")
+                        PwrSetting_List.SelectedIndex = 0
+
+                    Case "T700-701C"
+                        PwrSetting_List.Items.Clear()
+                        PwrSetting_List.Items.Add("GROUND IDLE")
+                        PwrSetting_List.Items.Add("50% MAXIMUM CONTINUOUS")
+                        PwrSetting_List.Items.Add("75% MAXIMUM CONTINUOUS")
+                        PwrSetting_List.Items.Add("MAXIMUM CONTINUOUS")
+                        PwrSetting_List.Items.Add("INTERMEDIATE RATED POWER")
+                        PwrSetting_List.Items.Add("MAXIMUM")
+                        PwrSetting_List.Items.Add("CONTINGENCY")
+                        PwrSetting_List.SelectedIndex = 0
+                End Select
+
+			Catch ex As Exception
+				MessageBox.Show("Initialize_Engine_Controls: " & ex.Message, "Error",MessageBoxButtons.OK,MessageBoxIcon.Error)
+			End Try
+		End Sub
+
+
+		'*****************
+		'* Initialize()  *
+		'*****************
+		Private Function Initialize() As Boolean
+            'Try
+            '             LOG_PERF_ABS_HUMIDITY.Value = KineticaRT.Values.Values.Zero
+            '             PWR_STEP_CODE.Value			= KineticaRT.Values.Values.Zero
+            '             CONDITION_NUMBER.Value		= KineticaRT.Values.Values.One    				
+            '		Pwr_Setting					= 0
+            '	PWR_STEP_CODE.Value			= New KineticaRT.Values.Double(Pwr_Setting)
+
+            '             Return True
+
+            '         Catch ex As Exception
+            '             clsTopMostMessageBox.Show("Performance_Sequence : Initialize()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            '             Return False
+            '         End Try
+		End Function
+
+        '*********************
+        '* ProcessDRPInputs  *
+        '*********************
+		Private Sub ProcessDRPInputs()
+            'Dim Cmd 						As OleDbCommand
+            'Dim ConnectionString 			As String
+            Dim i							As Integer
+            Dim j							As Integer
+			Dim Now_Day 					As String
+			Dim Now_Hour 					As String
+			Dim Now_Minute 					As String
+			Dim Now_Month 					As String
+			Dim Now_Second 					As String
+			Dim Now_Year 					As String
+            'Dim Reader 						As OleDbDataReader
+            'Dim SelectString 				As String
+			Dim TestNumber 					As String
+            'Dim TestSession_Connection 		As OleDbConnection
+			Dim Var1						As String
+			Dim Var2						As KineticaRT.Channels.Channel
+
+            Try
+
+                If Now.Day < 10 Then
+                    Now_Day = "0" + Now.Day.ToString
+                Else
+                    Now_Day = Now.Day.ToString
+                End If
+                If Now.Hour < 10 Then
+                    Now_Hour = "0" + Now.Hour.ToString
+                Else
+                    Now_Hour = Now.Hour.ToString
+                End If
+                If Now.Minute < 10 Then
+                    Now_Minute = "0" + Now.Minute.ToString
+                Else
+                    Now_Minute = Now.Minute.ToString
+                End If
+                If Now.Month < 10 Then
+                    Now_Month = "0" + Now.Month.ToString
+                Else
+                    Now_Month = Now.Month.ToString
+                End If
+                If Now.Second < 10 Then
+                    Now_Second = "0" + Now.Second.ToString
+                Else
+                    Now_Second = Now.Second.ToString
+                End If
+                Now_Year = Now.Year.ToString.Substring(2)
+
+                TestNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                TestNumber = TestNumber.Substring(3) + "000"
+
+				'Header
+                DRPInputs(0) = "LOCATE    TEI"
+				DRPInputs(1) = "CELL      001"
+                DRPInputs(2) = "ESN       " + CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+				DRPInputs(3) = "RDG       " + CONDITION_NUMBER.Value.ToString
+				DRPInputs(4) = "TDATE     " + Now_Month + Now_Day + Now_Year
+				DRPInputs(5) = "TESTNO    " + TestNumber
+				DRPInputs(6) = "TTIME     " + Now_Hour + Now_Minute + Now_Second
+
+                i = 7
+
+                For Each Parameter As String In Custom_Parameters.Keys
+                    'Remove 3 first characters that are the index and pad right for a total of 9 characters.
+                    Var1 = Parameter.Substring(3).PadRight(9, " ")
+                    'For j = Var1.Length To 9
+                    '    Var1 = Var1 + " "
+                    'Next
+                    Var2 = GetChannel(Custom_Parameters(Parameter))
+                    If Var2 Is Nothing Then
+                        clsTopMostMessageBox.Show("Performance_Sequence : ProcessDRPInputs()" & " Can't retrieve channel Value used for performance parameter = " & Parameter, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+                    DRPInputs(i) = Var1 + Var2.Value.ToString
+                    i = i + 1
+                Next
+
+                ''Connect to the TestSession Database
+                'ConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source=" + TestSession_DatabaseName + ";Jet OLEDB:System database=" + TestSession_DatabaseWorkgroup + "; User ID=" + TestSession_DatabaseUserID + "; Password=" + TestSession_DatabasePassword
+
+                'If OpenConnection(ConnectionString, TestSession_Connection) Then
+
+                '    SelectString = "SELECT * FROM DRPInputList WHERE [Engine_Model] = " + Chr(39) + Test_Mgr_UUT_Model.ToString() + Chr(39)
+                '    Cmd = New OleDbCommand(SelectString, TestSession_Connection)
+                '    Reader = Cmd.ExecuteReader()
+
+                '    While (Reader.Read())
+                '        Var1 = Reader.Item("Parameter").ToString()
+                '        For j = Var1.Length To 9
+                '            Var1 = Var1 + " "
+                '        Next
+                '        Var2 = GetChannel(Reader.Item("Variable").ToString())
+                '        If Var2 Is Nothing Then
+                '            MessageBox.Show("ERROR: Log Variable creation is Nothing")
+                '        End If
+                '        DRPInputs(i) = Var1 + Var2.Value.ToString
+                '        i = i + 1
+                '    End While
+                '    Reader.Close()
+
+                '    CloseConnection(TestSession_Connection)
+                'End If
+
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : ProcessDRPInputs()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+		'******************
+		'* WriteDRPFile() *
+		'******************
+		Private Function WriteDRPFile(path As String, CondNb As String) As Boolean
+			Dim index		As Integer
+            Dim filename	As String
+
+            filename = CELProject.Project.Number.ToString + CELProject.EngineModel.Substring(5) + "_reading_" + CondNb + "_" + CELProject.Test_Mgr_UUT_Answer(0).Value.ToString + ".txt"
+			Dim w As StreamWriter = New StreamWriter(path + filename)
+
+			For index=0 To DRPInputs.GetUpperBound(0)
+				If (NOT (DRPInputs(index) Is Nothing)) Then
+					w.WriteLine(DRPInputs(index))
+				End If
+			Next index
+			
+				
+			w.Flush()
+			w.Close()		
+		End Function
+		
+		'********************************************************************
+		'* Handlers *********************************************************
+		'********************************************************************
+
+		'****************************
+		'* OnBTN_PERFORMANCE_RUN()  *
+		'****************************
+		Private Sub OnBTN_PERFORMANCE_RUN(sender As KineticaRT.Channels.IChannel, newVal As KineticaRT.Values.Value)
+			Dim Result 			As DialogResult
+            Dim CondNb          As String = CONDITION_NUMBER.Value.ToString
+
+			Try			
+			    If (newVal Is KineticaRT.Values.Values.True) Then
+                    Dim Perf_FolderName As String = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + CELProject.Test_Mgr_UUT_Answer(0).Value.ToString() + "\" + CELProject.Test_Mgr_UUT_Answer(1).Value.ToString() + "\Perf\"
+ 					Result = MessageBox.Show("Take Performance Point " + CondNb + "?", "Performance Point",MessageBoxButtons.YesNo)
+					If (Result = DialogResult.Yes) Then
+                        If Process.GetProcessesByName("proc_incoming").Length = 0 Then
+                            Shell("C:\drp\scripts\proc_incoming.exe", AppWinStyle.MinimizedNoFocus)
+                        End If
+						ProcessDRPInputs()
+						WriteDRPFile(drpDataPath, CondNb)
+				    	WriteDRPFile(Perf_FolderName, CondNb)
+                        CONDITION_NUMBER.Value = New KineticaRT.Values.Double(CONDITION_NUMBER.Value.ToDouble + 1)
+					End If
+
+                    PERF_PERFORMANCE_RUN_BTN.Value = KineticaRT.Values.Values.False
+                End If
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : ProcessDRPInputs()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+		End Sub
+
+
+		'*****************************
+		'* OnBTN_PERFORMANCE_SAVE()  *
+		'*****************************
+		Private Sub OnBTN_PERFORMANCE_SAVE(sender As KineticaRT.Channels.IChannel, newVal As KineticaRT.Values.Value)
+			Dim DestinationPath	As String
+			Dim DirDest			As String
+			Dim Dirs			As String()
+			Dim FileDest		As String
+			Dim FileList		As String()
+            Dim i               As Integer
+            Dim j               As Integer
+			Dim SearchPath		As String
+
+			Try			
+			    If (newVal Is KineticaRT.Values.Values.True) Then
+                    DestinationPath = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + CELProject.Test_Mgr_UUT_Answer(0).Value.ToString() + "\" + CELProject.Test_Mgr_UUT_Answer(1).Value.ToString() + "\Perf\" + CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                    SearchPath = "C:\drp\engines\" + CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+
+                    If Directory.Exists(SearchPath) Then
+                        Directory.CreateDirectory(DestinationPath)
+						Dirs = Directory.GetDirectories(SearchPath)
+                        For i = 0 To Dirs.GetUpperBound(0)
+                            DirDest = DestinationPath + Dirs(i).Substring(SearchPath.Length)
+							Directory.CreateDirectory(DirDest)
+                            FileList = Directory.GetFiles(Dirs(i))
+                            For j = 0 To FileList.GetUpperBound(0)
+                                FileDest = DirDest + FileList(j).Substring(Dirs(i).Length)
+                                If File.Exists(FileDest) Then
+                                    File.Delete(FileDest)
+                                End If
+                                File.Copy(FileList(j), FileDest)
+                            Next
+                        Next
+                        clsTopMostMessageBox.Show("Test results saved in " + DestinationPath, "CELDAS™ 200", MessageBoxButtons.OK, MessageBoxIcon.Information)
+
+                    Else
+                        clsTopMostMessageBox.Show("No test results to save", "CELDAS™ 200", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    End If
+
+                    PERF_PERFORMANCE_SAVE_BTN.Value = KineticaRT.Values.Values.False
+                End If
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : OnBTN_PERFORMANCE_SAVE()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+		End Sub
+
+
+		'*****************************
+		'* OnBTN_PERFORMANCE_VIEW()  *
+		'*****************************
+		Private Sub OnBTN_PERFORMANCE_VIEW(sender As KineticaRT.Channels.IChannel, newVal As KineticaRT.Values.Value)
+
+			Try			
+			    If (newVal Is KineticaRT.Values.Values.True) Then
+			    	Shell("C:\drp\scripts\start_stop.exe", AppWinStyle.NormalFocus)
+
+                    PERF_PERFORMANCE_VIEW_BTN.Value = KineticaRT.Values.Values.False
+                End If
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : OnBTN_PERFORMANCE_VIEW()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+		End Sub
+
+
+		'**********************************************
+		'* OnPwrSetting_List_SelectedIndexChanged	  *
+		'**********************************************
+		Private Sub OnPwrSetting_List_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs)
+			Try
+				PWR_STEP_CODE.Value = New KineticaRT.Values.Integer(PwrSetting_List.SelectedIndex + 1)
+				Pwr_Setting = PWR_STEP_CODE.Value.ToDouble() - 1
+			Catch ex As Exception
+				MessageBox.Show("OnPwrSetting_List_SelectedIndexChanged: " & ex.ToString, "Error",MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+			Finally
+			End Try
+		End Sub
+
+		'************************
+		'* OnTestSessionClosing *
+		'************************
+		Protected Overrides Sub OnTestSessionClosing( newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus )
+			Try
+                MyBase.OnTestSessionClosing(newStatus)
+                If CELProject.EngineFamily = "T700" Then
+                    DeleteHandler()
+                    If Process.GetProcessesByName("proc_incoming").Length > 0 Then
+                        For Each curProcess As Process In Process.GetProcessesByName("proc_incoming")
+                            curProcess.Kill()
+                        Next
+                    End If
+                End If
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : OnTestSessionClosing()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+		End Sub
+
+		'****************************
+		'* OnTestSessionInitialized *
+		'****************************
+		Protected Overrides Sub OnTestSessionInitialized( newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus )
+
+			Try
+				MyBase.OnTestSessionInitialized( newStatus )
+				
+                If CELProject.EngineFamily = "T700" Then
+                    Init_Engine_Channels()
+                    Initialize()
+                End If
+				
+                'OpenPerfWindow.Value = KineticaRT.Values.Values.False
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : OnTestSessionInitialized()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+		End Sub
+
+		'************************
+		'* OnTestSessionRunning *
+		'************************
+		Protected Overrides Sub OnTestSessionRunning( newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus )
+
+            Try
+                If CELProject.EngineFamily = "T700" Then
+                    MyBase.OnTestSessionRunning(newStatus)
+                    CELProject.EngineWindowCollection.Item(0).EngineWindow.BeginInvoke(New MethodInvoker(AddressOf Me.Initialize_Engine_Controls))
+                    CELProject.LoadSave_Custom_Parameters(Custom_Parameters, False)
+                    CreateHandler()
+                End If
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Performance_Sequence : OnTestSessionRunning()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+		End Sub
+
+
+		'********************************************************************
+		'* Private Members **************************************************
+		'********************************************************************
+
+		'*************
+		'* Channels  *
+		'*************
+
+
+        Private CONDITION_NUMBER As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_DEC_TORQUE_LBSFT As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_FHVI As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_LDS_CALIB_DEG As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_NG_RPM As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_NP_RPM As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_EXHAUST_1_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_EXHAUST_2_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_S_INLET_1_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_S_INLET_2_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_S_INLET_3_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_S_INLET_4_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_S_INLET_5_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_S_INLET_6_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_S_INLET_7_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_S_INLET_8_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_T_INLET_1_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_T_INLET_2_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_T_INLET_3_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_T_INLET_4_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_UPSTREAM_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_CELL_FRONT_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_CELL_REAR_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_THROAT_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_PAS_CALIB_DEG As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_PS3_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_P3X_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_T_DISCHARGE_1_DEGR As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_T_DISCHARGE_2_DEGR As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_T_FUEL_AVG_DEGF As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_T_INLET_DEGR(32) As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_T_T45H_DEGR As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_T_UPSTREAM_AVG_DEGR As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_TORQUE_METER_TORQUE_LBSFT As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_VG_CALIB_DEG As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_WF1_PPH As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_WF2_PPH As KineticaRT.Channels.INumericChannel
+        Private PERF_PERFORMANCE_RUN_BTN As KineticaRT.Channels.IBooleanChannel
+        Private PERF_PERFORMANCE_SAVE_BTN As KineticaRT.Channels.IBooleanChannel
+        Private PERF_PERFORMANCE_VIEW_BTN As KineticaRT.Channels.IBooleanChannel
+        Private PWR_STEP_CODE As KineticaRT.Channels.INumericChannel
+
+		'*********************
+		'* Forms and Control *
+		'*********************
+		Private Entry_Frame					As KineticaRT.Controls.Control
+		Private Manual_Entry_Frame			As KineticaRT.Controls.Control
+		Private PwrSetting_List 			As System.Windows.Forms.ComboBox
+
+		'********
+		'* Misc *
+        '********
+        Private Custom_Parameters As New System.Collections.Specialized.OrderedDictionary
+        Private DRPInputs(175) As String
+        Private Pwr_Setting As Integer
+    End Class	
+End Namespace

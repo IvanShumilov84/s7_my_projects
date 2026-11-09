@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>KineticaRT.Studio.Controls.SetPointDial</name>
+    </assembly>
+    <members>
+        <member name="T:KineticaRT.Studio.Controls.SetPointDial">
+            <summary>
+            KineticaRT Studio SetPoint Dial control.
+            Displays numeric Values from two source channels on a dial,
+            together with an optional description and units
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.SetPointDial.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.SetPointDial.#ctor">
+            <summary>
+            Initialises a new instance of the SetPointDial class
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.SetPointDial.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.SetPointDial.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify 
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.SourceChannel">
+            <summary>
+            Gets or sets the Source channel to which this object is connected
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.CustomDescription">
+            <summary>
+            Gets or sets a Custom Description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.DescriptionSource">
+            <summary>
+            Gets or sets where to get the Description from
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.CustomUnits">
+            <summary>
+            Gets or sets a Custom Units string
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.UseCustomUnits">
+            <summary>
+            Gets or sets whether to use the Custom units string or the Source channel's value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.Format">
+            <summary>
+            Gets or sets the text formatting of the Value
+            If specified (ie non-blank string), overrides the format of the Source
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.NeedleColor">
+            <summary>
+            Gets or Sets the Color of the Needle
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.FillColor">
+            <summary>
+            Gets or Sets the Color of the Fill
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.ScaleColor">
+            <summary>
+            Gets or Sets the Color of the Scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.FillEnabled">
+            <summary>
+            Gets or sets whether fill is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.NeedleEnabled">
+            <summary>
+            Gets or sets whether the needle is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.SetPointSourceChannel">
+            <summary>
+            Gets or sets the SetPoint channel to which this object is connected
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.SetPointColor">
+            <summary>
+            Gets or Sets the Color of the SetPoint mark
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.SetPointMarkEnabled">
+            <summary>
+            Gets or sets whether the SetPoint mark is enabled
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.SetPointDial.UpdateLayout">
+            <summary>
+            Updates the sizes of all sections
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.SetPointDial.NewToolTip(System.String)">
+            <summary>
+            A new tool tip is being set
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.SetPointDial.NewRange(System.Double,System.Double)">
+            <summary>
+            Set the range of scaled objects
+            </summary>
+            <param name="Min">New minimum value</param>
+            <param name="Max">New Maximum value</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.SetPointDial.NewDPs(System.Int32)">
+            <summary>
+            Set the decimal places of scaled objects
+            </summary>
+            <param name="DPs">New decimal places</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.SetPointDial.OnSourcePropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)">
+            <summary>
+            A property in the Source channel has changed
+            </summary>
+            <param name="Sender">Object generating the event</param>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.SetPointDial.ValueScale">
+            <summary>
+            Gets the scale for the Scaled Control.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.SetPointDial.SetFill(System.Double,System.Drawing.Color)">
+            <summary>
+            Sets the fill color for this object.
+            Used for setting the LowLow threshold color when connected to threshold channels.
+            </summary>
+            <param name="color">The new color.</param>
+            <param name="centrePoint">The new center point about which the fill is drawn.</param>
+        </member>
+    </members>
+</doc>

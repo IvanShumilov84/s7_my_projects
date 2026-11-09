@@ -1,0 +1,71 @@
+[__DEFIO_CPXDVC]
+Nb = 0
+
+
+[__DEFIO_SPLDVC]
+Nb = 4
+NotMDF = 0, -1, 1, FCProtocol, FCDriver, splREALi
+MDF = -1131153434
+RIdx = 0
+NotMDF = 4, -1, 1, FCProtocol, FCDriver, splREALi
+MDF = 2085304223
+RIdx = 0
+NotMDF = 5, -1, 1, FCProtocol, FCDriver, splREALi
+MDF = -934579297
+RIdx = 0
+NotMDF = 6, -1, 1, FCProtocol, FCDriver, splREALi
+MDF = -1138231390
+RIdx = 0
+
+
+[__DEFIO_CHAN]
+RIdx = 0, 0
+Nb = 24
+MDF = 1\1, 0, 0, 0, -1, FM_MASS_FUEL_FLOW
+MDF = 1\1, 0, 0, 0, -1, FM_DENSITY_FUEL
+MDF = 1\1, 0, 0, 0, -1, FM_T_FUEL
+MDF = 1\1, 0, 0, 0, -1, FM_VOL_FUEL_FLOW
+MDF = 1\1, 0, 0, 0, -1, FM_TOTAL_VOL_FUEL
+MDF = 1\1, 0, 0, 0, -1, FM_TOTAL_FUEL
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_6
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_7
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_8
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_9
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_10
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_11
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_12
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_13
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_14
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_15
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_16
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_17
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_18
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_19
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_20
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_21
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_22
+MDF = 1\1, 0, 0, 0, -1, _IO_IU0_23
+RIdx = 0, 1
+Nb = 8
+MDF = 1\1, 0, 0, 0, -1, PM1_VOLTAGE_VL1_N
+MDF = 1\1, 0, 0, 0, -1, PM1_VOLTAGE_VL2_N
+MDF = 1\1, 0, 0, 0, -1, PM1_VOLTAGE_VL3_N
+MDF = 1\1, 0, 0, 0, -1, PM1_CURRENT_IL1
+MDF = 1\1, 0, 0, 0, -1, PM1_CURRENT_IL2
+MDF = 1\1, 0, 0, 0, -1, PM1_CURRENT_IL3
+MDF = 1\1, 0, 0, 0, -1, PM1_POWER_TOT
+MDF = 1\1, 0, 0, 0, -1, PM1_FREQ
+RIdx = 0, 2
+Nb = 8
+MDF = 1\1, 0, 0, 0, -1, PM2_VOLTAGE_VL1_N
+MDF = 1\1, 0, 0, 0, -1, PM2_VOLTAGE_VL2_N
+MDF = 1\1, 0, 0, 0, -1, PM2_VOLTAGE_VL3_N
+MDF = 1\1, 0, 0, 0, -1, PM2_CURRENT_IL1
+MDF = 1\1, 0, 0, 0, -1, PM2_CURRENT_IL2
+MDF = 1\1, 0, 0, 0, -1, PM2_CURRENT_IL3
+MDF = 1\1, 0, 0, 0, -1, PM2_POWER_TOT
+MDF = 1\1, 0, 0, 0, -1, PM2_FREQ
+RIdx = 0, 3
+Nb = 2
+MDF = 1\1, 0, 0, 0, -1, FL_FUEL_LEVEL
+MDF = 1\1, 0, 0, 0, -1, FL_AVERAGE_TEMPERATURE

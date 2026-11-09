@@ -1,0 +1,3 @@
+<Window BackColor="Black" Font="Microsoft Sans Serif, 8.25pt" ForeColor="SteelBlue" RightToLeft="0" TabIndex="0" BorderColor="LightSteelBlue" BorderStyle="1" BorderWidth="0.1" Name="tab" Shape="0" ToolTipText="" UpdateSpeed="1" HorizontalGrid.Size="8" HorizontalGrid.Spacing="2" VerticalGrid.Size="8" VerticalGrid.Spacing="2" TitleEnabled="false" Title="PT6A Closing Point" WindowState="0" Left="3400" Top="100" Width="500" Height="575" CurrentPanelIndex="0">
+  <Panel File="PT6A\PT6A_BOV_ClosingPoint.dll" Text="ELU" />
+</Window>

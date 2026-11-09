@@ -1,0 +1,445 @@
+﻿ <Project ShowExplorer="1" ShowConfig="1" AllowClosedown="1" TopMost="0" LicenseKey="F6CE30426820">
+
+	<Sequence File="OpenTest_Sequence.vb" Name="OpenTest_Sequence" Type="StudioDemonstration.OpenTest_Sequence" Define="TRACE=1,DEBUG=1">
+		<References>
+			<Reference File="CEL.KineticaRT.Controls.dll" />
+			<Reference File="CEL.KineticaRT.Controls.ZedGraphControl.dll" />
+			<Reference File="CEL.KineticaRT.Channels.dll" />
+			<Reference File="CEL.KineticaRT.Sequence.dll" />
+			<Reference File="CEL.KineticaRT.Servers.Logger.dll" />
+			<Reference File="Interop.Excel.dll" />
+			<Reference File="KineticaRT.Controls.dll" />
+			<Reference File="KineticaRT.Controls.Dial.dll" />
+			<Reference File="KineticaRT.Controls.Explorer.dll" />
+			<Reference File="KineticaRT.Controls.Frame.dll" />
+			<Reference File="KineticaRT.Controls.Picture.dll" />
+			<Reference File="KineticaRT.Controls.Slider.dll" />
+			<Reference File="KineticaRT.Controls.Tab.dll" />
+			<Reference File="KineticaRT.Logic.Channels.dll" />
+			<Reference File="KineticaRT.Logic.Message.dll" />
+			<Reference File="KineticaRT.Logic.Expressions.dll" />
+			<Reference File="KineticaRT.Studio.Application.dll" />
+			<Reference File="KineticaRT.Studio.Controls.dll" />
+			<Reference File="KineticaRT.Studio.Controls.ChannelSelector.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Dial.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Linear.dll" />
+			<Reference File="KineticaRT.Controls.Button.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Button.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Display.dll" />
+			<Reference File="KineticaRT.Controls.Display.dll" />
+			<Reference File="KineticaRT.Servers.Logger.dll" />
+			<Reference File="KineticaRT.Servers.OpcClient.dll" />
+			<Reference File="System.Data.dll" />
+			<Reference File="System.Data.Linq.dll" />
+			<Reference File="System.Drawing.dll" />
+			<Reference File="System.Xml.dll" />
+			<Reference File="System.Xml.Linq.dll" />
+			<Reference File="CEL.dll" />
+			<Reference File="CEL.Library.dll" />
+			<Reference File="CEL.Data.dll" />
+			<Reference File="EntitySpaces.Core.dll" />
+			<Reference File="EntitySpaces.DynamicQuery.dll" />
+			<Reference File="EntitySpaces.Interfaces.dll" />
+			<Reference File="EntitySpaces.Loader.dll" />
+			<Reference File="EntitySpaces.LoaderMT.dll" />
+			<Reference File="ADODB.dll" />
+			<Reference File="System.Configuration.dll" />
+      
+		</References>
+	</Sequence>
+
+	<Sequence File="GTCP131_9A\GTCP131_9A_Sequence.vb" Name="GTCP131_9A_Sequence" Type="StudioDemonstration.GTCP131_9A_Sequence" Define="TRACE=1,DEBUG=1">
+		<References>
+			<Reference File="CEL.KineticaRT.Controls.dll" />
+			<Reference File="CEL.KineticaRT.Controls.ZedGraphControl.dll" />
+			<Reference File="CEL.KineticaRT.Channels.dll" />
+			<Reference File="CEL.KineticaRT.Sequence.dll" />
+			<Reference File="CEL.KineticaRT.Servers.Logger.dll" />
+			<Reference File="Microsoft.Office.Interop.Excel.dll" />
+			<Reference File="KineticaRT.Controls.dll" />
+			<Reference File="KineticaRT.Controls.Explorer.dll" />
+			<Reference File="KineticaRT.Controls.Frame.dll" />
+			<Reference File="KineticaRT.Controls.Slider.dll" />
+			<Reference File="KineticaRT.Logic.Channels.dll" />
+			<Reference File="KineticaRT.Logic.Message.dll" />
+			<Reference File="KineticaRT.Logic.Expressions.dll" />
+			<Reference File="KineticaRT.Studio.Application.dll" />
+			<Reference File="KineticaRT.Studio.Controls.dll" />
+			<Reference File="KineticaRT.Controls.Button.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Button.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Display.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Linear.dll" />
+			<Reference File="KineticaRT.Controls.Display.dll" />
+			<Reference File="KineticaRT.Servers.Logger.dll" />
+			<Reference File="KineticaRT.Servers.OpcClient.dll" />
+			<Reference File="System.Data.dll" />
+			<Reference File="System.Drawing.dll" />
+			<Reference File="System.XML.dll" />
+			<Reference File="KineticaRT.Studio.Controls.LampIndicator.dll" />
+			<Reference File="CEL.dll" />
+			<Reference File="CEL.Library.dll" />
+			<Reference File="ADODB.dll" />
+			<Reference File="System.Configuration.dll" />
+			<Reference File="System.Xaml.dll" />
+			<Reference File="PresentationCore.dll" />
+			<Reference File="PresentationFramework.dll" />
+			<Reference File="WindowsBase.dll" />
+			<Reference File="WindowsFormsIntegration.dll" />
+			<Reference File="CEL.Data.dll" />
+			<Reference File="EntitySpaces.Core.dll" />
+			<Reference File="EntitySpaces.DynamicQuery.dll" />
+			<Reference File="EntitySpaces.Interfaces.dll" />
+			<Reference File="EntitySpaces.Loader.dll" />
+			<Reference File="EntitySpaces.LoaderMT.dll" />
+		</References>
+  </Sequence>
+
+  
+  <Sequence File="GTCP131_9B\GTCP131_9B_Sequence.vb" Name="GTCP131_9B_Sequence" Type="StudioDemonstration.GTCP131_9B_Sequence" Define="TRACE=1,DEBUG=1">
+		<References>
+			<Reference File="CEL.KineticaRT.Controls.dll" />
+			<Reference File="CEL.KineticaRT.Controls.ZedGraphControl.dll" />
+      		<Reference File="CEL.KineticaRT.Channels.dll" />
+      		<Reference File="CEL.KineticaRT.Sequence.dll" />
+      		<Reference File="CEL.KineticaRT.Servers.Logger.dll" />
+      		<Reference File="Microsoft.Office.Interop.Excel.dll" />
+      		<Reference File="KineticaRT.Controls.dll" />
+      		<Reference File="KineticaRT.Controls.Explorer.dll" />
+      		<Reference File="KineticaRT.Controls.Frame.dll" />
+      		<Reference File="KineticaRT.Controls.Slider.dll" />
+      		<Reference File="KineticaRT.Logic.Channels.dll" />
+      		<Reference File="KineticaRT.Logic.Message.dll" />
+      		<Reference File="KineticaRT.Logic.Expressions.dll" />
+      		<Reference File="KineticaRT.Studio.Application.dll" />
+      		<Reference File="KineticaRT.Studio.Controls.dll" />
+      		<Reference File="KineticaRT.Controls.Button.dll" />
+      		<Reference File="KineticaRT.Studio.Controls.Button.dll" />
+      		<Reference File="KineticaRT.Studio.Controls.Display.dll" />
+      		<Reference File="KineticaRT.Studio.Controls.Linear.dll" />
+      		<Reference File="KineticaRT.Controls.Display.dll" />
+      		<Reference File="KineticaRT.Servers.Logger.dll" />
+      		<Reference File="KineticaRT.Servers.OpcClient.dll" />
+      		<Reference File="System.Data.dll" />
+      		<Reference File="System.Drawing.dll" />
+      		<Reference File="System.XML.dll" />
+      		<Reference File="KineticaRT.Studio.Controls.LampIndicator.dll" />
+      		<Reference File="CEL.dll" />
+      		<Reference File="CEL.Library.dll" />
+      		<Reference File="ADODB.dll" />
+      		<Reference File="System.Configuration.dll" />
+      		<Reference File="System.Xaml.dll" />
+      		<Reference File="PresentationCore.dll" />
+      		<Reference File="PresentationFramework.dll" />
+      		<Reference File="WindowsBase.dll" />
+      		<Reference File="WindowsFormsIntegration.dll" />
+      		<Reference File="CEL.Data.dll" />
+      		<Reference File="EntitySpaces.Core.dll" />
+      		<Reference File="EntitySpaces.DynamicQuery.dll" />
+      		<Reference File="EntitySpaces.Interfaces.dll" />
+      		<Reference File="EntitySpaces.Loader.dll" />
+      		<Reference File="EntitySpaces.LoaderMT.dll" />
+		</References>
+  </Sequence>
+
+  <Sequence File="RE220_RJ\RE220_RJ_Sequence.vb" Name="RE220_Sequence" Type="StudioDemonstration.RE220_RJ_Sequence" Define="TRACE=1,DEBUG=1">
+		<References>
+			<Reference File="CEL.KineticaRT.Controls.dll" />
+			<Reference File="CEL.KineticaRT.Controls.ZedGraphControl.dll" />
+			<Reference File="CEL.KineticaRT.Channels.dll" />
+			<Reference File="CEL.KineticaRT.Sequence.dll" />
+			<Reference File="CEL.KineticaRT.Servers.Logger.dll" />
+			<Reference File="Microsoft.Office.Interop.Excel.dll" />
+			<Reference File="KineticaRT.Controls.dll" />
+			<Reference File="KineticaRT.Controls.Explorer.dll" />
+			<Reference File="KineticaRT.Controls.Frame.dll" />
+			<Reference File="KineticaRT.Controls.Slider.dll" />
+			<Reference File="KineticaRT.Logic.Channels.dll" />
+			<Reference File="KineticaRT.Logic.Message.dll" />
+			<Reference File="KineticaRT.Logic.Expressions.dll" />
+			<Reference File="KineticaRT.Studio.Application.dll" />
+			<Reference File="KineticaRT.Studio.Controls.dll" />
+			<Reference File="KineticaRT.Controls.Button.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Button.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Display.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Linear.dll" />
+			<Reference File="KineticaRT.Controls.Display.dll" />
+			<Reference File="KineticaRT.Servers.Logger.dll" />
+			<Reference File="KineticaRT.Servers.OpcClient.dll" />
+			<Reference File="System.Data.dll" />
+			<Reference File="System.Drawing.dll" />
+			<Reference File="System.XML.dll" />
+			<Reference File="KineticaRT.Studio.Controls.LampIndicator.dll" />
+			<Reference File="CEL.dll" />
+			<Reference File="CEL.Library.dll" />
+			<Reference File="ADODB.dll" />
+			<Reference File="System.Configuration.dll" />
+			<Reference File="System.Xaml.dll" />
+			<Reference File="PresentationCore.dll" />
+			<Reference File="PresentationFramework.dll" />
+			<Reference File="WindowsBase.dll" />
+			<Reference File="WindowsFormsIntegration.dll" />
+			<Reference File="CEL.Data.dll" />
+			<Reference File="EntitySpaces.Core.dll" />
+			<Reference File="EntitySpaces.DynamicQuery.dll" />
+			<Reference File="EntitySpaces.Interfaces.dll" />
+			<Reference File="EntitySpaces.Loader.dll" />
+			<Reference File="EntitySpaces.LoaderMT.dll" />
+		</References>
+  </Sequence>
+
+  <Sequence File="ARCHIVE\Archive_Sequence.vb" Name="Archive_Sequence" Type="StudioDemonstration.Archive_Sequence" Define="DEBUG=1,TRACE=1">
+		<References>
+			<Reference File="KineticaRT.Studio.Application.dll" />
+			<Reference File="CEL.dll" />
+			<Reference File="CEL.Library.dll" />
+			<Reference File="CEL.KineticaRT.Channels.dll" />
+			<Reference File="CEL.KineticaRT.Sequence.dll" />
+			<Reference File="CEL.KineticaRT.Servers.Logger.dll" />
+			<Reference File="KineticaRT.Logic.Channels.dll" />
+			<Reference File="KineticaRT.Servers.Logger.dll" />
+			<Reference File="KineticaRT.Servers.OpcClient.dll" />
+			<Reference File="System.Configuration.dll" />
+			<Reference File="System.Data.dll" />
+			<Reference File="System.Drawing.dll" />
+		</References>
+  </Sequence>
+
+  
+  <Sequence File="Common\Common_Sequence.vb" Name="Common_Sequence" Type="StudioDemonstration.Common_Sequence" Define="DEBUG=1,TRACE=1">
+		<References>
+			<Reference File="KineticaRT.Studio.Application.dll" />
+			<Reference File="CEL.dll" />
+			<Reference File="CEL.Library.dll" />
+			<Reference File="CEL.Data.dll" />
+			<Reference File="CEL.KineticaRT.Channels.dll" />
+			<Reference File="CEL.KineticaRT.Controls.ZedGraphControl.dll" />
+			<Reference File="CEL.KineticaRT.Sequence.dll" />
+			<Reference File="CEL.KineticaRT.Servers.Logger.dll" />
+			<Reference File="KineticaRT.Logic.Channels.dll" />
+			<Reference File="KineticaRT.Servers.Logger.dll" />
+			<Reference File="KineticaRT.Servers.OpcClient.dll" />
+			<Reference File="System.Data.dll" />
+			<Reference File="System.Drawing.dll" />
+			<Reference File="System.XML.dll" />
+			<Reference File="System.Configuration.dll" />
+		</References>
+  </Sequence>
+ 
+  
+  <Sequence File="DAS_CALIBRATION\Calibration_Sequence.vb" Name="Calibration_Sequence" Type="StudioDemonstration.Calibration_Sequence" Define="TRACE=1,DEBUG=1">
+		<References>
+			<Reference File="CEL.KineticaRT.Channels.dll" />
+			<Reference File="CEL.KineticaRT.Sequence.dll" />
+			<Reference File="CEL.KineticaRT.Servers.Logger.dll" />
+			<Reference File="Microsoft.Office.Interop.Excel.dll" />
+			<Reference File="KineticaRT.Controls.dll" />
+			<Reference File="KineticaRT.Controls.Explorer.dll" />
+			<Reference File="KineticaRT.Controls.Frame.dll" />
+			<Reference File="KineticaRT.Logic.Channels.dll" />
+			<Reference File="KineticaRT.Logic.Message.dll" />
+			<Reference File="KineticaRT.Logic.Expressions.dll" />
+			<Reference File="KineticaRT.Studio.Application.dll" />
+			<Reference File="KineticaRT.Studio.Controls.dll" />
+			<Reference File="KineticaRT.Controls.Button.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Button.dll" />
+			<Reference File="KineticaRT.Studio.Controls.Display.dll" />
+			<Reference File="KineticaRT.Controls.Display.dll" />
+			<Reference File="KineticaRT.Controls.Picture.dll" />
+			<Reference File="KineticaRT.Servers.Logger.dll" />
+			<Reference File="KineticaRT.Servers.OpcClient.dll" />
+			<Reference File="System.Data.dll" />
+			<Reference File="System.Drawing.dll" />
+			<Reference File="System.XML.dll" />
+			<Reference File="CEL.dll" />
+			<Reference File="CEL.Library.dll" />
+      		<Reference File="CEL.Data.dll" />
+      		<Reference File="EntitySpaces.Core.dll" />
+      		<Reference File="EntitySpaces.DynamicQuery.dll" />
+      		<Reference File="EntitySpaces.Interfaces.dll" />
+      		<Reference File="EntitySpaces.Loader.dll" />
+      		<Reference File="EntitySpaces.LoaderMT.dll" />
+      		<Reference File="System.Configuration.dll" />
+		</References>
+  </Sequence>
+	
+  	
+  <AddableControls>
+		<Component Name="Button Interlock" Type="KineticaRT.Controls.ButtonInterlock, KineticaRT.Controls.Button" />
+		<Component Name="Message Sound" Type="KineticaRT.Logic.Message.Sound, KineticaRT.Logic.Message" />
+		<Component Name="Message Voice" Type="KineticaRT.Logic.Message.Voice, KineticaRT.Logic.Message" />
+		<Component Name="ARINC Channel Collection" Type="CEL.ARINCChannelCollection, CEL" />
+		<Component Name="CEL Display WPF" Type="CEL.KineticaRT.Controls.DisplayWpf, CEL.KineticaRT.Controls" />
+		<Add Name="Label" Type="System.Windows.Forms.Label, System.Windows.Forms" />
+		<Add Name="ComboBox" Type="System.Windows.Forms.ComboBox, System.Windows.Forms" />
+		<Add Name="ListBox" Type="System.Windows.Forms.ListBox, System.Windows.Forms" />
+		<Add Name="TextBox" Type="System.Windows.Forms.TextBox, System.Windows.Forms" />
+		<Add Name="UserControl1" Type="StudioUserControlVB.UserControl1, StudioUserControlVB" />
+		<Add Name="BarGraph" Type="KineticaRT.Controls.BarGraph, KineticaRT.Controls.BarGraph" />
+		<Add Name="Button" Type="KineticaRT.Controls.Button, KineticaRT.Controls.Button" />
+		<Add Name="EnabledButton" Type="KineticaRT.Controls.EnabledButton, KineticaRT.Controls.Button" />
+		<Add Name="Picture Button" Type="KineticaRT.Controls.PictureButton, KineticaRT.Controls.Button" />
+		<Add Name="Dial" Type="KineticaRT.Controls.Dial, KineticaRT.Controls.Dial" />
+		<Add Name="Display" Type="KineticaRT.Controls.Display, KineticaRT.Controls.Display" />
+		<Add Name="Frame" Type="KineticaRT.Controls.Frame, KineticaRT.Controls.Frame" />
+		<Add Name="Indicator" Type="KineticaRT.Controls.Indicator, KineticaRT.Controls.Indicator" />
+		<Add Name="Knob" Type="KineticaRT.Controls.Knob, KineticaRT.Controls.Knob" />
+		<Add Name="Message Display" Type="KineticaRT.Logic.Message.Display,			KineticaRT.Logic.Message.Display" />
+		<Add Name="Picture" Type="KineticaRT.Controls.Picture, KineticaRT.Controls.Picture" />
+		<Add Name="Slider" Type="KineticaRT.Controls.Slider, KineticaRT.Controls.Slider" />
+		<Add Name="Tab" Type="KineticaRT.Controls.Tab, KineticaRT.Controls.Tab" />
+		<Add Name="Trend" Type="KineticaRT.Controls.Trend, KineticaRT.Controls.Trend" />
+		<Add Name="XYGraph" Type="KineticaRT.Controls.XYGraph, KineticaRT.Controls.XYGraph" />
+		<Add Name="CEL ZedGraph" Type="CEL.KineticaRT.Controls.ZedGraphControl, CEL.KineticaRT.Controls" /> <!-- Todo AAA: Rajouté pour tester les graphes -->
+		<Add Name="Studio Bargraph" Type="KineticaRT.Studio.Controls.BarGraph, KineticaRT.Studio.Controls.BarGraph" />
+		<Add Name="Studio Button" Type="KineticaRT.Studio.Controls.Button, KineticaRT.Studio.Controls.Button" />
+		<Add Name="Studio Channel Selector" Type="KineticaRT.Studio.Controls.ChannelSelector, KineticaRT.Studio.Controls.ChannelSelector" />
+		<Add Name="Studio Checkbox" Type="KineticaRT.Studio.Controls.Checkbox, KineticaRT.Studio.Controls.Checkbox" />
+		<Add Name="Studio Radio Button" Type="KineticaRT.Studio.Controls.RadioButton, KineticaRT.Studio.Controls.RadioButton" />
+		<Add Name="Studio Dial" Type="KineticaRT.Studio.Controls.Dial, KineticaRT.Studio.Controls.Dial" />
+		<Add Name="Studio Setpoint Dial" Type="KineticaRT.Studio.Controls.SetPointDial, KineticaRT.Studio.Controls.SetPointDial" />
+		<Add Name="Studio Display" Type="KineticaRT.Studio.Controls.Display, KineticaRT.Studio.Controls.Display" />
+		<Add Name="Studio Lamp Indicator" Type="KineticaRT.Studio.Controls.LampIndicator, KineticaRT.Studio.Controls.LampIndicator" />
+		<Add Name="Studio Linear" Type="KineticaRT.Studio.Controls.Linear, KineticaRT.Studio.Controls.Linear" />
+		<Add Name="Studio Setpoint Linear" Type="KineticaRT.Studio.Controls.SetPointLinear, KineticaRT.Studio.Controls.SetPointLinear" />
+		<Add Name="Studio Error Linear" Type="KineticaRT.Studio.Controls.ErrorLinear, KineticaRT.Studio.Controls.ErrorLinear" />
+		<Add Name="CEL Multi Channel Display" Type="CEL.Controls.MultiChannelDisplay, CEL" />
+		<Add Name="CEL Data Grid View" Type="CEL.KineticaRT.Controls.DataGridView, CEL.KineticaRT.Controls" />
+		<Add Name="CEL Studio Button" Type="CEL.KineticaRT.Controls.Button, CEL.KineticaRT.Controls" />
+		<Add Name="CEL Studio ZedGraphControl" Type="CEL.KineticaRT.Controls.ZedGraphControl, CEL.KineticaRT.Controls.ZedGraphControl" />
+		<Add Name="CEL Display WPF" Type="CEL.KineticaRT.Controls.DisplayWpf, CEL.KineticaRT.Controls" />
+		<Add Name="WPF MyControl" Type="MyControls.UserControl1, MyControls" />
+		<Reference Assembly="KineticaRT.Controls.BarGraph.dll" />
+		<Reference Assembly="KineticaRT.Controls.Button.dll" />
+		<Reference Assembly="KineticaRT.Controls.Dial.dll" />
+		<Reference Assembly="KineticaRT.Controls.Display.dll" />
+		<Reference Assembly="KineticaRT.Controls.Explorer.dll" />
+		<Reference Assembly="KineticaRT.Controls.Frame.dll" />
+		<Reference Assembly="KineticaRT.Controls.Indicator.dll" />
+		<Reference Assembly="KineticaRT.Controls.Knob.dll" />
+		<Reference Assembly="KineticaRT.Controls.Picture.dll" />
+		<Reference Assembly="KineticaRT.Controls.Slider.dll" />
+		<Reference Assembly="KineticaRT.Controls.Tab.dll" />
+		<Reference Assembly="KineticaRT.Controls.Trend.dll" />
+		<Reference Assembly="KineticaRT.Controls.XYGraph.dll" />
+		<Reference Assembly="KineticaRT.Logic.Message.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.BarGraph.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.Button.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.ChannelSelector.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.Checkbox.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.Dial.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.Display.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.ErrorLinear.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.LampIndicator.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.Linear.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.RadioButton.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.SetPointDial.dll" />
+		<Reference Assembly="KineticaRT.Studio.Controls.SetPointLinear.dll" />
+		<Reference Assembly="StudioUserControlVB.dll" />
+		<Reference Assembly="CEL.KineticaRT.Controls.dll" />
+		<Reference Assembly="CEL.KineticaRT.Controls.ZedGraphControl.dll" />
+		<Reference Assembly="CEL.dll" />
+		<Reference Assembly="CEL.Data.dll" />
+		<Reference Assembly="EntitySpaces.Core.dll" />	
+		<Reference Assembly="EntitySpaces.Interfaces.dll" />	
+		<!-- WPF Reference Required -->
+		<Reference Assembly="System.Xaml.dll" />
+		<Reference Assembly="PresentationCore.dll" />
+		<Reference Assembly="PresentationFramework.dll" />
+		<Reference Assembly="WindowsBase.dll" />
+		<Reference Assembly="WindowsFormsIntegration.dll" />
+  </AddableControls>
+
+  
+  <AddableChannels>
+		<Add Name="Boolean Channel" 						Type="KineticaRT.Channels.BooleanChannel,						KineticaRT" />
+		<Add Name="Boolean Constant" 						Type="KineticaRT.Logic.Channels.BooleanConstant,				KineticaRT.Logic.Channels" />
+		<Add Name="Boolean Link" 							Type="KineticaRT.Logic.Channels.BooleanLink,					KineticaRT.Logic.Channels" />
+		<Add Name="Boolean Variable" 						Type="KineticaRT.Logic.Channels.BooleanVariable,				KineticaRT.Logic.Channels" />
+		<Add Name="Boolean Expression" 						Type="KineticaRT.Logic.Channels.BooleanExpression,				KineticaRT.Logic.Channels" />
+		<Add Name="Numeric Channel" 						Type="KineticaRT.Channels.NumericChannel,						KineticaRT" />
+		<Add Name="Numeric Expression" 						Type="KineticaRT.Logic.Expressions.NumericExpression,			KineticaRT.Logic.Expressions" />
+		<Add Name="Numeric Threshold Channel" 				Type="KineticaRT.Channels.NumericThresholdChannel,				KineticaRT" />
+		<Add Name="Numeric Constant" 						Type="KineticaRT.Logic.Channels.NumericConstant,				KineticaRT.Logic.Channels" />
+		<Add Name="Numeric Link" 							Type="KineticaRT.Logic.Channels.NumericLink,					KineticaRT.Logic.Channels" />
+		<Add Name="Numeric Variable" 						Type="KineticaRT.Logic.Channels.NumericVariable,				KineticaRT.Logic.Channels" />
+		<Add Name="Text Constant" 							Type="KineticaRT.Logic.Channels.TextConstant,					KineticaRT.Logic.Channels" />
+		<Add Name="Text Channel" 							Type="KineticaRT.Channels.TextChannel,							KineticaRT" />
+		<Add Name="Text Link" 								Type="KineticaRT.Logic.Channels.TextLink,						KineticaRT.Logic.Channels" />
+		<Add Name="Text Variable" 							Type="KineticaRT.Logic.Channels.TextVariable,					KineticaRT.Logic.Channels" />
+		<Add Name="Sine Wave" 								Type="KineticaRT.Servers.Simulate.SineWave,						KineticaRT.Servers.Simulate" />
+		<Add Name="Sine Wave Array" 						Type="KineticaRT.Servers.Simulate.SineArray,					KineticaRT.Servers.Simulate" />
+		<Add Name="SawTooth Wave" 							Type="KineticaRT.Servers.Simulate.SawToothWave,					KineticaRT.Servers.Simulate" />
+		<Add Name="Triangle Wave" 							Type="KineticaRT.Servers.Simulate.TriangleWave,					KineticaRT.Servers.Simulate" />
+		<Add Name="Noise" 									Type="KineticaRT.Servers.Simulate.Noise,						KineticaRT.Servers.Simulate" />
+		<Add Name="Message Threshold" 						Type="KineticaRT.Logic.Message.Threshold,						KineticaRT.Logic.Message" />
+		<Add Name="Message Event" 							Type="KineticaRT.Logic.Message.Event,							KineticaRT.Logic.Message" />
+		<Add Name="Message TextLog" 						Type="KineticaRT.Logic.Message.TextLog,							KineticaRT.Logic.Message" />
+		<Add Name="Channel VariableChannel" 				Type="KineticaRT.Channels.VariableChannel,						KineticaRT" />
+		<Add Name="OPC BooleanItem" 						Type="KineticaRT.Servers.OpcClient.BooleanItem,					KineticaRT.Servers.OpcClient" />
+		<Add Name="OPC Client" 								Type="KineticaRT.Servers.OpcClient.Client,						KineticaRT.Servers.OpcClient" />
+		<Add Name="OPC Group" 								Type="KineticaRT.Servers.OpcClient.Group,						KineticaRT.Servers.OpcClient" />
+		<Add Name="OPC Item" 								Type="KineticaRT.Servers.OpcClient.Item,						KineticaRT.Servers.OpcClient" />
+		<Add Name="OPC NumericThresholdItem" 				Type="KineticaRT.Servers.OpcClient.NumericThresholdItem,		KineticaRT.Servers.OpcClient" />
+		<Add Name="OPC TextItem" 							Type="KineticaRT.Servers.OpcClient.TextItem,					KineticaRT.Servers.OpcClient" />
+		<Add Name="Now" 									Type="KineticaRT.Logic.Channels.Now,							KineticaRT.Logic.Channels" />
+		<DoNotAdd Name="Variable" 							Type="KineticaRT.Channels.Variable,								KineticaRT" />
+		<Add Name="Logger.CsvFile" 							Type="KineticaRT.Servers.Logging.CsvFile,						KineticaRT.Servers.Logger" />
+		<Add Name="Logger.Numeric Channel" 					Type="KineticaRT.Servers.Logging.NumericChannel,				KineticaRT.Servers.Logger" />
+		<Add Name="Logger.Numeric Threshold Channel" 		Type="KineticaRT.Servers.Logging.NumericThresholdChannel,		KineticaRT.Servers.Logger" />
+		<Add Name="Logger.Boolean Channel" 					Type="KineticaRT.Servers.Logging.BooleanChannel,				KineticaRT.Servers.Logger" />
+		<Add Name="Logger.Text Channel" 					Type="KineticaRT.Servers.Logging.TextChannel,					KineticaRT.Servers.Logger" />
+		<Add Name="Expression" 								Type="KineticaRT.Logic.Expressions.Expression,					KineticaRT.Logic.Expressions" />
+		<Add Name="CEL Logger.BooleanChannel" 				Type="CEL.KineticaRT.Servers.Logger.BooleanChannel,				CEL.KineticaRT.Servers.Logger" />
+		<Add Name="CEL Logger.BooleanExpression" 			Type="CEL.KineticaRT.Servers.Logger.BooleanExpression,			CEL.KineticaRT.Servers.Logger" />
+		<Add Name="CEL Logger.BooleanLatch" 				Type="CEL.KineticaRT.Servers.Logger.BooleanLatch,				CEL.KineticaRT.Servers.Logger" />
+		<Add Name="CEL Logger.BooleanLink" 					Type="CEL.KineticaRT.Servers.Logger.BooleanLink,				CEL.KineticaRT.Servers.Logger" />
+		<Add Name="CEL Logger.CsvFile" 						Type="CEL.KineticaRT.Servers.Logger.CsvFile,					CEL.KineticaRT.Servers.Logger" />
+		<Add Name="CEL Logger.NumericThresholdChannel" 		Type="CEL.KineticaRT.Servers.Logger.NumericThresholdChannel,	CEL.KineticaRT.Servers.Logger" />
+		<Add Name="CEL Logger.NumericThresholdExpression" 	Type="CEL.KineticaRT.Servers.Logger.NumericThresholdExpression,	CEL.KineticaRT.Servers.Logger" />
+		<Add Name="CEL Logger.NumericThresholdLink" 		Type="CEL.KineticaRT.Servers.Logger.NumericThresholdLink,		CEL.KineticaRT.Servers.Logger" />
+		<Add Name="CEL Logger.TextChannel" 					Type="CEL.KineticaRT.Servers.Logger.TextChannel,				CEL.KineticaRT.Servers.Logger" />
+		<Add Name="CEL Logger.TextLink" 					Type="CEL.KineticaRT.Servers.Logger.TextLink,					CEL.KineticaRT.Servers.Logger" />
+  </AddableChannels>
+  
+  
+  
+  <Channels File="ARCHIVE\Archive_Channels.ksc" Name="Archive" />
+  <Channels File="EngineLimits.ksc" 			Name="EngineLimits" />
+  <Channels File="OPCServer.ksc" 				Name="OPCServer" />
+  <Channels File="OpenTest.ksc" 				Name="OpenTest" />
+  <Channels File="Status.ksc" 					Name="Status" />
+  
+  <Window File="Diagnostic\Diagnostic_Screen.ksw" 						ShowInTaskbar="True" ShowControls="True"	Visible="False" DisableClose="True" 	IconFile="images\diagnostic.ico" />
+
+  <Window File="GTCP131_9A\GTCP131_9A_Screen.ksw" 						ShowInTaskbar="True" ShowControls="True"	Visible="False" DisableClose="True" 	IconFile="images\engine.ico"/>
+  <Window File="GTCP131_9A\GTCP131_9A_Performance_Screen.ksw" 			ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\performance.ico"/>
+  <Window File="GTCP131_9A\GTCP131_9A_Screen_Metric.ksw" 				ShowInTaskbar="True" ShowControls="True"	Visible="False" DisableClose="True" 	IconFile="images\engine.ico"/>
+  <Window File="GTCP131_9A\GTCP131_9A_Performance_Screen_Metric.ksw" 	ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\performance.ico"/>
+  <Window File="GTCP131_9A\GTCP131_9A_Screen_SI.ksw" 					ShowInTaskbar="True" ShowControls="True"	Visible="False" DisableClose="True" 	IconFile="images\engine.ico"/>
+  <Window File="GTCP131_9A\GTCP131_9A_Performance_Screen_SI.ksw" 		ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\performance.ico"/>
+
+  <Window File="GTCP131_9B\GTCP131_9B_Screen.ksw" 						ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\engine.ico"/>
+  <Window File="GTCP131_9B\GTCP131_9B_Performance_Screen.ksw" 			ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\performance.ico"/>
+  <Window File="GTCP131_9B\GTCP131_9B_Screen_Metric.ksw" 				ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\engine.ico"/>
+  <Window File="GTCP131_9B\GTCP131_9B_Performance_Screen_Metric.ksw" 	ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\performance.ico"/>
+  <Window File="GTCP131_9B\GTCP131_9B_Screen_SI.ksw" 					ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\engine.ico"/>
+  <Window File="GTCP131_9B\GTCP131_9B_Performance_Screen_SI.ksw" 		ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\performance.ico"/>
+
+  <Window File="RE220_RJ\RE220_RJ_Screen.ksw" 							ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\engine.ico"/>
+  <Window File="RE220_RJ\RE220_RJ_Performance_Screen.ksw" 				ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\performance.ico"/>
+  <Window File="RE220_RJ\RE220_RJ_Screen_Metric.ksw" 					ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\engine.ico"/>
+  <Window File="RE220_RJ\RE220_RJ_Performance_Screen_Metric.ksw" 		ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\performance.ico"/>
+  <Window File="RE220_RJ\RE220_RJ_Screen_SI.ksw" 						ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\engine.ico"/>
+  <Window File="RE220_RJ\RE220_RJ_Performance_Screen_SI.ksw" 			ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\performance.ico"/>
+  
+  <Window File="ARCHIVE\Archiving.ksw" 									ShowInTaskbar="True" ShowControls="False"	Visible="False" DisableClose="True" 	IconFile="images\archive.ico"/>
+  <Window File="DAS_CALIBRATION\Calibration.ksw" 						ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\calibration.ico"/>
+  <Window File="DAS_CALIBRATION\Calibration_Input_Data.ksw" 			ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\input.ico"/>
+  <Window File="SYSTEM_CHECK\SystemCheck_Screen.ksw" 					ShowInTaskbar="True" ShowControls="True" 	Visible="True" 	DisableClose="True"		IconFile="images\systemcheck.ico"/>
+  <Window File="Test_Password.ksw" 										ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\password.ico"/>
+  <Window File="UserInputs.ksw" 										ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\input.ico"/>
+  <Window File="MeasurementUnitSelector.ksw" 							ShowInTaskbar="True" ShowControls="True" 	Visible="False" DisableClose="True" 	IconFile="images\input.ico"/>
+  <Window File="Welcome_Screen.ksw" 									ShowInTaskbar="True" ShowControls="True" 	Visible="True"	DisableClose="False"	IconFile="images\favicon (5).ico"/>
+ 
+</Project>

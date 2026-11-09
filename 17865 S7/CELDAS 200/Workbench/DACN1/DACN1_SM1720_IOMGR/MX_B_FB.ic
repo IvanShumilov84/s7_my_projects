@@ -1,0 +1,6 @@
+__TMPR1 := __MX_B_FB [ __DINT_NULL ]
+__TMPR2 := __MX_B_FB [ __CDINT00000004 ]
+__TMPR1 := __TMPR1 * __TMPR2 
+__TMPR3 := __MX_B_FB [ __CDINT00000008 ]
+__TMPR1 := __TMPR1 + __TMPR3 
+__MX_B_FB [ __CDINT0000000C ] := __TMPR1 

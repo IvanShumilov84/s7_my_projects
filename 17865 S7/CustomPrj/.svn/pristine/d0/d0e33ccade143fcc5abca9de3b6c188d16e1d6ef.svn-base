@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+
+  <configSections>
+    <section name = "UnitronConfigurationSection" 		type = "CEL.HMI.UnitronConfigurationSection, 		CEL, Version=2.0.0.0, 	Culture=neutral, PublicKeyToken=null" />
+    <section name = "HobartConfigurationSection" 		type = "CEL.HMI.HobartConfigurationSection, 		CEL, Version=2.0.0.0, 	Culture=neutral, PublicKeyToken=null" />
+    <section name = "testmanagerConfigurationSection" 	type = "CEL.HMI.TestManagerConfigurationSection, 	CEL, Version=2.0.*, 	Culture=neutral, PublicKeyToken=null" />
+
+    <sectionGroup name = "EntitySpaces" 				type = "EntitySpaces.Interfaces.esConfigSettings, EntitySpaces.Core">
+		<section name = "connectionInfo" 				type = "EntitySpaces.Interfaces.esConfigSettings, EntitySpaces.Interfaces" allowLocation = "true" allowDefinition = "Everywhere" restartOnExternalChanges = "true"/>
+    </sectionGroup>
+
+    <sectionGroup name = "White">
+		<section name = "Core" type = "System.Configuration.NameValueSectionHandler"/>
+    </sectionGroup>
+
+	<section name = "engineConfigurationSection" 		type = "CEL.HMI.EngineConfigurationSection, 		CEL, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null" />
+	<section name = "reportConfigurationSection" 		type = "CEL.HMI.ReportConfigurationSection, 		CEL, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null" />
+	<section name = "databaseConfigurationSection"		type = "CEL.HMI.DatabaseConfigurationSection, 		CEL, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null" />
+	<section name = "projectConfigurationSection" 		type = "CEL.HMI.ProjectConfigurationSection, 		CEL, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null" />
+	<section name = "exportConfigurationSection"		type = "CEL.HMI.ExportConfigurationSection, 		CEL, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null" />
+	<section name = "exportFormatConfigurationSection"	type = "CEL.HMI.ExportFormatConfigurationSection, 	CEL, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null" />
+	<section name = "qnxConfigurationSection" 			type = "CEL.HMI.QnxConfigurationSection, 			CEL, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null"/>			
+  </configSections>
+
+  <runtime>
+    <!-- Cette ligne permet au PC Slave le loader et executer l<application en prenant comme source le PC MASTER -->
+    <loadFromRemoteSources enabled = "true"/>
+  </runtime>
+
+  <White>
+    <Core>
+      <add key = "LogActions" 						value = "false" />
+      <add key = "WorkSessionLocation" 				value = "." />
+      <add key = "PopupTimeout"	 					value = "8000" />
+      <add key = "MouseDelayForTooltip" 			value = "0" />
+      <add key = "SuggestionListTimeout" 			value = "3000" />
+      <add key = "BusyTimeout" 						value = "5000" />
+      <add key = "WaitBasedOnHouseGlass" 			value = "true" />
+      <add key = "UIAutomationZeroWindowBugTimeout" value = "8000" />
+      <add key = "TooltipWaitTime" 					value = "3000" />
+    </Core>
+  </White>
+
+  <EntitySpaces>
+    <connectionInfo default="ACCESSDynamic">
+      <connections>
+        <add	name				= "ACCESSDynamic"
+				providerMetadataKey	= "esDefault"
+				sqlAccessType		= "DynamicSQL"
+				provider			= "EntitySpaces.MSAccessProvider"
+				providerClass		= "DataProvider"
+				connectionString	= "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=C:\My Projects\17865 S7\CELDAS 200\Workbench\TestSession.mdb;Jet OLEDB:System database=C:\My Projects\17865 S7\CELDAS 200\Workbench\Secured.mdw;User Id=Administrator;Password=CEL9994"/>   
+      </connections>
+    </connectionInfo>
+  </EntitySpaces>
+
+  <exportConfigurationSection>
+	<exportInformation
+		exportType		= "CSVDelimited"
+		exportPathName	= "C:\My Projects\17865 S7\CustomPrj\CSV\" />
+  </exportConfigurationSection> 
+  
+  <exportFormatConfigurationSection>
+	<exportFormatInformation
+		fileName			= "DACN1_BOOL_NIDAQ_CSV.csv"
+		tableName			= "DACN1_NIDAQ_IOMGR_Bool"
+		columnNameHeader	= "False"
+		decimalSymbol		= "."
+		numberDigits		= "10"
+		textDelimiter		= "none"/>
+			<!-- fileName must ALWAYS HAVE EXTENTION or FTP server won't recognize it as a file.-->
+
+	<exportFormatInformation
+		fileName			= "DACN1_REAL_NIDAQ_CSV.csv"
+		tableName			= "DACN1_NIDAQ_IOMGR_Real"
+		columnNameHeader	= "False"
+		decimalSymbol		= "."
+		numberDigits		= "10"
+		textDelimiter		= "none"/>
+			
+	<exportFormatInformation
+		fileName			= "DACN1_BOOL_SERIAL_CSV.csv"
+		tableName			= "DACN1_Serial_IOMGR_Bool"
+		columnNameHeader	= "False"
+		decimalSymbol		= "."
+		numberDigits		= "10"
+		textDelimiter		= "none"/>				
+			
+	<exportFormatInformation
+		fileName			= "DACN1_REAL_SERIAL_CSV.csv"
+		tableName			= "DACN1_Serial_IOMGR_Real"
+		columnNameHeader	= "False"
+		decimalSymbol		= "."
+		numberDigits		= "10"
+		textDelimiter		= "none"/>	
+					
+	<exportFormatInformation
+		fileName			= "DACN1_LABEL_ARINC429_CSV.csv"
+		tableName			= "DACN1_ARINC429_LABEL"
+		columnNameHeader	= "False"
+		decimalSymbol		= "."
+		numberDigits		= "10"
+		textDelimiter		= "&quot;"/>
+		
+	<exportFormatInformation
+		fileName			= "DACN1_Real_PowerDNA_CSV_1.csv"
+		tableName			= "DACN1_PowerDNA_IOMGR_Real_1"
+		columnNameHeader	= "False"
+		decimalSymbol		= "."
+		numberDigits		= "10"
+		textDelimiter		= "none"/>
+			
+	<exportFormatInformation
+		fileName			= "DACN1_Real_PowerDNA_CSV_2.csv"
+		tableName			= "DACN1_PowerDNA_IOMGR_Real_2"
+		columnNameHeader	= "False"
+		decimalSymbol		= "."
+		numberDigits		= "10"
+		textDelimiter		= "none"/>
+
+	<exportFormatInformation
+		fileName			= "DACN1_UART_OMNIBUSBOX_CSV.csv"
+		tableName			= "DACN1_OmniBusBox_IOMGR_Uart"
+		columnNameHeader	= "False"
+		decimalSymbol		= "."
+		numberDigits		= "10"
+		textDelimiter		= "&quot;"/>
+
+  </exportFormatConfigurationSection>
+	
+  <qnxConfigurationSection>
+	<qnxConfig	ipAddress	= "192.168.2.200"
+				uploadPath	= "./app"
+				userName	= "Virgo2000"
+				password	= "v2000"/>		
+  </qnxConfigurationSection>
+  
+  <engineConfigurationSection>
+		<engineInformation	engineModel												= "DAS CALIBRATION"
+							PwcServerDllProcessingEnabled							= "false"
+							performanceAndLogAveragingPeriod						= "5"
+							arincConfiguration										= "HoneywellComputer" />
+
+		<engineInformation	engineModel												= "SYSTEM CHECK"
+							PwcServerDllProcessingEnabled							= "false"
+							performanceAndLogAveragingPeriod						= "5"
+							arincConfiguration										= "HoneywellComputer" />  
+
+		<engineInformation 	engineModel												= "GTCP131-9A"
+							dressKit												= "Honeywell"
+							ductDiameter											= "6.065"
+							ductDiameterUnit										= "Inch"
+							orificeDiameter											= "3.000"
+							orificeDiameterUnit										= "Inch"
+							orificeThickness										= "0.125"
+							orificeThicknessUnit									= "Inch"
+							tapArrangement											= "Flange"
+							useMeasuredBleedFlowValue								= "true"
+							performanceAndLogAveragingPeriod						= "5"
+							performanceReportTemplateFile							= "C:\My Projects\17865 S7\CustomPrj\GTCP131-9A\GTCP131_9A_Performance.xlsx"
+							WinDMMUtilityExeFile									= "C:\Honeywell\WinDMM\windmm.exe"
+							lauchCECVibrationSystemApplicationWhenOpeningSession	= "true"
+							arincConfiguration										= "HoneywellComputer" />
+
+		<engineInformation	engineModel												= "GTCP131-9B"
+							dressKit												= "Honeywell"
+							ductDiameter											= "6.065"
+							ductDiameterUnit										= "Inch"
+							orificeDiameter											= "3.000"
+							orificeDiameterUnit										= "Inch"
+							orificeThickness										= "0.125"
+							orificeThicknessUnit									= "Inch"
+							tapArrangement											= "Flange"
+							useMeasuredBleedFlowValue								= "true"
+							performanceAndLogAveragingPeriod						= "5"
+							performanceReportTemplateFile							= "C:\My Projects\17865 S7\CustomPrj\GTCP131-9B\GTCP131_9B_Performance.xlsx"
+							WinDMMUtilityExeFile									= "C:\Honeywell\WinDMM\windmm.exe"
+							lauchCECVibrationSystemApplicationWhenOpeningSession	= "true"
+							arincConfiguration										= "HoneywellComputer" />
+
+		<engineInformation 	engineModel												= "RE220-RJ"
+							dressKit												= "Honeywell"
+							ductDiameter											= "6.065"
+							ductDiameterUnit										= "Inch"
+							orificeDiameter											= "3.000"
+							orificeDiameterUnit										= "Inch"
+							orificeThickness										= "0.125"
+							orificeThicknessUnit									= "Inch"
+							tapArrangement											= "Flange"
+							useMeasuredBleedFlowValue								= "true"
+							performanceAndLogAveragingPeriod						= "5"
+							performanceReportTemplateFile							= "C:\My Projects\17865 S7\CustomPrj\RE220-RJ\RE220_Performance.xlsx"
+							WinDMMUtilityExeFile									= "C:\Honeywell\WinDMM\windmm.exe"
+							lauchCECVibrationSystemApplicationWhenOpeningSession	= "true"
+							arincConfiguration										= "HoneywellComputer" />
+			 
+  </engineConfigurationSection>
+
+  <reportConfigurationSection>
+    <reportInformation	calibrationReportOutputDirectory	= "C:\CELDAS DATA\Calibration Reports\"
+						calibrationReportTemplateFile		= "C:\My Projects\17865 S7\CELDAS 200\Workbench\PrjExt\Generic_Report_Calibration.xlsx"
+						checkReportOutputDirectory			= "C:\CELDAS DATA\Check Reports\"
+						checkReportTemplateFile				= "C:\My Projects\17865 S7\CELDAS 200\Workbench\PrjExt\Generic_Report_Check.xlsx"
+						logReportTemplateFile				= "C:\My Projects\17865 S7\CELDAS 200\HMI\PrjExt\Log_report.xlsx"
+						logReportTemplateCustomerLogo		= "C:\My Projects\17865 S7\CELDAS 200\HMI\Images\Logo-S7.jpg"  />
+  </reportConfigurationSection>
+
+  <databaseConfigurationSection>
+     <databaseInformation   path="C:\My Projects\17865 S7\CELDAS 200\Workbench"
+							databaseFilename="TestSession.mdb"
+							workGroupFilename="Secured.mdw"
+							userId="Administrator"
+							computerName="CELDAS200-17865"
+							computerLoginName="CELDAS200"/>
+  </databaseConfigurationSection>
+
+  <projectConfigurationSection>
+	<projectInformation	Rootpath							= "C:\My Projects\17865 S7\CELDAS 200"
+						description							= "APU Test Cell Container"
+						name								= "S7"
+						referenceNumber						= "17865"
+						number								= "17865"
+						WelcomeScreenSkinFullFileName		= "C:\My Projects\17865 S7\CELDAS 200\HMI\Images\Fond Bleu1.jpg"
+						workbenchConfigurationFullFileName	= "C:\My Projects\17865 S7\CustomPrj\Config\celdas_17865.cfg"
+						cecVibrationSystemExeFile			= "C:\Program Files\CCATS\CCATS.exe"
+						PerformanceReportsCellProtection	= "CEL9994"/>
+  </projectConfigurationSection>
+  
+  
+  <!-- Tracing Definition
+	Trace Level 	Configuration File Value 
+	Verbose 		4 
+	Info 			3	 
+	Warning 		2 
+	Error 			1 
+	Off 			0 
+  -->
+  
+   <system.diagnostics>
+    <switches>
+      <add name="Studio" value="1"/>
+      <add name="KineticaRT.Channels" 				value = "1"/>
+      <add name="KineticaRT.Servers.Logger" 		value = "2"/>
+      <add name="KineticaRT.Servers.OpcClient" 		value = "1"/>
+      <add name="KineticaRT.Servers.SmartDrive" 	value = "1"/>
+      <add name="KineticaRT.Controls.Button" 		value = "1"/>
+      <add name="KineticaRT.Studio.Controls.Button"	value = "1"/>
+    </switches>
+  </system.diagnostics>
+  
+  <startup>
+    <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5"/>
+  </startup>
+
+  <testmanagerConfigurationSection>
+	<Enable	FlowmeterConfiguration		= "True"
+			LoadCellAssignationEditor	= "False"
+			LogReportLayout				= "True"
+			HmiNumericChannels			= "False"
+			ArchiveReportLayout			= "True"
+			TestProgressStepEditor		= "False"
+			UserEditor					= "True"
+			Maintenance					= "True"
+			ChannelEditor				= "True"
+			ConfigurationFileExport		= "True"
+			CSVFileExport				= "True"
+			CSVFileUpload				= "True"
+			HardwareConfiguration		= "False"/>
+  </testmanagerConfigurationSection>
+
+</configuration>
+

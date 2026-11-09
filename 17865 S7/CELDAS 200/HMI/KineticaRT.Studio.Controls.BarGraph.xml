@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>KineticaRT.Studio.Controls.BarGraph</name>
+    </assembly>
+    <members>
+        <member name="T:KineticaRT.Studio.Controls.BarGraph">
+            <summary>
+            KineticaRT Studio Linear control.
+            Displays a numeric Value from a source channel on a slider,
+            together with an optional description and units
+            </summary>
+        </member>
+        <member name="T:KineticaRT.Studio.Controls.BarGraph.Layouts">
+            <summary>
+            Possible layouts for Description and Units sections
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.BarGraph.Layouts.DescriptionGapUnits">
+            <summary>
+            Description on Left, Units on Right
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.BarGraph.Layouts.DescriptionUnitsGap">
+            <summary>
+            Description on Left, Units centred
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.BarGraph.Layouts.GapDescriptionUnits">
+            <summary>
+            Description centred, Units on Right
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.BarGraph.Layouts.GapUnitsDescription">
+            <summary>
+            Units centred, Description on Right
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.BarGraph.Layouts.UnitsDescriptionGap">
+            <summary>
+            Units on Left, Description centred
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.BarGraph.Layouts.UnitsGapDescription">
+            <summary>
+            Units on Left, Description on Right
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.BarGraph.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.#ctor">
+            <summary>
+            Initialises a new instance of the BarGraph class
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify 
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.Format">
+            <summary>
+            Gets or sets the text formatting of the Value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.SourceChannel">
+            <summary>
+            Gets or sets the Source channel to which this object is connected
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.CustomDescription">
+            <summary>
+            Gets or sets a Custom Description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.DescriptionSource">
+            <summary>
+            Gets or sets where to get the Description from
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.CustomUnits">
+            <summary>
+            Gets or sets a Custom Units string
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.UseCustomUnits">
+            <summary>
+            Gets or sets whether to use the Custom units string or the Source channel's value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.BarColor">
+            <summary>
+            Gets or Sets the Color of the Bars
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.ValueColor">
+            <summary>
+            Gets or Sets the Color of the Values
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.ScaleColor">
+            <summary>
+            Gets or Sets the Color of the Scales
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.ScaleWidth">
+            <summary>
+            Gets or sets the width devoted to each scale (in pixels)
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.BarGraph.InformationLayout">
+            <summary>
+            Gets or sets the Layout of description and units
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.OnPaint(System.Windows.Forms.PaintEventArgs)">
+            <summary>
+            Paint Event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.UpdateLayout">
+            <summary>
+            Updates the sizes of all sections
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.NewToolTip(System.String)">
+            <summary>
+            A new tool tip is being set
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.NewRange(System.Double,System.Double)">
+            <summary>
+            Set the range of scaled objects
+            </summary>
+            <param name="Min">New minimum value</param>
+            <param name="Max">New Maximum value</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.NewDPs(System.Int32)">
+            <summary>
+            Set the decimal places of scaled objects
+            </summary>
+            <param name="DPs">New decimal places</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.SetScalePosition">
+            <summary>
+            Correctly (re)position the scales
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.OnResize(System.EventArgs)">
+            <summary>
+            Rezise event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.OnFontChanged(System.EventArgs)">
+            <summary>
+            Font Changed event
+            </summary>
+            <param name="e">Event data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.BarGraph.OnSourcePropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)">
+            <summary>
+            A property in the Source channel has changed
+            </summary>
+            <param name="Sender">Object generating the event</param>
+            <param name="e">Event Data</param>
+        </member>
+    </members>
+</doc>

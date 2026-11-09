@@ -1,0 +1,1783 @@
+Imports System
+Imports System.Collections
+Imports System.Collections.Specialized
+Imports System.Reflection
+Imports System.Text
+Imports System.Threading
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Windows.Forms
+Imports KineticaRT
+Imports KineticaRT.Sequence
+Imports KineticaRT.Values
+Imports KineticaRT.Controls.Frame
+Imports Microsoft.Office.Interop 'Excel
+Imports System.Data
+Imports System.Data.OleDb
+Imports Microsoft.VisualBasic
+Imports System.Runtime.InteropServices 'Used for DllImport
+Imports System.Security.Permissions 'Used in DllImport
+Imports System.Security 'Used in DllImport
+Imports System.DateTime
+Imports CEL.HMI
+Imports CEL.Library
+Imports CEL.Data.BusinessObjects
+Imports KineticaRT.Channels
+
+
+Namespace StudioDemonstration
+
+    Public Class GTCP85_98_Sequence
+        Inherits ApuSequence
+        Implements IBleedAirFlowCalculation
+
+        '        Select Case UserInputs.EnginePartNumberAndServiceBulletin
+        '            '******************GTCP85-98**************************
+        '            Case "PRE SB 49-1782;PN 698173-1"'GTCP85-98 Only
+        '            Case "PST SB 49-1782;PN 43888-1/-3" 'GTCP85-98 Only
+        '            Case "PST SB 49-3348;PN 43932-3" 'GTCP85-98 Only
+
+        '                '******************GTCP85-98CK*************************
+        '            Case "PST SB 49-1782;PN 698173-2" 'GTCP85-98CK Only
+        '            Case "PST SB 49-1782;PN 43888-2/-4" 'GTCP85-98CK Only
+        '            Case "PST SB 49-3631;PN 43888-5/-6" 'GTCP85-98CK Only
+        '            Case "PST SB 49-6961;PN 43888-3" 'GTCP85-98CK Only
+        '            Case "PST SB 49-3348;PN 43932-4" 'GTCP85-98CK Only
+        '            Case "PST SB 49-6951; PN 43932-3" 'GTCP85-98CK Only
+        '            Case "PN 43849-1/-3"
+
+        '                '******************GTCP85-98D**************************
+        '            Case "PN 698664-4"
+        '            Case "PN 43460-1/-1-846R/-2/-4"
+        '            Case "PN4 3460-6"
+        '            Case "PN 43849-4/-5"
+        '            Case "PN 695162-1/-2"
+        '            Case "PN 43705-2 AND 43712-2"
+        '            Case "PN 43705-4"
+        '            Case "PN 43959-3"
+        '                '******************GTCP85-98DC-B***********************
+
+        'NONE
+
+        '                '******************GTCP85-98DHF-A**********************
+        '            Case "PN 43959-2/-3"
+        '            Case "PN 43959-4"
+        '            Case "PST SB 49-5233/PN 43959-2/-3"
+        '            Case "PST SB 49-5233/ PN 43959-4"
+
+
+        '            Case Else
+        '                Throw (New Exception("Engine part number and/or service bulletin not supported in this software"))
+        '        End Select
+
+
+        'Les constantes sont lu a partir du fichier celdas_XXXXX.cfg
+        Private NumberOfTInletProbe As Integer = 0
+        Private RealNumberOfTInletProbe As Integer = 0
+        Private NumberOfTEgtProbe As Integer = 0
+        Private RealNumberOfTEgtProbe As Integer = 0
+
+
+#Region " Enum "
+
+        Public Enum eRepairType
+            Heavy = 0
+            LightMedium = 1
+        End Enum
+        Public Enum eShaftLoad
+            Sixty60SHP = 1
+            ZeroSHP = 2
+        End Enum
+
+
+        Private Enum eTestStepGTCP85_98
+            ACCELERATION_CRACK_PRESSURE = 0
+            MANUAL_START_CHECK = 1 'step 1.E.2
+            NO_LOAD = 2
+            COMBINATION_LOAD = 3
+            BLEED_LOAD_ONLY = 4
+            ACCELERATION_CRACK_PRESSURE_RECHECK = 5
+            CAPTURE_FINAL_DATA = 6
+        End Enum
+
+        Private Enum ePerfCorrFactorIndex
+            TCL = 0
+            WB_Chng = 1
+            PB_Chng = 2
+            TB_Chng = 3
+            Last_Index = 3 'has to be equal to the last one
+        End Enum
+
+#End Region
+
+        Private Function Create13031PerformanceFile(ByVal AppendOption As Boolean, _
+                                                    ByVal TestStepNumber As Integer, _
+                                                    ByVal ProtectPassword As String, _
+                                                    ByVal UnProtectPassword As String, _
+                                                    ByRef excelWorkbook As Excel.Workbook) As Boolean
+            'Declaration
+            Dim currentSheet As String
+            Dim excelSheets As Excel.Sheets
+            Dim excelWorksheet As Excel.Worksheet
+
+            Create13031PerformanceFile = True
+
+            ' The following gets the Worksheets collection
+            excelSheets = excelWorkbook.Worksheets
+
+            Try
+                'Unlock Sheets
+                excelWorkbook.Worksheets(1).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(2).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(3).Unprotect(UnProtectPassword)
+
+                If AppendOption = False Then
+
+                    'SUMMARY Header
+                    currentSheet = "SUMMARY"
+                    excelWorksheet = excelSheets.Item(currentSheet)
+
+                    Dim row As Integer = 2
+                    Dim column As Integer = 5
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = CELProject.EngineModel + " APU TEST DATA SHEET"
+
+                    row = 5
+                    column = 3
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.CustomerName
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.WorkOrder
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.EnginePartNumberAndServiceBulletin
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.EngineSerialNumber
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.RepairTypeDescription
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.TestType
+
+                    row = 5
+                    column = 9
+
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = Format(Now, "MM/dd/yyyy")
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.LHV
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.SampleFuelSG
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.SampleFuelTemperature
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.FuelType
+                    row += 1
+                    excelWorksheet.Cells(row, column).NumberFormat = "@"
+                    excelWorksheet.Cells(row, column).Value = UserInputs.OilType
+
+                    currentSheet = "ACCEPTANCE"
+                    excelWorksheet = excelSheets.Item(currentSheet)
+
+                    'APU Tested according to
+                    excelWorksheet.Cells(48, 4).NumberFormat = "@"
+                    excelWorksheet.Cells(48, 4).Value = Custom_Parameters("APUTestedAccordingTo").ToString()
+
+
+                End If
+
+                currentSheet = "SUMMARY"
+                excelWorksheet = excelSheets.Item(currentSheet)
+
+                Select Case TestStepNumber
+                    Case eTestStepGTCP85_98.ACCELERATION_CRACK_PRESSURE
+
+                        excelWorksheet.Cells(40, 7).Value = Log_Perf_AccelLimitValveCrack.Value.ToString(Log_Perf_AccelLimitValveCrack.Format, Nothing)
+
+                        'Case eTestStepGTCP85_98.RTL:
+                    Case eTestStepGTCP85_98.NO_LOAD
+
+                        'Test Performance Detail
+                        excelWorksheet.Cells(54, 7).Value = PERF_SPEED_SWITCH_ACTUATION_35_PCT_OPC.Value.ToString(PERF_SPEED_SWITCH_ACTUATION_35_PCT_OPC.Format, Nothing)
+                        excelWorksheet.Cells(55, 7).Value = PERF_SPEED_SWITCH_ACTUATION_95_PCT_OPC.Value.ToString(PERF_SPEED_SWITCH_ACTUATION_95_PCT_OPC.Format, Nothing)
+
+
+                        excelWorksheet.Cells(17, 6).Value = "N/A" 'PBStd_MEAN.Value.ToString(				PBStd_MEAN.Format				,Nothing)
+                        excelWorksheet.Cells(19, 6).Value = "N/A" 'WBStd_MEAN.Value.ToString(				WBStd_MEAN.Format				,Nothing)
+                        excelWorksheet.Cells(21, 6).Value = "N/A" 'TBStd_MEAN.Value.ToString(				TBStd_MEAN.Format				,Nothing)
+                        excelWorksheet.Cells(22, 6).Value = LOG_PERF_T_EGT_DEGF_AVG.Value.ToString(LOG_PERF_T_EGT_DEGF_AVG.Format, Nothing)
+                        excelWorksheet.Cells(24, 6).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+                        excelWorksheet.Cells(26, 6).Value = "N/A" 'GEN_COR_MEAN.Value.ToString(				GEN_COR_MEAN.Format				,Nothing)
+                        excelWorksheet.Cells(28, 6).Value = LOG_PERF_VIB_GEARBOX_MILS.Value.ToString(LOG_PERF_VIB_GEARBOX_MILS.Format, Nothing)
+                        excelWorksheet.Cells(30, 6).Value = LOG_PERF_VIB_TURBINE_MILS.Value.ToString(LOG_PERF_VIB_TURBINE_MILS.Format, Nothing)
+
+                        'Case eTestStepGTCP85_98.ECS_ONLY:
+                    Case eTestStepGTCP85_98.BLEED_LOAD_ONLY
+
+
+                        excelWorksheet.Cells(17, 8).Value = LOG_PERF_PBStd.Value.ToString(LOG_PERF_PBStd.Format, Nothing)
+                        excelWorksheet.Cells(17, 7).Value = LOG_PERF_PBStd_LOW_LIMIT.Value.ToString(LOG_PERF_PBStd_LOW_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(19, 8).Value = LOG_PERF_WBStd.Value.ToString(LOG_PERF_WBStd.Format, Nothing)
+                        excelWorksheet.Cells(19, 7).Value = LOG_PERF_WBStd_LOW_LIMIT.Value.ToString(LOG_PERF_WBStd_LOW_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(21, 8).Value = LOG_PERF_TBStd.Value.ToString(LOG_PERF_TBStd.Format, Nothing)
+                        excelWorksheet.Cells(21, 7).Value = LOG_PERF_TBStd_LOW_LIMIT.Value.ToString(LOG_PERF_TBStd_LOW_LIMIT.Format, Nothing) + " " + _
+                            LOG_PERF_TBStd_HI_LIMIT.Value.ToString(LOG_PERF_TBStd_HI_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(22, 8).Value = LOG_PERF_T_EGT_DEGF_AVG.Value.ToString(LOG_PERF_T_EGT_DEGF_AVG.Format, Nothing)
+                        excelWorksheet.Cells(22, 7).Value = LOG_PERF_T_EGT_DEGF_TURBINE_DISCHARGE_TEMP_MAX_LIMIT.Value.ToString(LOG_PERF_T_EGT_DEGF_TURBINE_DISCHARGE_TEMP_MAX_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(24, 8).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+                        excelWorksheet.Cells(26, 8).Value = "N/A" 'GEN_COR_MEAN.Value.ToString(				GEN_COR_MEAN.Format				,Nothing)								
+                        excelWorksheet.Cells(28, 8).Value = LOG_PERF_VIB_GEARBOX_MILS.Value.ToString(LOG_PERF_VIB_GEARBOX_MILS.Format, Nothing)
+                        excelWorksheet.Cells(30, 8).Value = LOG_PERF_VIB_TURBINE_MILS.Value.ToString(LOG_PERF_VIB_TURBINE_MILS.Format, Nothing)
+
+                        'Case eTestStepGTCP85_98.ECS_60SHP:
+                    Case eTestStepGTCP85_98.COMBINATION_LOAD
+
+                        'Performance Limits at 60HP depends on type of repair Heavy / Light Medium
+                        If UserInputs.RepairTypeID = Gtcp8598.eRepairType.OverhauledEngine Then
+
+                            excelWorksheet.Cells(26, 9).Value = "60-63"      'SHPCOR 'TODO
+
+                        Else 'light/med
+
+                            excelWorksheet.Cells(26, 9).Value = "60-63"      'SHPCOR 'TODO
+
+                        End If
+
+                        excelWorksheet.Cells(17, 10).Value = LOG_PERF_PBStd.Value.ToString(LOG_PERF_PBStd.Format, Nothing)
+                        excelWorksheet.Cells(17, 9).Value = LOG_PERF_PBStd_LOW_LIMIT.Value.ToString(LOG_PERF_PBStd_LOW_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(19, 10).Value = LOG_PERF_WBStd.Value.ToString(LOG_PERF_WBStd.Format, Nothing)
+                        excelWorksheet.Cells(19, 9).Value = LOG_PERF_WBStd_LOW_LIMIT.Value.ToString(LOG_PERF_WBStd_LOW_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(21, 10).Value = LOG_PERF_TBStd.Value.ToString(LOG_PERF_TBStd.Format, Nothing)
+                        excelWorksheet.Cells(21, 9).Value = LOG_PERF_TBStd_LOW_LIMIT.Value.ToString(LOG_PERF_TBStd_LOW_LIMIT.Format, Nothing) + " " + _
+                            LOG_PERF_TBStd_HI_LIMIT.Value.ToString(LOG_PERF_TBStd_HI_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(22, 10).Value = LOG_PERF_T_EGT_DEGF_AVG.Value.ToString(LOG_PERF_T_EGT_DEGF_AVG.Format, Nothing)
+                        excelWorksheet.Cells(22, 9).Value = LOG_PERF_T_EGT_DEGF_TURBINE_DISCHARGE_TEMP_MAX_LIMIT.Value.ToString(LOG_PERF_T_EGT_DEGF_TURBINE_DISCHARGE_TEMP_MAX_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(24, 10).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+                        excelWorksheet.Cells(26, 10).Value = LOG_PERF_GENERATOR_CORRECTED_SHP.Value.ToString(LOG_PERF_GENERATOR_CORRECTED_SHP.Format, Nothing)
+                        excelWorksheet.Cells(26, 9).Value = LOG_PERF_GENERATOR_SHP_MIN_LIMIT.Value.ToString(LOG_PERF_GENERATOR_SHP_MIN_LIMIT.Format, Nothing) + "-" + LOG_PERF_GENERATOR_SHP_MAX_LIMIT.Value.ToString(LOG_PERF_GENERATOR_SHP_MAX_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(28, 10).Value = LOG_PERF_VIB_GEARBOX_MILS.Value.ToString(LOG_PERF_VIB_GEARBOX_MILS.Format, Nothing)
+                        excelWorksheet.Cells(30, 10).Value = LOG_PERF_VIB_TURBINE_MILS.Value.ToString(LOG_PERF_VIB_TURBINE_MILS.Format, Nothing)
+
+
+                        excelWorksheet.Cells(37, 7).Value = LOG_PERF_P_BARO_INHGA.Value.ToString(LOG_PERF_P_BARO_INHGA.Format, Nothing)
+                        excelWorksheet.Cells(38, 7).Value = LOG_PERF_T_CELL_DEGF.Value.ToString(LOG_PERF_T_CELL_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(39, 7).Value = LOG_PERF_T_INLET_DEGF_AVG.Value.ToString(LOG_PERF_T_INLET_DEGF_AVG.Format, Nothing)
+
+                    Case eTestStepGTCP85_98.CAPTURE_FINAL_DATA
+
+                        '37 Bare made in step combination load
+                        '39 Tinlet made in step combination load
+                        '40 in crack pressure check step
+                        excelWorksheet.Cells(41, 7).Value = Log_Perf_GearboxVibration.Value.ToString(Log_Perf_GearboxVibration.Format, Nothing)
+                        excelWorksheet.Cells(43, 7).Value = Log_Perf_TurbineVibration.Value.ToString(Log_Perf_TurbineVibration.Format, Nothing)
+                        excelWorksheet.Cells(45, 7).Value = Log_Perf_ShaftSpeed.Value.ToString(Log_Perf_ShaftSpeed.Format, Nothing)
+                        excelWorksheet.Cells(45, 9).Value = LOG_PERF_NG_100_RPM_CST.Value.ToString(LOG_PERF_NG_100_RPM_CST.Format, Nothing) + "±100"
+
+                        excelWorksheet.Cells(46, 7).Value = Log_Perf_FuelPumpInletPress.Value.ToString(Log_Perf_FuelPumpInletPress.Format, Nothing)
+                        excelWorksheet.Cells(46, 9).Value = LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_LOW.Value.ToString(LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_LOW.Format, Nothing) + " to " + _
+                            LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_HI.Value.ToString(LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_HI.Format, Nothing)
+
+                        excelWorksheet.Cells(47, 7).Value = Log_Perf_FuelPumpDischPress.Value.ToString(Log_Perf_FuelPumpDischPress.Format, Nothing)
+                        excelWorksheet.Cells(48, 7).Value = Log_Perf_OilPumpDischPress.Value.ToString(Log_Perf_OilPumpDischPress.Format, Nothing)
+                        excelWorksheet.Cells(49, 7).Value = Log_Perf_Oil_Pump_Disch_Fluc.Value.ToString(Log_Perf_Oil_Pump_Disch_Fluc.Format, Nothing)
+                        excelWorksheet.Cells(50, 7).Value = Log_Perf_OilPumpDischTemp.Value.ToString(Log_Perf_OilPumpDischTemp.Format, Nothing)
+
+                        excelWorksheet.Cells(52, 7).Value = Log_Perf_TurbineBearingCavPress.Value.ToString(Log_Perf_TurbineBearingCavPress.Format, Nothing)
+                        excelWorksheet.Cells(52, 9).Value = LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_HIGH_LIMIT.Value.ToString(LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_HIGH_LIMIT.Format, Nothing)
+                        excelWorksheet.Cells(52, 10).Value = LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_LOW_LIMIT.Value.ToString(LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_LOW_LIMIT.Format, Nothing)
+
+                        excelWorksheet.Cells(53, 7).Value = Log_Perf_GearboxCavNegPress.Value.ToString(Log_Perf_GearboxCavNegPress.Format, Nothing)
+                        excelWorksheet.Cells(53, 9).Value = LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_HIGH_LIMIT.Value.ToString(LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_HIGH_LIMIT.Format, Nothing)
+                        excelWorksheet.Cells(53, 10).Value = LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_LOW_LIMIT.Value.ToString(LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_LOW_LIMIT.Format, Nothing)
+                        '54 In step no load
+                        '55 In step no load
+                        excelWorksheet.Cells(56, 7).Value = Log_Perf_FullLoadGovSpeedDroop.Value.ToString(Log_Perf_FullLoadGovSpeedDroop.Format, Nothing)
+                        excelWorksheet.Cells(56, 9).Value = Log_Perf_FullLoadGovSpeedDroop_LOW_LIMIT.Value.ToString(Log_Perf_FullLoadGovSpeedDroop_LOW_LIMIT.Format, Nothing)
+                        excelWorksheet.Cells(56, 10).Value = Log_Perf_FullLoadGovSpeedDroop_HI_LIMIT.Value.ToString(Log_Perf_FullLoadGovSpeedDroop_HI_LIMIT.Format, Nothing)
+                        excelWorksheet.Cells(57, 7).Value = Log_Perf_AirPressRegOutPress.Value.ToString(Log_Perf_AirPressRegOutPress.Format, Nothing)
+                        excelWorksheet.Cells(57, 9).Value = Log_Perf_AirPressRegOutPress_MIN_LIMIT.Value.ToString(Log_Perf_AirPressRegOutPress_MIN_LIMIT.Format, Nothing)
+                        excelWorksheet.Cells(57, 10).Value = Log_Perf_AirPressRegOutPress_MAX_LIMIT.Value.ToString(Log_Perf_AirPressRegOutPress_MAX_LIMIT.Format, Nothing)
+
+                End Select
+
+                currentSheet = "DETAILS"
+                excelWorksheet = excelSheets.Item(currentSheet)
+
+                Select Case TestStepNumber
+                    'Case eTestStepGTCP85_98.RTL:
+                    Case eTestStepGTCP85_98.NO_LOAD
+
+                        'Do Nothing
+
+                        'Case eTestStepGTCP85_98.ECS_ONLY:
+                    Case eTestStepGTCP85_98.BLEED_LOAD_ONLY
+
+                        excelWorksheet.Cells(15, 7).Value = LOG_PERF_WB_PPM.Value.ToString(LOG_PERF_WB_PPM.Format, Nothing)
+                        excelWorksheet.Cells(16, 7).Value = LOG_PERF_P_BLEED_INHGA.Value.ToString(LOG_PERF_P_BLEED_INHGA.Format, Nothing)
+                        excelWorksheet.Cells(17, 7).Value = LOG_PERF_T_BLEED_DEGF.Value.ToString(LOG_PERF_T_BLEED_DEGF.Format, Nothing)
+
+                        'Case eTestStepGTCP85_98.ECS_60SHP:
+                    Case eTestStepGTCP85_98.COMBINATION_LOAD
+
+                        excelWorksheet.Cells(18, 7).Value = LOG_PERF_WB_PPM.Value.ToString(LOG_PERF_WB_PPM.Format, Nothing)
+                        excelWorksheet.Cells(19, 7).Value = LOG_PERF_P_BLEED_INHGA.Value.ToString(LOG_PERF_P_BLEED_INHGA.Format, Nothing)
+                        excelWorksheet.Cells(20, 7).Value = LOG_PERF_T_BLEED_DEGF.Value.ToString(LOG_PERF_T_BLEED_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(21, 7).Value = LOG_PERF_P_ORIFICE_INHGG.Value.ToString(LOG_PERF_P_ORIFICE_INHGG.Format, Nothing)
+                        excelWorksheet.Cells(22, 7).Value = LOG_PERF_T_ORIFICE_DEGF.Value.ToString(LOG_PERF_T_ORIFICE_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(23, 7).Value = LOG_PERF_P_ORIFICE_DELTA_INH2OD.Value.ToString(LOG_PERF_P_ORIFICE_DELTA_INH2OD.Format, Nothing)
+                        'line 20 made directly in the excel file
+                        excelWorksheet.Cells(25, 7).Value = LOG_PERF_T_EGT_DEGF_EXHAUST_TOTAL.Value.ToString(LOG_PERF_T_EGT_DEGF_EXHAUST_TOTAL.Format, Nothing) 'ft corrigé?
+                        excelWorksheet.Cells(26, 7).Value = LOG_PERF_T_EGT_DEGF_AVG.Value.ToString(LOG_PERF_T_EGT_DEGF_AVG.Format, Nothing) 'ft corrigé?
+
+                    Case eTestStepGTCP85_98.ACCELERATION_CRACK_PRESSURE_RECHECK
+
+                        excelWorksheet.Cells(38, 7).Value = Log_Perf_AccelLimitValveCrackCheck.Value.ToString(Log_Perf_AccelLimitValveCrackCheck.Format, Nothing)
+
+                    Case eTestStepGTCP85_98.CAPTURE_FINAL_DATA
+
+                        excelWorksheet.Cells(28, 7).Value = Log_Perf_ETC_SP_Check.Value.ToString(Log_Perf_ETC_SP_Check.Format, Nothing) 'Load Control Thermostat for -98DHF
+                        excelWorksheet.Cells(28, 8).Value = Log_Perf_ETC_SP_Check_MAX_LIMIT.Value.ToString(Log_Perf_ETC_SP_Check_MAX_LIMIT.Format, Nothing) 'Load Control Thermostat for -98DHF
+                        excelWorksheet.Cells(30, 7).Value = Log_Perf_ETC_SP_ReCheck.Value.ToString(Log_Perf_ETC_SP_ReCheck.Format, Nothing) 'Load Control Thermostat for -98DHF
+                        excelWorksheet.Cells(32, 7).Value = Log_Perf_LoadCtrl_Valve_Rate.Value.ToString(Log_Perf_LoadCtrl_Valve_Rate.Format, Nothing)
+                        excelWorksheet.Cells(33, 7).Value = Log_Perf_BleedAirOsc.Value.ToString(Log_Perf_BleedAirOsc.Format, Nothing)
+                        excelWorksheet.Cells(34, 7).Value = Log_Perf_MinSpeedDuringOL.Value.ToString(Log_Perf_MinSpeedDuringOL.Format, Nothing)
+                        excelWorksheet.Cells(36, 7).Value = Log_Perf_MaxEGTDuringOL.Value.ToString(Log_Perf_MaxEGTDuringOL.Format, Nothing)
+                        '34 in step ACCELERATION_CRACK_PRESSURE_RECHECK
+                        excelWorksheet.Cells(39, 7).Value = NUMBER_OF_STARTS.Value.ToString(NUMBER_OF_STARTS.Format, Nothing)
+                        excelWorksheet.Cells(40, 7).Value = LOG_PERF_OPERATING_TIME_MINUTE.Value.ToString(LOG_PERF_OPERATING_TIME_MINUTE.Format, Nothing) 'TODO Log_Perf_OperatingTime.Value.ToString()
+
+
+                End Select
+
+                TestProgress_RecordPerfStep()
+
+                currentSheet = "ACCEPTANCE"
+                excelWorksheet = excelSheets.Item(currentSheet)
+
+                If CELProject.IsTrue(CELProject.PERF_TEST_RESULT_REJECTED.Value) Then
+                    excelWorksheet.OLEObjects("TestResultRejected").object.value = True
+                Else
+                    excelWorksheet.OLEObjects("TestResultRejected").object.value = False
+                End If
+
+                If CELProject.IsTrue(CELProject.PERF_TEST_RESULT_ACCEPTED.Value) Then
+                    excelWorksheet.OLEObjects("TestResultAccepted").object.value = True
+                Else
+                    excelWorksheet.OLEObjects("TestResultAccepted").object.value = False
+                End If
+
+                excelWorksheet.Cells(54, 3).Value = Me.UserInputs.OperatorName
+                excelWorksheet.Cells(55, 3).Value = Me.UserInputs.QCInspectorName
+
+            Catch ex As Exception
+                System.Diagnostics.Trace.WriteLine("CreatePerformanceFile: " + ex.Message)
+                MessageBox.Show(ex.ToString)
+                Create13031PerformanceFile = False
+            Finally
+                'Lock Sheets
+                excelWorkbook.Worksheets(1).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(2).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(3).Protect(ProtectPassword)
+            End Try
+        End Function
+
+        Private Function Init_Arrays()
+
+            Try
+
+                'Query Database
+                Dim engineCorrectionFactors As Gtcp8598Collection = New Gtcp8598Collection
+                engineCorrectionFactors.es.Connection.Name = CELProject.DefaultConnectionName
+                Select Case CELProject.EngineModel
+                    Case "GTCP85-98"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = CELProject.EngineModel)
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = UserInputs.RepairTypeID)
+                    Case "GTCP85-98CK"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = CELProject.EngineModel)
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = UserInputs.RepairTypeID)
+                    Case "GTCP85-98D"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = CELProject.EngineModel)
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = Gtcp8598.eRepairType.NotApplicable)
+                    Case "GTCP85-98DC-B"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = CELProject.EngineModel)
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = UserInputs.RepairTypeID)
+                    Case "GTCP85-98DHF", "GTCP85-98DHF-A"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = "GTCP85-98DHF-A")
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = Gtcp8598.eRepairType.NotApplicable)
+
+                    Case Else
+                        Debug.Assert(False, "Engine model not supported")
+
+                End Select
+
+                engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.ShaftLoad = 0) 'No Load (0 SHP)
+                engineCorrectionFactors.Query.OrderBy(engineCorrectionFactors.Query.Tcl.Ascending)
+                engineCorrectionFactors.Query.Load()
+
+                Debug.Assert(engineCorrectionFactors.Count > 0, "GTCP85-98.Init_Arrays: engineCorrectionFactors returned 0 record for 0 SHP")
+
+                Dim i As Integer = 0
+                ReDim GTCP85_98_RTL_ECS(engineCorrectionFactors.Count - 1, 3)
+                For Each correctionFactor As Gtcp8598 In engineCorrectionFactors
+                    GTCP85_98_RTL_ECS(i, 0) = correctionFactor.Tcl
+                    GTCP85_98_RTL_ECS(i, 1) = correctionFactor.WBChng
+                    GTCP85_98_RTL_ECS(i, 2) = correctionFactor.PBChng
+                    GTCP85_98_RTL_ECS(i, 3) = correctionFactor.TBChng
+                    i += 1
+                Next
+
+                engineCorrectionFactors.Dispose()
+
+                engineCorrectionFactors = New Gtcp8598Collection
+
+                Select Case CELProject.EngineModel
+                    Case "GTCP85-98"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = CELProject.EngineModel)
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = Gtcp8598.eRepairType.NotApplicable) 'For combined there is no difference for Overhauled or Repaired engine
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.ShaftLoad = 50) '50 SHP
+
+                    Case "GTCP85-98CK"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = CELProject.EngineModel)
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = Gtcp8598.eRepairType.NotApplicable) 'For combined there is no difference for Overhauled or Repaired engine
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.ShaftLoad = 50) '50 SHP
+
+                    Case "GTCP85-98D"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = CELProject.EngineModel)
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = Gtcp8598.eRepairType.NotApplicable) 'For combined there is no difference for Overhauled or Repaired engine
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.ShaftLoad = 60) '60 SHP
+
+                    Case "GTCP85-98DC-B"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = CELProject.EngineModel)
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = UserInputs.RepairTypeID)
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.ShaftLoad = 60) '60 SHP
+
+                    Case "GTCP85-98DHF", "GTCP85-98DHF-A"
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.EngineModel = "GTCP85-98DHF-A")
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.RepairTypeEnum = Gtcp8598.eRepairType.NotApplicable) 'For combined there is no difference for Overhauled or Repaired engine
+                        engineCorrectionFactors.Query.Where(engineCorrectionFactors.Query.ShaftLoad = 60) '60 SHP
+
+                    Case Else
+                        Debug.Assert(False, "Engine model not supported")
+
+                End Select
+
+                engineCorrectionFactors.Query.OrderBy(engineCorrectionFactors.Query.Tcl.Ascending)
+                engineCorrectionFactors.Query.Load()
+
+                Debug.Assert(engineCorrectionFactors.Count > 0, "GTCP85-98.Init_Arrays: engineCorrectionFactors returned 0 record for 0 SHP")
+
+                i = 0
+                ReDim GTCP85_98_ECS_AND_SHP(engineCorrectionFactors.Count - 1, 3)
+                For Each correctionFactor As Gtcp8598 In engineCorrectionFactors
+                    GTCP85_98_ECS_AND_SHP(i, 0) = correctionFactor.Tcl
+                    GTCP85_98_ECS_AND_SHP(i, 1) = correctionFactor.WBChng
+                    GTCP85_98_ECS_AND_SHP(i, 2) = correctionFactor.PBChng
+                    GTCP85_98_ECS_AND_SHP(i, 3) = correctionFactor.TBChng
+                    i += 1
+                Next
+
+                engineCorrectionFactors.Dispose()
+
+                Return True
+            Catch Ex As Exception
+                MessageBox.Show("InitArrays_GTCP85_98DHF: " & Ex.ToString())
+                Return False
+            Finally
+            End Try
+
+        End Function
+
+
+#Region " Handlers "
+        Private Sub OnSTART_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    CurrentSpeed = 0
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnSTART_BTN: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnCaptureBtn(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    'ici bas 98DHF
+                    'Update the Log/Perf channel set
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    Select Case sender.Name
+                        Case "CAPTURE_NG_FULL_LOAD_BTN"
+                            Log_Perf_FullLoadGovSpeedDroop.Value = LOG_PERF_NG_RPM.Value
+                            CAPTURE_NG_FULL_LOAD_BTN.Value = Values.False
+                        Case "CAPTURE_ETC_SETPOINT_BTN"
+                            Log_Perf_ETC_SP_Check.Value = LOG_PERF_T_EGT_DEGF_AVG.Value
+                            CAPTURE_ETC_SETPOINT_BTN.Value = Values.False
+                        Case "CAPTURE_ETC_SETPOINT_RECHECK_BTN"
+                            Log_Perf_ETC_SP_ReCheck.Value = LOG_PERF_T_EGT_DEGF_AVG.Value
+                            CAPTURE_ETC_SETPOINT_RECHECK_BTN.Value = Values.False
+                        Case "CAPTURE_MAX_EGT_OVERLOAD_BTN"
+                            Log_Perf_MaxEGTDuringOL.Value = LOG_PERF_T_EGT_DEGF_AVG.Value
+                            CAPTURE_MAX_EGT_OVERLOAD_BTN.Value = Values.False
+                        Case "CAPTURE_MIN_SPEED_OVERLOAD_BTN"
+                            Log_Perf_MinSpeedDuringOL.Value = LOG_PERF_NG_RPM.Value
+                            CAPTURE_MIN_SPEED_OVERLOAD_BTN.Value = Values.False
+                        Case "CAPTURE_AIR_PRESSURE_OUTPUT_BTN"
+                            Log_Perf_AirPressRegOutPress.Value = LOG_PERF_P_AIR_PRESSURE_REG_INHGG.Value
+                            CAPTURE_AIR_PRESSURE_OUTPUT_BTN.Value = Values.False
+                    End Select
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnCaptureBtn: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Function Compute_BleedAirFlow(ByVal TOrifice_DEGF As Double, _
+                                                ByVal POrifice_INHGA As Double, _
+                                                ByVal POrificeDelta_INH2OG As Double) As Double Implements IBleedAirFlowCalculation.Compute_BleedAirFlow
+            Try
+                If CELProject.IsTrue(BLEED_AIR_VALVE_BTN.Value) Then
+
+                    Dim BleedAirFLow As Double = CELProject.GetBleedAirFlow(CELProject.EngineConfiguration.DuctDiameter, CELProject.EngineConfiguration.DuctDiameterUnit, _
+                                                                            CELProject.EngineConfiguration.OrificeDiameter, CELProject.EngineConfiguration.OrificeDiameterUnit, _
+                                                                            TOrifice_DEGF, CELDAS.eTemperature.Fahrenheit, _
+                                                                            POrifice_INHGA, CELDAS.ePressure.InchesOfMercury, _
+                                                                            POrificeDelta_INH2OG, CELDAS.ePressure.InchesH2O, _
+                                                                            CELProject.EngineConfiguration.OrificeThinkness, _
+                                                                            CELProject.EngineConfiguration.OrificeThinknessUnit, _
+                                                                            CELProject.EngineConfiguration.TapArrangement, _
+                                                                            CELDAS.eFlowMass.LbByMin) 'Output in lb/min 
+
+                    Return BleedAirFLow
+
+                Else
+                    Return 0.0
+                End If
+
+
+            Catch Ex As Exception
+                'Log error
+                MessageBox.Show("Error in Engine_Sequence.Compute_BleedAirFlow: " & Ex.ToString)
+                Return 0.0
+            End Try
+        End Function
+
+        Protected Overrides Sub Compute(ByVal CalcForLogAndPerfReports As Boolean)
+
+            Try
+                If CalcForLogAndPerfReports Then
+
+                    LOG_PERF_WB_CALC.Value = New KineticaRT.Values.Double(Compute_BleedAirFlow(LOG_PERF_T_ORIFICE_DEGF.Value.ToDouble, _
+                                                                                                 LOG_PERF_P_ORIFICE_INHGA.Value.ToDouble, _
+                                                                                                 LOG_PERF_P_ORIFICE_DELTA_INH2OD.Value.ToDouble))
+
+                    Compute_GTCP85_98_Perf(LOG_PERF_T_INLET_DEGF_AVG, _
+                                            LOG_PERF_DELTA, _
+                                            LOG_PERF_P_BARO_INHGA, _
+                                            LOG_PERF_P_BLEED_INHGG, _
+                                            LOG_PERF_WB_CALC, _
+                                            LOG_PERF_T_BLEED_DEGF, _
+                                            LOG_PERF_PBChng, _
+                                            LOG_PERF_TBChng, _
+                                            LOG_PERF_WBChng, _
+                                            LOG_PERF_PBStd, _
+                                            LOG_PERF_TBStd, _
+                                            LOG_PERF_WBStd)
+
+                    FlowmeterCtrl.ComputeFlow(True)
+
+                    'IMPORTANT: Toutes les variables flottantes telles que WB_CALC, DELPB, LB_DEMAND dont la source et la destination sont vides doivent
+                    'manuellement être updaté pour être inscrite dans le LOG ou le PERF report.
+                Else
+
+                    WB_CALC.Value = New KineticaRT.Values.Double(Compute_BleedAirFlow(T_ORIFICE_DEGF.Value.ToDouble, _
+                                                                                      P_ORIFICE_INHGA.Value.ToDouble, _
+                                                                                      P_ORIFICE_DELTA_INH2OD.Value.ToDouble))
+                    Compute_GTCP85_98_Perf(T_INLET_DEGF_AVG, _
+                                            DELTA, _
+                                            P_BARO_INHGA, _
+                                            P_BLEED_INHGG, _
+                                            WB_CALC, _
+                                            T_BLEED_DEGF, _
+                                            PBChng, _
+                                            TBChng, _
+                                            WBChng, _
+                                            PBStd, _
+                                            TBStd, _
+                                            WBStd)
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Compute_GTCP85_98" + ex.ToString(), "Error")
+            End Try
+
+        End Sub
+        Private Sub Compute_GTCP85_98_Perf(ByRef tinlet_degf_avg As IChannel, _
+                                           ByRef pdelta As IChannel, _
+                                           ByRef pbaro_inhga As IChannel, _
+                                           ByRef pbleed_inhgg As IChannel, _
+                                           ByRef wbcalc As IChannel, _
+                                           ByRef tbleed_degf As IChannel, _
+                                           ByRef pb_chng As IChannel, _
+                                           ByRef tb_chng As IChannel, _
+                                           ByRef wb_chng As IChannel, _
+                                           ByRef pb_std As IChannel, _
+                                           ByRef tb_std As IChannel, _
+                                           ByRef wb_std As IChannel)
+
+            Dim PB As Double = 0
+            Dim PBChngTable As Double = Double.NaN
+
+            Dim TB As Double = 0
+            Dim TBChngTable As Double = Double.NaN
+
+            Dim WB As Double = 0
+            Dim WBChngTable As Double = Double.NaN
+
+            Dim Tcl As Double = tinlet_degf_avg.Value.ToDouble
+
+            Try
+
+                If CELProject.PERF_TEST_STEP_NB.Value.ToDouble = eTestStepGTCP85_98.NO_LOAD Or _
+                    CELProject.PERF_TEST_STEP_NB.Value.ToDouble = eTestStepGTCP85_98.BLEED_LOAD_ONLY Then  'RTL or ECS ONLY
+                    'ShaftLoad = 2 'No LOAD
+                    WBChngTable = CELProject.Interpolation_1D(Tcl, GTCP85_98_RTL_ECS, ePerfCorrFactorIndex.WB_Chng)
+                    PBChngTable = CELProject.Interpolation_1D(Tcl, GTCP85_98_RTL_ECS, ePerfCorrFactorIndex.PB_Chng)
+                    TBChngTable = CELProject.Interpolation_1D(Tcl, GTCP85_98_RTL_ECS, ePerfCorrFactorIndex.TB_Chng)
+                ElseIf CELProject.PERF_TEST_STEP_NB.Value.ToDouble = eTestStepGTCP85_98.COMBINATION_LOAD Then ' Default to ECS and 60+3-0 SHP
+                    'ShaftLoad = 1 'ShaftLOAD
+                    'Note: le tableau des valeurs en shaft load sont loade en memoire dans Init_Arrays selon le repair type Overhaul ou Repair
+                    'donc pas besoin de faire ici un "if Overhaul then else Repair ..."
+                    WBChngTable = CELProject.Interpolation_1D(Tcl, GTCP85_98_ECS_AND_SHP, ePerfCorrFactorIndex.WB_Chng)
+                    PBChngTable = CELProject.Interpolation_1D(Tcl, GTCP85_98_ECS_AND_SHP, ePerfCorrFactorIndex.PB_Chng)
+                    TBChngTable = CELProject.Interpolation_1D(Tcl, GTCP85_98_ECS_AND_SHP, ePerfCorrFactorIndex.TB_Chng)
+                End If
+
+                ' Verify that DELTA is NOT zero to prevent divide by zero error
+                If pdelta.Value.ToDouble = 0.0 Then
+                    WB = Double.NaN
+                    PB = Double.NaN
+                Else
+                    ' P_BLEED Value is in.HgG, the PBStd value is expected in in.HGA.  We must add BARO value
+                    PB = (pbaro_inhga.Value.ToDouble + pbleed_inhgg.Value.ToDouble) / pdelta.Value.ToDouble + PBChngTable
+                    WB = (wbcalc.Value.ToDouble / pdelta.Value.ToDouble) + WBChngTable
+                End If
+
+                TB = tbleed_degf.Value.ToDouble + TBChngTable
+
+
+                'Update KineticaRT Channels
+                pb_chng.Value = New KineticaRT.Values.Double(PBChngTable)
+                tb_chng.Value = New KineticaRT.Values.Double(TBChngTable)
+                wb_chng.Value = New KineticaRT.Values.Double(WBChngTable)
+
+                pb_std.Value = New KineticaRT.Values.Double(PB)
+                tb_std.Value = New KineticaRT.Values.Double(TB)
+                wb_std.Value = New KineticaRT.Values.Double(WB)
+            Catch Ex As Exception
+                MessageBox.Show("Compute_GTCP85_98_Perf: " & Ex.ToString)
+            Finally
+            End Try
+        End Sub
+        Private Sub Compute_Time()
+            'TODO COmpute time a remplacer par le controleur
+            Try
+                If NG_PCT.Value.ToDouble > 95.0 Then
+
+                    If LastStart Then
+                        OperatingTime = OperatingTime.Add(Now.Subtract(OperatingTime_Start))
+                    End If
+
+                    LastStart = True
+                    OperatingTime_Start = Now
+                Else
+                    LastStart = False
+                End If
+
+                OPERATING_TIME_MINUTE.Value = New KineticaRT.Values.Double((OperatingTime.Hours * 60) + OperatingTime.Minutes + (OperatingTime.Seconds / 60))
+
+            Catch Ex As Exception
+                MessageBox.Show("Compute_Time: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+        Protected Overrides Sub OnCLOSE_TEST_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    MyBase.StopWorkingThread()
+
+                    If TestProgressMgr IsNot Nothing Then
+                        TestProgress_Save()
+                        TestProgressMgr.Dispose()
+                        TestProgressMgr = Nothing
+                    End If
+
+                    'Persistent Values Force Save
+                    GTCP85_98_PersistentValuesCtrl.SavePersistentValues(True)
+
+                    RemoveHandlers()
+
+                    Dispose_Engine_Controllers()
+
+                    GTCP85_98_PersistentValuesCtrl.Dispose()
+
+
+                End If
+
+                CELProject.CLOSE_TEST_BTN.Value = Values.False
+
+            Catch Ex As Exception
+                MessageBox.Show("OnCLOSE_TEST_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+        Protected Overrides Sub OnLOG_TAKE_POINT_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    'Update the Log/Perf channel set
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    'Synchronize data for Log and Performance
+                    Compute(True)
+
+                    CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, False, "GTCP85-98", True)
+                    CELProject.LOG_TAKE_POINT_BTN.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnLOG_TAKE_POINT_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+
+
+        Protected Overrides Sub OnNEW_TEST_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value) Then
+
+                If (CELProject.IsTrue(newVal)) Then
+
+                    NUMBER_OF_STARTS.Value = Values.Zero
+                    FUEL_USED_INITIAL_LITERS.Value = Values.Zero
+                    WF_TOT1.Value = Values.Zero
+                    VIB_GEARBOX_MAX_MILS_PERSISTENT.Value = Values.Zero
+                    VIB_TURBINE_MAX_MILS_PERSISTENT.Value = Values.Zero
+                    CELProject.PERF_TEST_RESULT_ACCEPTED.Value = Values.False
+                    CELProject.PERF_TEST_RESULT_REJECTED.Value = Values.True
+
+                    TestProgress_Save()
+
+                    Try
+                        If (System.IO.File.Exists(CELProject.EngineSession.LogFolder + "TestProgress.xml")) Then
+
+                            Rename(CELProject.EngineSession.LogFolder + "TestProgress.xml", CELProject.EngineSession.LogFolder + "TestProgress_" & Format(Date.Now, "yyyy-MM-dd hh'h'mm'm'ss's'") & ".xml")
+                        End If
+
+                        TestProgressMgr.TestProgressSheet.Entries.Clear()
+
+                    Catch Ex As Exception
+                        MessageBox.Show("TestProgess File not found: " & Ex.ToString())
+                    End Try
+
+                End If
+            End If
+
+        End Sub
+
+        Private Sub TestProgress_Save()
+            If Not Me.TestProgressMgr Is Nothing Then
+                Dim fileName As String = CELProject.EngineSession.LogFolder + "/TestProgress.xml"
+                Dim settings As Xml.XmlWriterSettings = New Xml.XmlWriterSettings()
+                settings.Indent = True
+
+                Using writer As Xml.XmlWriter = Xml.XmlWriter.Create(fileName, settings)
+                    Dim xslPath As String = "type=""text/xsl"" href=""" + CELProject.Report.TestProgressFullFileName + """"
+                    writer.WriteProcessingInstruction("xml-stylesheet", xslPath)
+                    Dim ser As New Xml.Serialization.XmlSerializer(GetType(CEL.TestProgress.TestProgressSheet))
+                    ser.Serialize(writer, Me.TestProgressMgr.TestProgressSheet)
+                End Using
+            End If
+        End Sub
+        Private Sub TestProgress_Initialize()
+            Dim dataInfo As CEL.TestProgress.TestProgressMgr.TestProgress_DataInfo
+
+            dataInfo.EngineStartEventChannelName = "START_BTN"
+            dataInfo.EngineStartEventChannelValue = True
+            dataInfo.EngineStartEventDescription = "Engine Start"
+            dataInfo.EngineStartEventRecordTime = True
+            dataInfo.EngineStopEventChannelName = "STOP_CMD"
+            dataInfo.EngineStopEventChannelValue = True
+            dataInfo.EngineStopEventDescription = "Engine Stop - Rundown Time (s): "
+            dataInfo.EngineStopEventRecordTime = True
+            dataInfo.TestProgressFrameName = CELProject.EngineFamily.Replace("-", "_") + "_Screen.fraTestProgressHorizontal"
+            dataInfo.TestProgressSheetFileName = CELProject.EngineSession.LogFolder + "/TestProgress.xml"
+            dataInfo.UUTModel = CELProject.EngineModel
+            dataInfo.UUTSerialNumber = Me.UserInputs.EngineSerialNumber
+            dataInfo.UUTWorkOrder = Me.UserInputs.WorkOrder
+
+            Me.TestProgressMgr = New CEL.TestProgress.TestProgressMgr(dataInfo)
+        End Sub
+        Private Sub TestProgress_RecordPerfStep()
+
+            Dim sheetEntry As CEL.TestProgress.TestProgressSheetEntry = Nothing
+
+            Dim TextString As String = cmbTestStepList.SelectedItem & " performance point taken"
+
+            sheetEntry = New CEL.TestProgress.TestProgressSheetEntry(Now.ToString(), TextString)
+
+            If sheetEntry IsNot Nothing Then
+                Me.TestProgressMgr.AddTestProgressEntry(sheetEntry)
+            End If
+
+        End Sub
+
+
+        Protected Overrides Sub OnPERF_CLOSE_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    CELProject.ActivateForm("GTCP85_98_Performance_Screen", "GTCP85_98_Screen", False, False)
+                    CELProject.PERF_CLOSE_WINDOW_BTN.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERF_CLOSE_WINDOW_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+        Protected Overrides Sub OnPERF_OPEN_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    'Update the Log/Perf channel set
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    Log_Perf_FuelPumpInletPress.Value = LOG_PERF_P_FUEL_PUMP_INLET_PSIG.Value
+                    Log_Perf_FuelPumpDischPress.Value = LOG_PERF_P_FUEL_PUMP_DISCHARGE_PSIG.Value
+                    Log_Perf_GearboxVibration.Value = LOG_PERF_VIB_GEARBOX_MILS.Value
+                    Log_Perf_TurbineVibration.Value = LOG_PERF_VIB_TURBINE_MILS.Value
+                    Log_Perf_ShaftSpeed.Value = LOG_PERF_NG_RPM.Value
+                    Log_Perf_OilPumpDischPress.Value = LOG_PERF_P_OIL_PSIG.Value 'POil pump discharge
+                    Log_Perf_OilPumpDischTemp.Value = LOG_PERF_T_OIL_DEGF.Value 'TOil pump discharge
+                    Log_Perf_TurbineBearingCavPress.Value = LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG.Value
+                    Log_Perf_GearboxCavNegPress.Value = LOG_PERF_P_ACCESSORY_GEARCASE_INHGG.Value
+
+                    CELProject.ActivateForm("GTCP85_98_Performance_Screen", "GTCP85_98_Screen", True, False)
+                    CELProject.PERF_OPEN_WINDOW_BTN.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERF_OPEN_WINDOW_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+        Protected Overrides Sub OnPERF_TAKE_POINT_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Dim SearchPath As String
+            Dim excelWorkbook As Excel.Workbook = Nothing
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    'Update the Log/Perf channel set
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    'Synchronize data for Log and Performance
+                    Compute(True)
+
+                    SearchPath = CELProject.EngineSession.PerfFolder
+
+                    Dim NewFileCreated As Boolean
+
+                    If CELProject.Project.Number = "13031" Then 'Value Specific to the Indonesia project
+
+                        Dim Template13031ReportFullFileName As String = CELProject.EngineConfiguration.PerformanceReportTemplateFile
+                        NewFileCreated = CELProject.ProcessPerformanceReport(SearchPath, Template13031ReportFullFileName, AddressOf Create13031PerformanceFile)
+
+                        'add ElseIf other project here
+
+                    Else
+
+                        'Dim StandardCELTemplateReportFullFileName As String = EngineConfiguration.PerformanceReportTemplateFile
+                        'NewFileCreated = CELProject.ProcessPerformanceReport(SearchPath, StandardCELTemplateReportFullFileName, AddressOf CreateStandardCELPerformanceFile)
+
+                    End If
+
+                    CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, True, "GTCP85-98", NewFileCreated)
+
+                    CELProject.PERF_TAKE_POINT_BTN.Value = Values.False
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnPERF_TAKE_POINT_BTN: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Function CreateCustomHeaderLogFile(ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+
+            Try
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Date Time:"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+                RowIndex += 1
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Cond#:"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+                RowIndex += 1
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Comment:"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                ExcelWorksheet.Rows(RowIndex).RowHeight = 65.25
+                ExcelWorksheet.Rows(RowIndex).VerticalAlignment = Excel.XlVAlign.xlVAlignTop
+                ExcelWorksheet.Rows(RowIndex).WrapText = True
+
+                Return True
+
+            Catch ex As Exception
+                MessageBox.Show("CreateCustomHeaderLogFile: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+        Protected Overrides Function UpdateCustomHeaderLogFile(ByVal AppendOption As Boolean, ByVal IsPerfEntry As Boolean, ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+
+            Try
+                Dim Log_Condition As Integer
+
+                If AppendOption = False Then
+                    Log_Condition = 1
+                Else
+                    Log_Condition = ExcelWorksheet.Cells(RowIndex + 1, ExcelWorksheet.Columns.Count).End(Excel.XlDirection.xlToLeft).Column - 1
+                    Log_Condition = Log_Condition + 1
+
+                End If
+
+                If ((Log_Condition > 1) And ((Log_Condition Mod 5) = 1)) Then
+
+                    'Repeat The Test Spec For this new sets of condition
+
+                    With ExcelWorksheet
+                        .Range(.Cells(2, 2), .Cells(RowIndex - 2, 6)).Copy(.Cells(2, Log_Condition + 1))
+                    End With
+                End If
+
+                ColumnIndex = 1 + Log_Condition
+
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Format(Now, "yyyy/MM/dd HH:mm:ss")
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                RowIndex += 1
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Log_Condition.ToString()
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                RowIndex += 1
+                If IsPerfEntry = False Then
+                    Dim CommentText As String = String.Empty
+                    Dim InputObject As New InputCommentForm
+                    InputObject.ShowDialog("Log Report", "Comment:", "", CommentText)
+                    ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = CommentText
+                Else
+                    ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "STEP: " & cmbTestStepList.SelectedItem
+                End If
+
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                RowIndex += 2
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Values"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter
+
+                Return True
+
+            Catch ex As Exception
+                MessageBox.Show("UpdateCustomHeaderLogFile: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        Protected Overrides Sub OnTestStep_List_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs)
+            Try
+
+                CELProject.PERF_TEST_STEP_NB.Value = New KineticaRT.Values.Integer(cmbTestStepList.SelectedIndex)
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestStep_List_SelectedIndexChanged: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            Finally
+            End Try
+        End Sub
+#End Region
+
+#Region " Engine Worker Thread "
+
+
+        Protected Overrides Sub OnEngineWorkingThread()
+
+
+            Compute(False)
+
+            Compute_Time()
+
+            If NG_RPM.Value.ToDouble > CurrentSpeed Then
+                CurrentSpeed = NG_RPM.Value.ToDouble
+
+                'Performance parameter to calcul
+                Select Case CELProject.PERF_TEST_STEP_NB.Value.ToDouble
+                    Case eTestStepGTCP85_98.ACCELERATION_CRACK_PRESSURE
+                        If CurrentSpeed < 9000 And CurrentSpeed > 8000 Then
+                            Log_Perf_AccelLimitValveCrack.Value = P_FUEL_PUMP_DISCHARGE_PSIG.Value
+                        End If
+                    Case eTestStepGTCP85_98.ACCELERATION_CRACK_PRESSURE_RECHECK
+                        If CurrentSpeed < 9000 And CurrentSpeed > 8000 Then
+                            Log_Perf_AccelLimitValveCrackCheck.Value = P_FUEL_PUMP_DISCHARGE_PSIG.Value
+                        End If
+                End Select
+            End If
+
+
+            'Persistent Values Save Check
+            GTCP85_98_PersistentValuesCtrl.SavePersistentValues(False)
+
+        End Sub
+
+#End Region
+
+        Protected Overrides Sub OnTestSessionInitialized(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionInitialized(newStatus)
+
+                If CELProject.EngineFamily = "GTCP85-98" Then
+
+                    UserInputs.MapUserInputsParameters(CELProject)
+
+                    CELProject.EngineSession.WorkingFolder = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + UserInputs.EngineSerialNumber.ToString() + "\" + UserInputs.WorkOrder.ToString()
+                    CELProject.CreateLogFile(AddressOf CreateCustomHeaderLogFile, "GTCP85-98", CELProject.EngineModel)
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionInitialized: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionOpened(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionOpened(newStatus)
+
+            Catch ex As Exception
+
+                MessageBox.Show("GTCP85_98_Sequence.OnTestSessionOpened: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionRunning(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+
+                MyBase.OnTestSessionRunning(newStatus)
+                If CELProject.EngineFamily = "GTCP85-98" Then
+
+                    Init_Engine_Channels()
+                    Init_Arrays()
+                    CELProject.LoadSave_Custom_Parameters(Custom_Parameters, False)
+
+                    CELProject.Perf_Nb_Sheet_To_Print = 3
+
+                    Init_Engine_Controllers()
+
+                    AddHandlers()
+
+                    MyBase.StartWorkingThread()
+
+                    Init_Engine_Channels_Value()
+
+
+                    'Test Progress Initialization
+                    TestProgress_Initialize()
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionRunning: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+        Protected Overrides Sub AddHandlers()
+
+            AddHandler CELProject.CLOSE_TEST_BTN.ValueChanged, AddressOf OnCLOSE_TEST_BTN
+
+            AddHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+            AddHandler CELProject.NEW_TEST_BTN.ValueChanged, AddressOf OnNEW_TEST_BTN
+            AddHandler CELProject.PERF_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnPERF_CLOSE_WINDOW_BTN
+            AddHandler CELProject.PERF_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnPERF_OPEN_WINDOW_BTN
+            AddHandler CELProject.PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnPERF_TAKE_POINT_BTN
+
+            AddHandler START_BTN.ValueChanged, AddressOf OnSTART_BTN
+            AddHandler cmbTestStepList.SelectedIndexChanged, AddressOf OnTestStep_List_SelectedIndexChanged
+
+
+            'ICI BAS LES HANDER DU 98
+
+            AddHandler CAPTURE_AIR_PRESSURE_OUTPUT_BTN.ValueChanged, AddressOf OnCaptureBtn
+            AddHandler CAPTURE_ETC_SETPOINT_BTN.ValueChanged, AddressOf OnCaptureBtn
+            AddHandler CAPTURE_ETC_SETPOINT_RECHECK_BTN.ValueChanged, AddressOf OnCaptureBtn
+            AddHandler CAPTURE_MAX_EGT_OVERLOAD_BTN.ValueChanged, AddressOf OnCaptureBtn
+            AddHandler CAPTURE_MIN_SPEED_OVERLOAD_BTN.ValueChanged, AddressOf OnCaptureBtn
+            AddHandler CAPTURE_NG_FULL_LOAD_BTN.ValueChanged, AddressOf OnCaptureBtn
+
+        End Sub
+        Protected Overrides Sub RemoveHandlers()
+
+            RemoveHandler CELProject.CLOSE_TEST_BTN.ValueChanged, AddressOf OnCLOSE_TEST_BTN
+
+            RemoveHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+            RemoveHandler CELProject.NEW_TEST_BTN.ValueChanged, AddressOf OnNEW_TEST_BTN
+            RemoveHandler CELProject.PERF_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnPERF_CLOSE_WINDOW_BTN
+            RemoveHandler CELProject.PERF_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnPERF_OPEN_WINDOW_BTN
+            RemoveHandler CELProject.PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnPERF_TAKE_POINT_BTN
+
+            RemoveHandler START_BTN.ValueChanged, AddressOf OnSTART_BTN
+            RemoveHandler cmbTestStepList.SelectedIndexChanged, AddressOf OnTestStep_List_SelectedIndexChanged
+            'Ici bas les handler du 98
+
+            RemoveHandler CAPTURE_AIR_PRESSURE_OUTPUT_BTN.ValueChanged, AddressOf OnCaptureBtn
+            RemoveHandler CAPTURE_ETC_SETPOINT_BTN.ValueChanged, AddressOf OnCaptureBtn
+            RemoveHandler CAPTURE_ETC_SETPOINT_RECHECK_BTN.ValueChanged, AddressOf OnCaptureBtn
+            RemoveHandler CAPTURE_MAX_EGT_OVERLOAD_BTN.ValueChanged, AddressOf OnCaptureBtn
+            RemoveHandler CAPTURE_MIN_SPEED_OVERLOAD_BTN.ValueChanged, AddressOf OnCaptureBtn
+            RemoveHandler CAPTURE_NG_FULL_LOAD_BTN.ValueChanged, AddressOf OnCaptureBtn
+
+        End Sub
+        Protected Overrides Sub Init_Engine_Controls()
+        End Sub
+        Protected Overrides Sub Init_Engine_Controllers()
+
+            Dim PersistentValuesChannels() As String = {"NUMBER_OF_STARTS",
+                                                     "OPERATING_TIME_CURRENT_SEC",
+                                                     "FUEL_USED_INITIAL_LITERS",
+                                                     "FUEL_USED_TOTAL_LITERS",
+                                                     "PERF_TEST_RESULT_ACCEPTED",
+                                                     "PERF_TEST_RESULT_REJECTED",
+                                                     "VIB_GEARBOX_MAX_MILS_PERSISTENT",
+                                                     "VIB_TURBINE_MAX_MILS_PERSISTENT"}
+
+            'Dim PersistentValuesChannels() As String = {"NUMBER_OF_STARTS",
+            '                                       "OPERATING_TIME_CURRENT_SEC",
+            '                                       "FUEL_USED_INITIAL_LITERS",
+            '                                       "FUEL_USED_TOTAL_LITERS",
+            '                                       "PERF_TEST_RESULT_ACCEPTED",
+            '                                       "PERF_TEST_RESULT_REJECTED",
+            '                                       "NG_MAX_PERSISTENT_RPM",
+            '                                       "VIB_GEARBOX_MILS_PERSISTENT",
+            '                                       "VIB_TURBINE_MILS_PERSISTENT",
+            '                                       "P_OIL_MAX_PERSISTENT_KPAG",
+            '                                       "MINIMUM_SURGE_MARGIN_TEST_PASSED",
+            '                                       "NUMBER_APU_FAULT_SEEN_DURING_TEST",
+            '                                       "LOG_PERF_EVENT_1",
+            '                                       "LOG_PERF_EVENT_2",
+            '                                       "LOG_PERF_HR_MTR_1",
+            '                                       "LOG_PERF_HR_MTR_2",
+            '                                       "P_OIL_AT_60KW_SHAFT_LOAD_KPAG",
+            '                                       "T_OIL_AT_60KW_SHAFT_LOAD_DEGC",
+            '                                       "ET_TIME_RUNDOWN_MANUAL_ENTRY"}
+
+            Dim PersistentValuesFileName As String = Nothing
+
+            Select Case CELProject.Project.Number
+
+                Case 13031
+                    PersistentValuesFileName = "C:\CELDAS DATA\" & CELProject.EngineModel & "\" & UserInputs.EngineSerialNumber & "\" & UserInputs.WorkOrder & "\Log\PersistentValues.xml"
+                    GTCP85_98_PersistentValuesCtrl = New PersistentValuesController(Me, PersistentValuesChannels, 1, PersistentValuesFileName)
+
+                    If Double.IsNaN(FUEL_USED_TOTAL_LITERS.Value.ToDouble()) Then
+                        FUEL_USED_INITIAL_LITERS.Value = Values.Zero
+                    Else
+                        FUEL_USED_INITIAL_LITERS.Value = New KineticaRT.Values.Double(FUEL_USED_TOTAL_LITERS.Value.ToDouble())
+                    End If
+
+                Case Else
+                    Debug.Assert(False, "OnTestSessionRunning: Code Missing for this project")
+
+            End Select
+
+
+
+            ' Les config sont lu a partir du fichier celdas_XXXXX.cfg
+            NumberOfTInletProbe = CELProject.Project.ReadOneIntegerConfigItem("//ConfigurationSettings/" + CELProject.EngineFamily + "/T_INLET_NUMBER_PROBE", 0)
+            RealNumberOfTInletProbe = CELProject.Project.ReadOneIntegerConfigItem("//ConfigurationSettings/" + CELProject.EngineFamily + "/T_INLET_REAL_NUMBER_PROBE", 0)
+            NumberOfTEgtProbe = CELProject.Project.ReadOneIntegerConfigItem("//ConfigurationSettings/" + CELProject.EngineFamily + "/T_EGT_NUMBER_PROBE", 0)
+            RealNumberOfTEgtProbe = CELProject.Project.ReadOneIntegerConfigItem("//ConfigurationSettings/" + CELProject.EngineFamily + "/T_EGT_REAL_NUMBER_PROBE", 0)
+
+            'Generic delete channel function handling
+            DeletableTEgtChCtrl = New DeletableChannelController(Me, RealNumberOfTEgtProbe, NumberOfTEgtProbe, NumberOfTEgtProbe, "T_EGT", "_DEGF", "_DELETE_BTN", "T_EGT_DEGF_AVG", "T_EGT_DEGF_MIN", "T_EGT_DEGF_MAX", "T_EGT_DEGFD_SPREAD")
+            DeletableTInletChCtrl = New DeletableChannelController(Me, RealNumberOfTInletProbe, NumberOfTInletProbe, NumberOfTInletProbe, "T_INLET", "_DEGF", "_DELETE_BTN", "T_INLET_DEGF_AVG", Nothing, Nothing, "T_INLET_DEGFD_SPREAD")
+
+
+            FlowmeterCtrl = New FlowmeterController(Me)
+
+            StarterMaxCurrentRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_CURRENT_AMP", "STARTER_CURRENT_AMP_MAX", "START_BTN")
+            StarterMaxVoltageRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_VOLTAGE_VDC", "STARTER_VOLTAGE_VDC_MAX", "START_BTN")
+
+            'ft Loadair control deja fait dans common sequence
+
+            FuelRegulatorCtrl = New UpDownDemandController("FUEL_PRESSURE_DEMAND", "FUEL_PRESSURE_DEMAND_INCREMENT", "FUEL_PRESSURE_UP_DEMAND_BTN", "FUEL_PRESSURE_DOWN_DEMAND_BTN", Nothing)
+            FuelRegulatorCtrl.Maximum = 100
+            FuelRegulatorCtrl.Increment = 1
+            FuelRegulatorCtrl.Minimum = 0
+            FuelRegulatorCtrl.ResetValue = 0
+
+            'Configuring Load Bank Control
+            Dim myLBData As LoadBankController.LB_DataInfo
+
+            myLBData.FanEnableChannelName = "LB1_FAN_ENABLE_CMD"
+            myLBData.FanEnableBtnChannelName = "LB1_FAN_ENABLE_BTN"
+            myLBData.EnableChannelName = "LB_LOAD_BTN"
+            myLBData.DemandChannelName = "LB1_DEMAND"
+            myLBData.UpDemandChannelName = "LB1_UP_DEMAND_BTN"
+            myLBData.DownDemandChannelName = "LB1_DOWN_DEMAND_BTN"
+            myLBData.DemandChannelIncrementName = "LB1_DEMAND_INCREMENT"
+            myLBData.FrameName = "GTCP85_98_Screen.fraControlSystem.fraLoadBankControl"
+            myLBData.DisplayName = "dspLB_DEMAND"
+            myLBData.ThreadSpeedMsec = 250 'msec
+            myLBData.Maximum = 50 'MaxLoad SHP/Delta =60 pour le 98DHF
+            myLBData.DelestageKwpersec = 100000 'instant delestage
+            myLBData.FanCoolDownSeconds = 300
+            myLBData.Memorize = False
+            myLBData.Increment = 1
+            myLBData.FieldFlashingTimeMsec = 0  'no field flashing 
+            myLBData.FieldFlashingSignalName = Nothing
+            myLBData.FieldFlashingTriggerSignalName = Nothing
+            myLBData.InitialDemandChannelName = "LB1_INITIAL_DEMAND"
+            myLBData.BtnLatchSeconds = 0
+            myLBData.FanEnableChannelPulseName = Nothing
+            myLBData.FanStopChannelPulseName = Nothing
+            myLBData.PulseEnableInitialType = False
+            myLBData.PulseStopInitialType = False
+
+            LoadBankCtrl = New LoadBankController(myLBData)
+
+            'Configuring Load Bank Stage Values
+            LoadBankCtrl.AddStage(1, "LB1_1")
+            LoadBankCtrl.AddStage(2, "LB1_2")
+            LoadBankCtrl.AddStage(2, "LB1_3")
+            LoadBankCtrl.AddStage(5, "LB1_4")
+            LoadBankCtrl.AddStage(5, "LB1_5")
+            LoadBankCtrl.AddStage(10, "LB1_6")
+            LoadBankCtrl.AddStage(10, "LB1_7")
+            LoadBankCtrl.AddStage(25, "LB1_8")
+            LoadBankCtrl.AddStage(50, "LB1_9")
+            LoadBankCtrl.AddStage(50, "LB1_10")
+            LoadBankCtrl.AddCurrentPhases("LB1_CURRENT_IA", "LB1_CURRENT_IB", "LB1_CURRENT_IC", 20)
+            LoadBankCtrl.AddVoltagePhases("LB1_VOLTAGE_VAB", "LB1_VOLTAGE_VBC", "LB1_VOLTAGE_VCA", 20)
+            LoadBankCtrl.StartWorkerThread(250)
+
+        End Sub
+        Protected Overrides Sub Dispose_Engine_Controllers()
+
+            If Not (FlowmeterCtrl Is Nothing) Then
+                FlowmeterCtrl.Dispose()
+            End If
+            If Not (FuelRegulatorCtrl Is Nothing) Then
+                FuelRegulatorCtrl.Dispose()
+            End If
+
+            If Not (DeletableTEgtChCtrl Is Nothing) Then
+                DeletableTEgtChCtrl.Dispose()
+            End If
+            If Not (DeletableTInletChCtrl Is Nothing) Then
+                DeletableTInletChCtrl.Dispose()
+            End If
+
+            'LoadAirCtrl.Dispose()'fait dans common sequence
+            If Not (LoadBankCtrl Is Nothing) Then
+                LoadBankCtrl.Dispose()
+            End If
+            If Not (StarterMaxCurrentRecordCtrl Is Nothing) Then
+                StarterMaxCurrentRecordCtrl.Dispose()
+            End If
+            If Not (StarterMaxVoltageRecordCtrl Is Nothing) Then
+                StarterMaxVoltageRecordCtrl.Dispose()
+            End If
+
+        End Sub
+        Protected Overrides Sub OnTestSessionClosing(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionClosing(newStatus)
+
+                If CELProject.EngineFamily = "GTCP85-98" Then
+
+                    RemoveHandlers()
+
+                    Dispose_Engine_Controllers()
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionClosing: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        Protected Overrides Function Init_Engine_Channels() As Boolean
+
+            Dim Return_Value As New ArrayList()
+
+            Return_Value.Clear()
+
+            Try
+                'Initialise Common Engine Channels
+                Return_Value.Add(MyBase.InitializeChannel(APU_TESTED_ACCORDING_TO, "APU_TESTED_ACCORDING_TO"))
+                Return_Value.Add(MyBase.InitializeChannel(BLEED_AIR_VALVE_BTN, "BLEED_AIR_VALVE_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(DELTA, "DELTA"))
+                Return_Value.Add(MyBase.InitializeChannel(ENGINE_PN_AND_SB, "ENGINE_PN_AND_SB"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DELTA, "LOG_PERF_DELTA"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_INITIAL_LITERS, "FUEL_USED_INITIAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_TOTAL_LITERS, "FUEL_USED_TOTAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_RPM, "LOG_PERF_NG_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_100_RPM_CST, "LOG_PERF_NG_100_RPM_CST"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_OPERATING_TIME_MINUTE, "LOG_PERF_OPERATING_TIME_MINUTE"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ACCESSORY_GEARCASE_INHGG, "LOG_PERF_P_ACCESSORY_GEARCASE_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_AIR_PRESSURE_REG_INHGG, "LOG_PERF_P_AIR_PRESSURE_REG_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BARO_INHGA, "LOG_PERF_P_BARO_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BLEED_INHGA, "LOG_PERF_P_BLEED_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BLEED_INHGG, "LOG_PERF_P_BLEED_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_FUEL_PUMP_DISCHARGE_PSIG, "LOG_PERF_P_FUEL_PUMP_DISCHARGE_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_FUEL_PUMP_INLET_PSIG, "LOG_PERF_P_FUEL_PUMP_INLET_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_LOW, "LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_LOW"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_HI, "LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_HI"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_OIL_PSIG, "LOG_PERF_P_OIL_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ORIFICE_DELTA_INH2OD, "LOG_PERF_P_ORIFICE_DELTA_INH2OD"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ORIFICE_INHGA, "LOG_PERF_P_ORIFICE_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ORIFICE_INHGG, "LOG_PERF_P_ORIFICE_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG, "LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_HIGH_LIMIT, "LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_HIGH_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_LOW_LIMIT, "LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_LOW_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_HIGH_LIMIT, "LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_HIGH_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_LOW_LIMIT, "LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_LOW_LIMIT"))
+
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PBChng, "LOG_PERF_PBChng"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PBStd, "LOG_PERF_PBStd"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PBStd_LOW_LIMIT, "LOG_PERF_PBStd_LOW_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_BLEED_DEGF, "LOG_PERF_T_BLEED_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_EGT_DEGF_AVG, "LOG_PERF_T_EGT_DEGF_AVG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_CELL_DEGF, "LOG_PERF_T_CELL_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_FUEL_DEGF, "LOG_PERF_T_FUEL_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_INLET_DEGF_AVG, "LOG_PERF_T_INLET_DEGF_AVG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_ORIFICE_DEGF, "LOG_PERF_T_ORIFICE_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_OIL_DEGF, "LOG_PERF_T_OIL_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TBChng, "LOG_PERF_TBChng"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TBStd, "LOG_PERF_TBStd"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TBStd_LOW_LIMIT, "LOG_PERF_TBStd_LOW_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TBStd_HI_LIMIT, "LOG_PERF_TBStd_HI_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_EGT_DEGF_TURBINE_DISCHARGE_TEMP_MAX_LIMIT, "LOG_PERF_T_EGT_DEGF_TURBINE_DISCHARGE_TEMP_MAX_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_GEARBOX_MILS, "LOG_PERF_VIB_GEARBOX_MILS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_TURBINE_MILS, "LOG_PERF_VIB_TURBINE_MILS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WB_CALC, "LOG_PERF_WB_CALC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WB_PPM, "LOG_PERF_WB_PPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WBChng, "LOG_PERF_WBChng"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WBStd, "LOG_PERF_WBStd"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WBStd_LOW_LIMIT, "LOG_PERF_WBStd_LOW_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF_PPH, "LOG_PERF_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(NG_RPM, "NG_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(NG_PCT, "NG_PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(OPERATING_TIME_MINUTE, "OPERATING_TIME_MINUTE"))
+                Return_Value.Add(MyBase.InitializeChannel(P_AIR_PRESSURE_REG_INHGG, "P_AIR_PRESSURE_REG_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(P_BARO_INHGA, "P_BARO_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(P_BLEED_INHGG, "P_BLEED_INHGG"))
+                Return_Value.Add(MyBase.InitializeChannel(P_BLEED_INHGA, "P_BLEED_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(P_FUEL_PUMP_DISCHARGE_PSIG, "P_FUEL_PUMP_DISCHARGE_PSIG"))
+
+                Return_Value.Add(MyBase.InitializeChannel(P_FUEL_CRACKING_PSIG, "P_FUEL_CRACKING_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(P_FUEL_PUMP_INLET_PSIG, "P_FUEL_PUMP_INLET_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(P_ORIFICE_DELTA_INH2OD, "P_ORIFICE_DELTA_INH2OD"))
+                Return_Value.Add(MyBase.InitializeChannel(P_ORIFICE_INHGA, "P_ORIFICE_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(PBChng, "PBChng"))
+                Return_Value.Add(MyBase.InitializeChannel(PBStd, "PBStd"))
+                Return_Value.Add(MyBase.InitializeChannel(REPAIR_TYPE, "REPAIR_TYPE"))
+                Return_Value.Add(MyBase.InitializeChannel(REPAIR_TYPE_ID, "REPAIR_TYPE_ID"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_SPEED_SWITCH_ACTUATION_35_PCT_OPC, "PERF_SPEED_SWITCH_ACTUATION_35_PCT_OPC"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_SPEED_SWITCH_ACTUATION_95_PCT_OPC, "PERF_SPEED_SWITCH_ACTUATION_95_PCT_OPC"))
+                Return_Value.Add(MyBase.InitializeChannel(T_BLEED_DEGF, "T_BLEED_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(T_INLET_DEGF_AVG, "T_INLET_DEGF_AVG"))
+                Return_Value.Add(MyBase.InitializeChannel(T_CELL_DEGF, "T_CELL_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(T_ORIFICE_DEGF, "T_ORIFICE_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(TBChng, "TBChng"))
+                Return_Value.Add(MyBase.InitializeChannel(TBStd, "TBStd"))
+                Return_Value.Add(MyBase.InitializeChannel(START_BTN, "START_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(VIB_GEARBOX_MAX_MILS_PERSISTENT, "VIB_GEARBOX_MAX_MILS_PERSISTENT"))
+                Return_Value.Add(MyBase.InitializeChannel(VIB_TURBINE_MAX_MILS_PERSISTENT, "VIB_TURBINE_MAX_MILS_PERSISTENT"))
+                Return_Value.Add(MyBase.InitializeChannel(WB_CALC, "WB_CALC"))
+                Return_Value.Add(MyBase.InitializeChannel(WBChng, "WBChng"))
+                Return_Value.Add(MyBase.InitializeChannel(WBStd, "WBStd"))
+                Return_Value.Add(MyBase.InitializeChannel(WF_TOT1, "WF_TOT1"))
+
+                MyBase.InitializeObject(cmbTestStepList, "GTCP85_98_Screen.fraControl.TestStep_List")
+
+
+                If cmbTestStepList Is Nothing Then 'initialize in CofigHMIforEngine
+                    MessageBox.Show("MyBase.InitializeObject - TestStep_List Is Nothing")
+                    Return_Value.Add(False)
+                Else
+                    Return_Value.Add(True)
+                End If
+
+                'Ici bas le 98
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_AIR_PRESSURE_OUTPUT_BTN, "CAPTURE_AIR_PRESSURE_OUTPUT_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_ETC_SETPOINT_BTN, "CAPTURE_ETC_SETPOINT_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_ETC_SETPOINT_RECHECK_BTN, "CAPTURE_ETC_SETPOINT_RECHECK_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_MAX_EGT_OVERLOAD_BTN, "CAPTURE_MAX_EGT_OVERLOAD_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_MIN_SPEED_OVERLOAD_BTN, "CAPTURE_MIN_SPEED_OVERLOAD_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_NG_FULL_LOAD_BTN, "CAPTURE_NG_FULL_LOAD_BTN"))
+
+
+                'Return_Value.Add(MyBase.InitializeChannel(DELTA, "DELTA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_EGT_DEGF_EXHAUST_TOTAL, "LOG_PERF_T_EGT_DEGF_EXHAUST_TOTAL"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_GENERATOR_CORRECTED_SHP, "LOG_PERF_GENERATOR_CORRECTED_SHP"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_GENERATOR_SHP_MIN_LIMIT, "LOG_PERF_GENERATOR_SHP_MIN_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_GENERATOR_SHP_MAX_LIMIT, "LOG_PERF_GENERATOR_SHP_MAX_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_Oil_Pump_Disch_Fluc, "Log_Perf_Oil_Pump_Disch_Fluc"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_FullLoadGovSpeedDroop, "Log_Perf_FullLoadGovSpeedDroop"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_FullLoadGovSpeedDroop_LOW_LIMIT, "Log_Perf_FullLoadGovSpeedDroop_LOW_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_FullLoadGovSpeedDroop_HI_LIMIT, "Log_Perf_FullLoadGovSpeedDroop_HI_LIMIT"))
+
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_MaxEGTDuringOL, "Log_Perf_MaxEGTDuringOL")) 'ft
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_ETC_SP_Check, "Log_Perf_ETC_SP_Check"))   ' Load Control Thermostat for -98DHF
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_ETC_SP_Check_MAX_LIMIT, "Log_Perf_ETC_SP_Check_MAX_LIMIT"))   ' Load Control Thermostat for -98DHF
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_ETC_SP_ReCheck, "Log_Perf_ETC_SP_ReCheck")) ' Load Control Thermostat for -98DHF
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_LoadCtrl_Valve_Rate, "Log_Perf_LoadCtrl_Valve_Rate"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_BleedAirOsc, "Log_Perf_BleedAirOsc"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_MinSpeedDuringOL, "Log_Perf_MinSpeedDuringOL"))
+                Return_Value.Add(MyBase.InitializeChannel(NUMBER_OF_STARTS, "NUMBER_OF_STARTS"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_AccelLimitValveCrack, "Log_Perf_AccelLimitValveCrack"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_AirPressRegOutPress, "Log_Perf_AirPressRegOutPress"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_AirPressRegOutPress_MIN_LIMIT, "Log_Perf_AirPressRegOutPress_MIN_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_AirPressRegOutPress_MAX_LIMIT, "Log_Perf_AirPressRegOutPress_MAX_LIMIT"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_FuelPumpDischPress, "Log_Perf_FuelPumpDischPress"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_FuelPumpInletPress, "Log_Perf_FuelPumpInletPress"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_GearboxCavNegPress, "Log_Perf_GearboxCavNegPress"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_GearboxVibration, "Log_Perf_GearboxVibration"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_OilPumpDischPress, "Log_Perf_OilPumpDischPress"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_OilPumpDischTemp, "Log_Perf_OilPumpDischTemp"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_TurbineBearingCavPress, "Log_Perf_TurbineBearingCavPress"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_TurbineVibration, "Log_Perf_TurbineVibration"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_ShaftSpeed, "Log_Perf_ShaftSpeed"))
+                Return_Value.Add(MyBase.InitializeChannel(Log_Perf_AccelLimitValveCrackCheck, "Log_Perf_AccelLimitValveCrackCheck"))
+
+            Catch ex As Exception
+                MessageBox.Show("Init_Engine_Channels: " & ex.ToString())
+                Return_Value.Add(False)
+            End Try
+
+            If Return_Value.Contains(False) Then
+                Init_Engine_Channels = False
+            Else
+                Init_Engine_Channels = True
+            End If
+        End Function
+        Protected Overrides Sub Init_Engine_Channels_Value()
+
+            Try
+
+                CELProject.PERF_TEST_STEP_NB.Value = Values.Zero
+
+                OperatingTime = New System.TimeSpan(0, 0, 0, 0, 0) 'init operating time to 0 at open test only
+
+                CELProject.PERF_TEST_STEP_NB.Value = Values.Zero
+
+                cmbTestStepList.SelectedIndex = 0
+
+                Log_Perf_Oil_Pump_Disch_Fluc.Value = Values.Zero
+                Log_Perf_FullLoadGovSpeedDroop.Value = Values.Zero
+                Log_Perf_ETC_SP_Check.Value = Values.Zero
+                Log_Perf_ETC_SP_ReCheck.Value = Values.Zero
+                Log_Perf_LoadCtrl_Valve_Rate.Value = Values.Zero
+                Log_Perf_BleedAirOsc.Value = Values.Zero
+                Log_Perf_MinSpeedDuringOL.Value = Values.Zero
+                Log_Perf_MaxEGTDuringOL.Value = Values.Zero
+                Log_Perf_AccelLimitValveCrack.Value = Values.Zero
+                Log_Perf_AirPressRegOutPress.Value = Values.Zero
+
+                Log_Perf_FuelPumpDischPress.Value = Values.Zero
+                Log_Perf_FuelPumpInletPress.Value = Values.Zero
+                Log_Perf_GearboxCavNegPress.Value = Values.Zero
+                Log_Perf_GearboxVibration.Value = Values.Zero
+                Log_Perf_OilPumpDischPress.Value = Values.Zero
+                Log_Perf_OilPumpDischTemp.Value = Values.Zero
+                Log_Perf_TurbineBearingCavPress.Value = Values.Zero
+                Log_Perf_TurbineVibration.Value = Values.Zero
+                Log_Perf_ShaftSpeed.Value = Values.Zero
+                Log_Perf_AccelLimitValveCrackCheck.Value = Values.Zero
+
+                NUMBER_OF_STARTS.Value = Values.Zero
+
+                'TODO dans les HMI_Numeric, ce channel est utilise en numeric et devrait etre en text
+                REPAIR_TYPE.ValueObject = UserInputs.RepairTypeDescription
+                REPAIR_TYPE_ID.ValueObject = UserInputs.RepairTypeID 'TODO le type est pas bon, ca devrait être une string?!????
+
+                ENGINE_PN_AND_SB.ValueObject = UserInputs.EnginePartNumberAndServiceBulletin
+
+                'It seems that we have a little problem of initialization at HMI. This is helping to see the NaN when starting the system!!
+                PBStd.Value = Values.Zero
+                TBStd.Value = Values.Zero
+                WBStd.Value = Values.Zero
+                PBChng.Value = Values.Zero
+                TBChng.Value = Values.Zero
+                WBChng.Value = Values.Zero
+
+            Catch Ex As Exception
+                MessageBox.Show("Init_Engine_Channels_Value: " & Ex.ToString())
+            Finally
+            End Try
+        End Sub
+        Protected Overrides Sub SetTestStepList(ByVal value As Integer)
+            'TODO
+        End Sub
+
+        Private APU_TESTED_ACCORDING_TO As ITextChannel
+        Private CAPTURE_AIR_PRESSURE_OUTPUT_BTN As IChannel
+        Private CAPTURE_ETC_SETPOINT_BTN As IChannel
+        Private CAPTURE_ETC_SETPOINT_RECHECK_BTN As IChannel
+        Private CAPTURE_MIN_SPEED_OVERLOAD_BTN As IChannel
+        Private CAPTURE_MAX_EGT_OVERLOAD_BTN As IChannel
+        Private CAPTURE_NG_FULL_LOAD_BTN As IChannel
+        Private LOG_PERF_T_EGT_DEGF_EXHAUST_TOTAL As INumericChannel
+        Private P_FUEL_PUMP_DISCHARGE_PSIG As INumericChannel
+        Private FUEL_USED_INITIAL_LITERS As INumericChannel
+        Private FUEL_USED_TOTAL_LITERS As INumericChannel
+        Private LOG_PERF_GENERATOR_CORRECTED_SHP As INumericChannel
+        Private LOG_PERF_GENERATOR_SHP_MIN_LIMIT As INumericChannel
+        Private LOG_PERF_GENERATOR_SHP_MAX_LIMIT As INumericChannel
+
+        '-129H / 98DHF  Performance Panel: Engine Run
+        Private Log_Perf_AccelLimitValveCrack As INumericChannel
+        Private Log_Perf_EngineVibUnderHotOilCond As IBooleanChannel
+        Private Log_Perf_GearboxVibration As INumericChannel
+        Private Log_Perf_TurbineVibration As INumericChannel
+        Private Log_Perf_ShaftSpeed As INumericChannel
+        Private Log_Perf_FuelPumpInletPress As INumericChannel
+        Private Log_Perf_FuelPumpDischPress As INumericChannel
+        Private Log_Perf_OilPumpDischPress As INumericChannel
+        Private Log_Perf_Oil_Pump_Disch_Fluc As INumericChannel
+        Private Log_Perf_OilPumpDischTemp As INumericChannel
+        Private Log_Perf_TurbineBearingCavPress As INumericChannel
+        Private Log_Perf_GearboxCavNegPress As INumericChannel
+        Private Log_Perf_FullLoadGovSpeedDroop As INumericChannel
+        Private Log_Perf_FullLoadGovSpeedDroop_LOW_LIMIT As INumericChannel
+        Private Log_Perf_FullLoadGovSpeedDroop_HI_LIMIT As INumericChannel
+
+        Private Log_Perf_AirPressRegOutPress As INumericChannel
+        Private Log_Perf_AirPressRegOutPress_MIN_LIMIT As INumericChannel
+        Private Log_Perf_AirPressRegOutPress_MAX_LIMIT As INumericChannel
+
+
+        Private Log_Perf_ETC_SP_Check As INumericChannel
+        Private Log_Perf_ETC_SP_Check_MAX_LIMIT As INumericChannel
+        Private Log_Perf_ETC_SP_ReCheck As INumericChannel
+        Private Log_Perf_LoadCtrl_Valve_Rate As INumericChannel
+        Private Log_Perf_BleedAirOsc As INumericChannel
+        Private Log_Perf_MinSpeedDuringOL As INumericChannel
+        Private Log_Perf_MaxEGTDuringOL As INumericChannel
+        Private Log_Perf_AccelLimitValveCrackCheck As INumericChannel
+        Private NUMBER_OF_STARTS As INumericChannel
+        Private LOG_PERF_P_FUEL_PUMP_INLET_PSIG As INumericChannel
+        Private LOG_PERF_P_FUEL_PUMP_DISCHARGE_PSIG As INumericChannel
+        Private LOG_PERF_P_OIL_PSIG As INumericChannel
+        Private LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG As INumericChannel
+
+        Private BLEED_AIR_VALVE_BTN As IBooleanChannel
+        Private DELTA As INumericChannel
+        Private ENGINE_PN_AND_SB As ITextChannel
+        Private LOG_PERF_DELTA As INumericChannel
+        Private LOG_PERF_NG_RPM As INumericChannel
+        Private LOG_PERF_NG_100_RPM_CST As INumericChannel
+        Private LOG_PERF_OPERATING_TIME_MINUTE As INumericChannel
+        Private LOG_PERF_P_ACCESSORY_GEARCASE_INHGG As INumericChannel
+        Private LOG_PERF_P_AIR_PRESSURE_REG_INHGG As INumericChannel
+        Private LOG_PERF_P_BARO_INHGA As INumericChannel
+        Private LOG_PERF_T_CELL_DEGF As INumericChannel
+        Private LOG_PERF_P_BLEED_INHGA As INumericChannel
+        Private LOG_PERF_P_BLEED_INHGG As INumericChannel
+        Private LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_LOW As INumericChannel
+        Private LOG_PERF_P_FUEL_PUMP_INLET_PSIG_LIMIT_HI As INumericChannel
+        Private LOG_PERF_P_ORIFICE_DELTA_INH2OD As INumericChannel
+        Private LOG_PERF_P_ORIFICE_INHGA As INumericChannel
+        Private LOG_PERF_P_ORIFICE_INHGG As INumericChannel
+        Private LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_HIGH_LIMIT As INumericChannel
+        Private LOG_PERF_P_TURBINE_BEARING_CAVITY_INHGG_LOW_LIMIT As INumericChannel
+        Private LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_HIGH_LIMIT As INumericChannel
+        Private LOG_PERF_P_ACCESSORY_GEARCASE_INHGG_LOW_LIMIT As INumericChannel
+
+
+
+        Private LOG_PERF_PBChng As INumericChannel
+        Private LOG_PERF_PBStd As INumericChannel
+        Private LOG_PERF_PBStd_LOW_LIMIT As INumericChannel
+        Private LOG_PERF_T_BLEED_DEGF As INumericChannel
+        Private LOG_PERF_T_EGT_DEGF_AVG As INumericChannel
+        Private LOG_PERF_T_FUEL_DEGF As INumericChannel
+        Private LOG_PERF_T_INLET_DEGF_AVG As INumericChannel
+        Private LOG_PERF_T_ORIFICE_DEGF As INumericChannel
+        Private LOG_PERF_T_OIL_DEGF As INumericChannel
+        Private LOG_PERF_TBChng As INumericChannel
+        Private LOG_PERF_TBStd As INumericChannel
+        Private LOG_PERF_TBStd_LOW_LIMIT As INumericChannel
+        Private LOG_PERF_TBStd_HI_LIMIT As INumericChannel
+        Private LOG_PERF_T_EGT_DEGF_TURBINE_DISCHARGE_TEMP_MAX_LIMIT As INumericChannel
+
+        Private LOG_PERF_VIB_GEARBOX_MILS As INumericChannel
+        Private LOG_PERF_VIB_TURBINE_MILS As INumericChannel
+        Private LOG_PERF_WB_CALC As INumericChannel
+        Private LOG_PERF_WB_PPM As INumericChannel
+        Private LOG_PERF_WBChng As INumericChannel
+        Private LOG_PERF_WBStd As INumericChannel
+        Private LOG_PERF_WBStd_LOW_LIMIT As INumericChannel
+        Private LOG_PERF_WF_PPH As INumericChannel
+        Private NG_RPM As INumericChannel
+        Private NG_PCT As INumericChannel
+
+        Private OPERATING_TIME_MINUTE As INumericChannel
+        Private P_AIR_PRESSURE_REG_INHGG As INumericChannel
+        Private P_BARO_INHGA As INumericChannel
+        Private P_BLEED_INHGG As INumericChannel
+        Private P_BLEED_INHGA As INumericChannel
+        Private T_BLEED_DEGF As INumericChannel
+        Private T_INLET_DEGF_AVG As INumericChannel
+        Private T_CELL_DEGF As INumericChannel
+        Private T_ORIFICE_DEGF As INumericChannel
+        Private P_FUEL_CRACKING_PSIG As INumericChannel
+        Private P_FUEL_PUMP_INLET_PSIG As INumericChannel
+        Private P_ORIFICE_DELTA_INH2OD As INumericChannel
+        Private P_ORIFICE_INHGA As INumericChannel
+        Private PBChng As INumericChannel
+        Private PBStd As INumericChannel
+        Private REPAIR_TYPE As ITextChannel
+        Private REPAIR_TYPE_ID As INumericChannel
+        Private PERF_SPEED_SWITCH_ACTUATION_35_PCT_OPC As INumericChannel
+        Private PERF_SPEED_SWITCH_ACTUATION_95_PCT_OPC As INumericChannel
+        Private START_BTN As IBooleanChannel
+        Private TBChng As INumericChannel
+        Private TBStd As INumericChannel
+        Private VIB_GEARBOX_MAX_MILS_PERSISTENT As INumericChannel
+        Private VIB_TURBINE_MAX_MILS_PERSISTENT As INumericChannel
+        Private WB_CALC As INumericChannel
+        Private WBChng As INumericChannel
+        Private WBStd As INumericChannel
+        Private WF_TOT1 As INumericChannel
+
+        '*********************
+        '* Forms and Control *
+        '*********************
+        Private cmbTestStepList As System.Windows.Forms.ComboBox
+
+        '********
+        '* Misc *
+        '********
+        Private Log_Condition As Integer
+
+        Private Custom_Parameters As New System.Collections.Specialized.OrderedDictionary()
+
+        Private OperatingTime_Start As System.DateTime
+        Private OperatingTime_Stop As System.DateTime
+        Private LastStart As Boolean = False
+        Private OperatingTime As System.TimeSpan 'Used to calculate operating time
+
+        Private CurrentSpeed As Double = 0
+
+        Private GTCP85_98_PersistentValuesCtrl As PersistentValuesController = Nothing
+        Private DeletableTEgtChCtrl As DeletableChannelController = Nothing
+        Private DeletableTInletChCtrl As DeletableChannelController = Nothing
+        Private FlowmeterCtrl As FlowmeterController = Nothing
+        Private FuelRegulatorCtrl As UpDownDemandController = Nothing
+        'Private LoadAirCtrl As UpDownDemandController = Nothing 'Done in Common_Sequence
+        Private LoadBankCtrl As LoadBankController = Nothing
+        Private StarterMaxCurrentRecordCtrl As MinMaxRecordController = Nothing
+        Private StarterMaxVoltageRecordCtrl As MinMaxRecordController = Nothing
+
+        Private GTCP85_98_RTL_ECS(,) As Double 'Used to keep a database table in memory for fast access for GTCP85_98
+        Private GTCP85_98_ECS_AND_SHP(,) As Double 'Used to keep a database table in memory for fast access for GTCP85_98
+
+        Private UserInputs As New UserInput13031_GTCP85_98()
+
+        Private TestProgressMgr As CEL.TestProgress.TestProgressMgr = Nothing
+
+    End Class
+
+
+    Public Class UserInput13031_GTCP85_98
+
+
+        Public EngineSerialNumber As String = String.Empty
+        Public WorkOrder As String = String.Empty
+        Public TestNumber As String = String.Empty
+        Public CustomerName As String = String.Empty
+        Public LHV As String = String.Empty
+        Public SampleFuelSG As String = String.Empty
+        Public SampleFuelTemperature As String = String.Empty
+        Public OilType As String = String.Empty
+        Public FuelType As String = String.Empty
+        
+        Public TestType As String = String.Empty
+        Public RepairTypeDescription As String = String.Empty
+        Public RepairTypeID As Gtcp8598.eRepairType = Gtcp8598.eRepairType.NotApplicable
+
+
+        Public OperatorName As String = String.Empty
+        Public QCInspectorName As String = String.Empty
+        Public EnginePartNumberAndServiceBulletin As String = String.Empty
+
+        ' Allow friend access to the empty constructor.
+        Friend Sub New()
+
+        End Sub
+
+        '***************************
+        '* MapUserInputsParameters *
+        '***************************
+        Public Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+            EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+            WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+            TestNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+            CustomerName = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+            LHV = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+            SampleFuelSG = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString() 'SG is used in some formula in test session
+            SampleFuelTemperature = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString() 'also use in some formula in test session
+            OilType = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+            FuelType = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+
+
+            TestType = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+            OperatorName = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+            QCInspectorName = CELProject.Test_Mgr_UUT_Choice(2).Value.ToString()
+            RepairTypeDescription = CELProject.Test_Mgr_UUT_Choice(3).Value.ToString()
+            If RepairTypeDescription = "Heavy" Then
+                RepairTypeID = Gtcp8598.eRepairType.OverhauledEngine
+            Else
+                RepairTypeID = Gtcp8598.eRepairType.RepairedEngine
+            End If
+            EnginePartNumberAndServiceBulletin = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+
+        End Sub
+    End Class
+
+
+
+End Namespace
+
+

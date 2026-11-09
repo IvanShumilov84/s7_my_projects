@@ -1,0 +1,3 @@
+<Window BackColor="Control" Font="Microsoft Sans Serif, 8.25pt" ForeColor="SteelBlue" RightToLeft="0" TabIndex="0" BorderColor="LightSteelBlue" BorderStyle="1" BorderWidth="0.1" Name="tab" Shape="0" ToolTipText="" UpdateSpeed="1" HorizontalGrid.Size="2" HorizontalGrid.Spacing="2" VerticalGrid.Size="2" VerticalGrid.Spacing="2" TitleEnabled="false" Title="PCL Control Panel" WindowState="0" Left="1980" Top="100" Width="270" Height="780" CurrentPanelIndex="0">
+  <Panel File="PT6A\PT6A_68_PMU_Panel.dll" Text="PMU Control Panel" />
+</Window>

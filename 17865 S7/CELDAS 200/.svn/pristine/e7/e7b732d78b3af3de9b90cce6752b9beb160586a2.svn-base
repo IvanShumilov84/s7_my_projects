@@ -1,0 +1,1269 @@
+Imports System
+Imports System.Collections
+Imports System.Collections.Generic
+Imports System.Reflection
+Imports System.Text
+Imports System.Text.RegularExpressions
+Imports System.Threading
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Windows.Forms
+Imports KineticaRT
+Imports KineticaRT.Channels
+Imports KineticaRT.Sequence
+Imports KineticaRT.Values
+Imports KineticaRT.Controls.Frame
+Imports Microsoft.Office.Interop 'Excel
+Imports System.Data
+Imports System.Data.OleDb
+Imports Microsoft.VisualBasic
+
+Imports EntitySpaces.Interfaces
+Imports CEL.Data.BusinessObjects
+
+Imports CEL.HMI
+Imports CEL.Library
+Namespace StudioDemonstration
+
+    Public Class PT6T_Sequence 'Cette séquence a été créé à partir de PT6A_Sequence
+        Inherits PropellerDynoSequence
+
+        Implements IAccelCheckScreen
+
+        Private Const MaxNumberOfTEgtProbe As Integer = 4
+        Private Const MaxNumberOfTInletProbe As Integer = 4
+
+        Protected Overrides Function CreateCustomHeaderLogFile(ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Date Time:"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+            RowIndex += 1
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Cond#:"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+            RowIndex += 1
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Comment:"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            ExcelWorksheet.Rows(RowIndex).RowHeight = 65.25
+            ExcelWorksheet.Rows(RowIndex).VerticalAlignment = Excel.XlVAlign.xlVAlignTop
+            ExcelWorksheet.Rows(RowIndex).WrapText = True
+
+            Return True
+        End Function
+
+        Protected Overrides Function UpdateCustomHeaderLogFile(ByVal AppendOption As Boolean, ByVal IsPerfEntry As Boolean, ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+            Dim Log_Condition As Integer
+
+            If AppendOption = False Then
+                Log_Condition = 1
+            Else
+                'Log_Condition = (ExcelWorksheet.Cells(RowIndex + 1, 1).End(Excel.XlDirection.xlToRight).Column - 1)
+                'TODO: Ici changement du au nouveau Microsoft.Office.Interop.Excel	                        'Log_Condition = (ExcelWorksheet.Cells(RowIndex + 1, 1).End(XlDirection.xlToRight).Column - 1)  'cette ligne en office 2010 retourne toujours 16384 -1 donc 16383 et le reste du code plante
+                Log_Condition = ExcelWorksheet.Cells(RowIndex + 1, ExcelWorksheet.Columns.Count).End(Excel.XlDirection.xlToLeft).Column - 1
+                Log_Condition = Log_Condition + 1
+
+            End If
+
+            If ((Log_Condition > 1) And ((Log_Condition Mod 5) = 1)) Then
+
+                'Repeat The Test Spec For this new sets of condition
+
+                With ExcelWorksheet
+                    .Range(.Cells(2, 2), .Cells(RowIndex - 2, 6)).Copy(.Cells(2, Log_Condition + 1))
+                End With
+            End If
+
+            ColumnIndex = 1 + Log_Condition
+
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Format(Now, "yyyy/MM/dd HH:mm:ss")
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 1
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Log_Condition.ToString()
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 1
+            If IsPerfEntry = False Then
+                Dim CommentText As String = ""
+                Dim InputObject As New InputCommentForm
+                InputObject.ShowDialog("Log Report", "Comment:", "", CommentText)
+
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = CommentText
+            Else
+                '						ExcelWorkSheet.Cells(RowIndex, ColumnIndex).Value				= "STEP: " & TEST_STEP_NB.Value.ToString() & " " & Now.ToString()
+                'TODO  ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "STEP: " & TestStep_List.SelectedItem & " " & Now.ToString()
+            End If
+
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 2
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Values"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter
+
+            UpdateCustomHeaderLogFile = True
+        End Function
+
+        Protected Overrides Sub Init_Engine_Channels_Value()
+
+            DYNO_SPEED_DEMAND.Value = New KineticaRT.Values.Double(DYNO_SPEED_100_PCT_RPM.Value.ToDouble)
+            DYNO_SPEED_MODE_BTN.Value = Values.True
+
+            'Default value for power law mode
+            If DYNO_POWERLAW_DEFAULT_TDEMAND IsNot Nothing Then
+                DYNO_POWLAW_DEMAND.Value = New KineticaRT.Values.Double(DYNO_POWERLAW_DEFAULT_TDEMAND.Value.ToDouble)
+            Else
+                DYNO_POWLAW_DEMAND.Value = New KineticaRT.Values.Double(-4700)
+            End If
+
+        End Sub
+
+        Protected Overrides Sub OnEngineWorkingThread()
+
+            TimeToIdleTimerStarboardCtrl.Timer()
+            TimeToLightTimerStarboardCtrl.Timer()
+            CrankTimerStarboardCtrl.Timer()
+
+            TimeToIdleTimerPortCtrl.Timer()
+            TimeToLightTimerPortCtrl.Timer()
+            CrankTimerPortCtrl.Timer()
+
+            StarterTimerCtrl.Timer()
+            OperatingTimerCtrl.Timer()
+            OperatingTimerPortCtrl.Timer()
+
+            RundownTimerStarboardCtrl.Timer()
+            RundownTimerPortCtrl.Timer()
+
+            If CELProject.HierarchyType = CELDAS.eHierarchyType.Master Then
+                AccelCheckTimerCtrl.Timer()
+            End If
+
+
+            'Persistent Values Save Check
+            PersistentValuesCtrl.SavePersistentValues(False)
+
+        End Sub
+
+        Private Sub SetTransientPresets()
+            Dim EngineModel = CELProject.EngineModel
+            Return
+            Try
+                TransientControl.SaveFileDialog.InitialDirectory = "C:\CELDAS DATA\" & CELProject.EngineModel & "\" & CELProject.Test_Mgr_UUT_Answer(0).Value.ToString() & "\" _
+                        & CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+
+                'Graph A - WF, NG, ITT, SHP
+                'XY type graph i.e. Parameter on X Axis vs another parameter(s) on Y Axis
+                'preset.Name = "Corrected WF, NG and ITT vs Corrected SHP"
+                'preset.XAxisSourceChannel = "SHP_CORR_HP_SCALE"
+
+                'Y Axi(e)s is/are of the left
+                'preset.YAxisSourceChannels.Add("WF_CORR_PPH_SCALE")
+                'preset.YAxisSourceChannels.Add("NG_CORR_RPM_SCALE")
+
+                'Y2 Axi(e)s is/are on the right
+                If EngineModel = "PT6A-6" OrElse EngineModel = "PT6A-6A" OrElse EngineModel = "PT6A-6B" Then
+                    'preset.Y2AxisSourceChannels.Add("T_T4_CORR_DEGF")
+                Else
+                    'preset.Y2AxisSourceChannels.Add("T_T5_CORR_DEGF_SCALE")
+                End If
+
+                'TransientControl.Presets.Add(preset)
+
+                If EngineModel = "PT6A-67F" Then
+                    'Graph B - T5A, T5D, SHP
+                    'preset = New CEL.KineticaRT.Controls.ZedGraphControl.GraphPresetItem()
+
+                    'XY type graph i.e. Parameter on X Axis vs another parameter(s) on Y Axis
+                    'preset.Name = "T5A/Theta, T5D/Theta  vs Corrected SHP"
+                    'preset.XAxisSourceChannel = "SHP_CORR_HP_SCALE"
+
+                    'Y Axi(e)s is/are of the left
+                    'preset.YAxisSourceChannels.Add("T_T5A_DLL_OUTPUT_CORR_DEGR")
+                    'preset.YAxisSourceChannels.Add("T_T5D_DLL_OUTPUT_CORR_DEGR")
+
+                    'TransientControl.Presets.Add(preset)
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("PT6T_Sequence: SetTransientPresets: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Private Sub OnSetMot(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    CELProject.ActivateForm("SetMot_PT6T_Screen", "PT6T_Master_Screen", True, False)
+                Else
+                    CELProject.ActivateForm("SetMot_PT6T_Screen", "PT6T_Master_Screen", False, False)
+                End If
+            Catch ex As Exception
+                MessageBox.Show("PT6T_Sequence: OnSetMot: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Private Sub OnACCEL_CHECK_OPEN_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value) Implements IAccelCheckScreen.OnACCEL_CHECK_OPEN_WINDOW_BTN
+
+            If CELProject.IsTrue(newVal) Then
+                CELProject.ActivateForm("PT6T_AccelCheck_Screen", CELProject.DefaultParentWindow, True, False)
+
+                If sender.Name.ToUpper() = "ACCEL_CHECK_OPEN_WINDOW_P_BTN" Then
+                    SHP_HP.Value = SHP_P_HP.Value
+                    ACCEL_CHECK_P_SIDE.Value = Values.True
+                End If
+
+                If sender.Name.ToUpper() = "ACCEL_CHECK_OPEN_WINDOW_S_BTN" Then
+                    SHP_HP.Value = SHP_S_HP.Value
+                    ACCEL_CHECK_S_SIDE.Value = Values.True
+                End If
+
+                'Reset Button
+                ACCEL_CHECK_OPEN_WINDOW_S_BTN.Value = Values.False
+            End If
+        End Sub
+
+        Private Sub OnACCEL_CHECK_CLOSE_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value) Implements IAccelCheckScreen.OnACCEL_CHECK_CLOSE_WINDOW_BTN
+
+            If CELProject.IsTrue(newVal) Then
+                CELProject.ActivateForm("PT6T_AccelCheck_Screen", CELProject.DefaultParentWindow, False, False)
+                'Reset Button
+                ACCEL_CHECK_CLOSE_WINDOW_BTN.Value = Values.False
+
+                ACCEL_CHECK_S_SIDE.Value = Values.False
+                ACCEL_CHECK_P_SIDE.Value = Values.False
+            End If
+        End Sub
+
+        Private Sub OnTORQUE_TRIM_PANEL_OPEN_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsTrue(newVal) Then
+                CELProject.ActivateForm("PT6A_68_Torque_Trim_Screen", CELProject.DefaultParentWindow, True, False)
+                'Reset Button
+                TORQUE_TRIM_PANEL_OPEN_BTN.Value = Values.False
+            End If
+        End Sub
+
+        Private Sub OnTORQUE_TRIM_PANEL_CLOSE_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            If CELProject.IsTrue(newVal) Then
+                CELProject.ActivateForm("PT6A_68_Torque_Trim_Screen", CELProject.DefaultParentWindow, False, False)
+                'Reset Button
+                TORQUE_TRIM_PANEL_CLOSE_BTN.Value = Values.False
+            End If
+        End Sub
+
+        Private Sub OnPERF_CLEAR_TORQUE_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            If CELProject.IsTrue(newVal) Then
+                Dim confirmation As Integer = MessageBox.Show("Are you sure you want to clear the currently recorded values?",
+                                                              "PT6T Torque Trim",
+                                                              MessageBoxButtons.YesNo)
+                If confirmation = DialogResult.Yes Then
+                    For i As Integer = 0 To (MaxNumberOfTorqueTrimPoints - 1)
+                        PERF_Q_ENG(i).Value = New KineticaRT.Values.Double(0.0)
+                        PERF_TQCOMPEN(i).Value = New KineticaRT.Values.Double(0.0)
+                    Next
+                Else
+                    sender.Value = Values.False
+                    Exit Sub
+                End If
+                sender.Value = Values.False
+            End If
+        End Sub
+
+        'Private Sub OnPERF_CAPTURE_TORQUE_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+        '    Dim iPoint As Integer = Regex.Replace(sender.Name.ToString, "[^0-9]", String.Empty)
+
+        '    If CELProject.IsTrue(newVal) Then
+
+        '        If UserInputs.BedType = "1P Moment Rig" Then
+        '            PERF_TQCOMPEN(iPoint - 1).Value = New KineticaRT.Values.Double(
+        '                (PWC83020_DYNO_TORQUE_CORRECTION_GAIN.Value.ToDouble() * PMU_TQCOMPEN.Value.ToDouble()) + (PWC83020_DYNO_TORQUE_CORRECTION_BIAS.Value.ToDouble() / 14.9902))
+        '        Else
+        '            PERF_TQCOMPEN(iPoint - 1).Value = PMU_TQCOMPEN.Value
+        '        End If
+
+        '        PERF_Q_ENG(iPoint - 1).Value = PMU_Q_ENGINE_LBSFT.Value
+        '        sender.Value = Values.False
+        '    End If
+
+        'End Sub
+
+        'Private Sub OnPERF_CALCULATE_TORQUE_TRIM_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+        '    Dim SumX, SumXSquared, SumY, SumXY As Double
+        '    Dim Slope, Intercept, Determinant As Double
+
+        '    Dim ValidTorqueTrimPoints As New List(Of Integer)
+
+        '    If CELProject.IsTrue(newVal) Then
+
+        '        'Get the number of valid points and their index
+        '        For i As Integer = 0 To (MaxNumberOfTorqueTrimPoints - 1)
+        '            If Not (PERF_Q_ENG(i).Value.ToDouble() = 0 And PERF_TQCOMPEN(i).Value.ToDouble() = 0) Then
+        '                ValidTorqueTrimPoints.Add(i)
+        '            End If
+        '        Next
+
+        '        'Exit sub if no points were taken
+        '        If ValidTorqueTrimPoints.Count <= 0 Then
+        '            sender.Value = Values.False
+        '            Exit Sub
+        '        End If
+
+        '        'Calculate the least sqaure curve (linear regression)
+        '        For Each Pt As Integer In ValidTorqueTrimPoints
+        '            SumX += PERF_TQCOMPEN(Pt).Value.ToDouble()
+        '            SumXSquared += PERF_TQCOMPEN(Pt).Value.ToDouble() * PERF_TQCOMPEN(Pt).Value.ToDouble()
+        '            SumY += PERF_Q_ENG(Pt).Value.ToDouble()
+        '            SumXY += PERF_Q_ENG(Pt).Value.ToDouble() * PERF_TQCOMPEN(Pt).Value.ToDouble()
+        '        Next
+
+        '        Determinant = (ValidTorqueTrimPoints.Count * SumXSquared) - (SumX * SumX)
+        '        Slope = ((ValidTorqueTrimPoints.Count * SumXY) - (SumY * SumX)) / Determinant
+        '        Intercept = ((SumY * SumXSquared) - (SumX * SumXY)) / Determinant
+
+        '        'Update Values
+        '        If UserInputs.BedType = "1P Moment Rig" Then
+        '            'Gain and Bias are offset by a constant value when engine is on a 1P Moment Rig.
+        '            'This is because torque trim is done while applying a 5000 lbs-in pressure in the +Y direction
+        '            PERF_NEW_QTRMGN.Value = New KineticaRT.Values.Double((PMU_QTRMGN.Value.ToDouble() / Slope) - 0.00304)
+        '            PERF_NEW_QTRMBS.Value = New KineticaRT.Values.Double(((PERF_NEW_QTRMGN.Value.ToDouble() / PMU_QTRMGN.Value.ToDouble()) * (PMU_QTRMBS.Value.ToDouble() - Intercept)) - 3.17828)
+        '        Else
+        '            'Base calculation of the torque trim Gain and Bias
+        '            PERF_NEW_QTRMGN.Value = New KineticaRT.Values.Double(PMU_QTRMGN.Value.ToDouble() / Slope)
+        '            PERF_NEW_QTRMBS.Value = New KineticaRT.Values.Double((PERF_NEW_QTRMGN.Value.ToDouble() / PMU_QTRMGN.Value.ToDouble()) * (PMU_QTRMBS.Value.ToDouble() - Intercept))
+        '        End If
+
+
+        '        sender.Value = Values.False
+        '    End If
+        'End Sub
+
+        Protected Overrides Sub OnDYNO_DEMAND_VALIDATE(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If sender.Name = "DYNO_POS_DEMAND" Then
+                    If DYNO_POS_DEMAND.Value.ToDouble() > 100 Then
+                        DYNO_POS_DEMAND.Value = New KineticaRT.Values.Double(100)
+                    ElseIf DYNO_POS_DEMAND.Value.ToDouble() < 0 Then
+                        DYNO_POS_DEMAND.Value = Values.Zero
+                    End If
+                ElseIf sender.Name = "DYNO_SPEED_DEMAND" Then
+                    If DYNO_SPEED_DEMAND.Value.ToDouble() > 2250 Then
+                        DYNO_SPEED_DEMAND.Value = New KineticaRT.Values.Double(2250)
+                    ElseIf DYNO_SPEED_DEMAND.Value.ToDouble() < 0 Then
+                        DYNO_SPEED_DEMAND.Value = Values.Zero
+                    End If
+                ElseIf sender.Name = "DYNO_TORQUE_DEMAND" Then
+                    If DYNO_TORQUE_DEMAND.Value.ToDouble() > 26113 Then
+                        DYNO_TORQUE_DEMAND.Value = New KineticaRT.Values.Double(26113)
+                    ElseIf DYNO_TORQUE_DEMAND.Value.ToDouble() < 0 Then
+                        DYNO_TORQUE_DEMAND.Value = Values.Zero
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("PT6T_Sequence: OnDYNO_DEMAND_VALIDATE: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnDYNO_INLET_VALIDATE(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If DYNO_SET_INLET_PCT.Value.ToDouble() > 100 Then
+                    DYNO_SET_INLET_PCT.Value = New KineticaRT.Values.Double(100)
+                ElseIf DYNO_SET_INLET_PCT.Value.ToDouble() < 0 Then
+                    DYNO_SET_INLET_PCT.Value = Values.Zero
+                End If
+            Catch ex As Exception
+                MessageBox.Show("PT6T_Sequence: OnDYNO_INLET_VALIDATE: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Private Sub OnCRANK_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    ARCHIVE_RECORD_BTN.Value = Values.True
+                    T_T5_CURRENT_S_DEGF.Value = T_T5_S_DEGF.Value
+                    CRANK_BTN_PRESSED.Value = Values.True
+                    CRANK_START_DEMAND_OPC.Value = Values.True
+                Else
+                    CRANK_BTN_PRESSED.Value = Values.False
+                    CRANK_START_DEMAND_OPC.Value = Values.False
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("PT6T_Sequence: OnCrank: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+
+        End Sub
+
+        Private Sub OnCRANK_P_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    ARCHIVE_RECORD_BTN.Value = Values.True
+                    T_T5_CURRENT_P_DEGF.Value = T_T5_P_DEGF.Value
+                    CRANK_P_BTN_PRESSED.Value = Values.True
+                    CRANK_START_DEMAND_PORT_OPC.Value = Values.True
+                Else
+                    CRANK_P_BTN_PRESSED.Value = Values.False
+                    CRANK_START_DEMAND_PORT_OPC.Value = Values.False
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("PT6T_Sequence: OnCrank: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+
+        End Sub
+
+        Private Sub OnENGINE_AT_REST(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    'Automatically stop the archive when engine at rest becomes true.
+                    'Crank_btn_pressed condition is to check if the engine is starting or stopping.
+                    If ARCHIVE_RECORD_BTN.Value = Values.True And CRANK_BTN_PRESSED.Value = Values.False Then
+                        ARCHIVE_STOP_BTN.Value = Values.True
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("PT6T_Sequence: OnENGINE_AT_REST: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnLOG_TAKE_POINT_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            If CELProject.IsTrue(newVal) Then
+
+                'Update the Log/Perf channel set
+                CELProject.LogPerfSynch.UpdateValues()
+                FlowmeterCtrl.ComputeFlow(True)
+                CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, False, CELProject.EngineModel, True)
+                CELProject.LOG_TAKE_POINT_BTN.Value = Values.False
+            End If
+        End Sub
+
+        Protected Overrides Sub OnNEW_TEST_BTN(sender As IChannel, newVal As Value)
+            Try
+                If (CELProject.IsTrue(newVal)) Then
+
+                    If DialogResult.Yes = MessageBox.Show("Do you want to reset the fuel used?", "CELDAS200", MessageBoxButtons.YesNo, MessageBoxIcon.Question) Then
+
+                        FUEL_USED_INITIAL_LITERS.Value = Values.Zero
+
+                    End If
+
+                End If
+            Catch ex As Exception
+                MessageBox.Show("PT6T_Sequence: OnNewTest: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionInitialized(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                Dim EngineSN As String = String.Empty
+                Dim WorkOrder As String = String.Empty
+
+                MyBase.OnTestSessionInitialized(newStatus)
+
+                If CELProject.EngineFamily = "PT6T" Then
+
+                    Select Case CELProject.Project.Number
+                        Case 14086
+                            UserInputs.MapUserInputsParameters(CELProject)
+
+                            EngineSN = UserInputs.EngineSerialNumber
+                            WorkOrder = UserInputs.WorkOrder
+
+                        Case 17631
+                            UserInputs17631.MapUserInputsParameters(CELProject)
+
+                            EngineSN = UserInputs17631.EngineSerialNumber
+                            WorkOrder = UserInputs17631.WorkOrder
+                    End Select
+
+
+                    CELProject.EngineSession.WorkingFolder = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + EngineSN + "\" + WorkOrder
+                    CELProject.CreateLogFile(AddressOf CreateCustomHeaderLogFile, CELProject.EngineModel, CELProject.EngineModel)
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("PT6T_Sequence.OnTestSessionInitialized: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionOpened(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionOpened(newStatus)
+
+            Catch ex As Exception
+
+                MessageBox.Show("PT6T_Sequence.OnTestSessionOpened: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionRunning(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionRunning(newStatus)
+
+                If CELProject.EngineFamily = "PT6T" Then
+
+                    Init_Engine_Controls()
+                    Init_Engine_Channels()
+                    Init_Engine_Channels_Value()
+                    Init_Engine_Controllers()
+
+                    AddHandlers()
+
+
+                    MyBase.StartWorkingThread()
+
+                End If
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionRunning: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub AddHandlers()
+            AddHandler ACCEL_CHECK_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnACCEL_CHECK_CLOSE_WINDOW_BTN
+            AddHandler ACCEL_CHECK_OPEN_WINDOW_S_BTN.ValueChanged, AddressOf OnACCEL_CHECK_OPEN_WINDOW_BTN
+            AddHandler ACCEL_CHECK_OPEN_WINDOW_P_BTN.ValueChanged, AddressOf OnACCEL_CHECK_OPEN_WINDOW_BTN
+
+            AddHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+
+            AddHandler CRANK_S_BTN.ValueChanged, AddressOf OnCRANK_BTN
+            AddHandler CRANK_P_BTN.ValueChanged, AddressOf OnCRANK_P_BTN
+
+            AddHandler DYNO_SET_INLET_PCT.ValueChanged, AddressOf OnDYNO_INLET_VALIDATE
+            AddHandler DYNO_POS_DEMAND.ValueChanged, AddressOf OnDYNO_DEMAND_VALIDATE
+            AddHandler DYNO_SPEED_DEMAND.ValueChanged, AddressOf OnDYNO_DEMAND_VALIDATE
+            AddHandler DYNO_TORQUE_DEMAND.ValueChanged, AddressOf OnDYNO_DEMAND_VALIDATE
+            AddHandler CELProject.NEW_TEST_BTN.ValueChanged, AddressOf OnNEW_TEST_BTN
+
+            AddHandler ENGINE_AT_REST_S.ValueChanged, AddressOf OnENGINE_AT_REST
+            AddHandler ENGINE_AT_REST_P.ValueChanged, AddressOf OnENGINE_AT_REST
+
+            AddHandler CLOSE_TEST_BTN_OPC.ValueChanged, AddressOf OnCLOSE_TEST_BTN
+
+            'PT6T Torque Trim : need to validate method : this is based on the PT6A-68 engine series
+            If (CELProject.EngineModel = "PT6A-68") And CELProject.HierarchyType = CELDAS.eHierarchyType.Slave Then
+                ' Dim i As Integer
+                'For i = 0 To (MaxNumberOfTorqueTrimPoints - 1)
+                '    AddHandler PERF_CAPTURE_TORQUE_BTN(i).ValueChanged, AddressOf OnPERF_CAPTURE_TORQUE_BTN
+                'Next
+                'AddHandler PERF_CALCULATE_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnPERF_CALCULATE_TORQUE_TRIM_BTN
+                AddHandler PERF_CLEAR_TORQUE_BTN.ValueChanged, AddressOf OnPERF_CLEAR_TORQUE_BTN
+
+            End If
+        End Sub
+
+        Protected Overrides Sub RemoveHandlers()
+            If Not (ACCEL_CHECK_CLOSE_WINDOW_BTN Is Nothing) Then
+                RemoveHandler ACCEL_CHECK_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnACCEL_CHECK_CLOSE_WINDOW_BTN
+            End If
+            If Not (ACCEL_CHECK_OPEN_WINDOW_S_BTN Is Nothing) Then
+                RemoveHandler ACCEL_CHECK_OPEN_WINDOW_S_BTN.ValueChanged, AddressOf OnACCEL_CHECK_OPEN_WINDOW_BTN
+            End If
+            If Not (ACCEL_CHECK_OPEN_WINDOW_P_BTN Is Nothing) Then
+                RemoveHandler ACCEL_CHECK_OPEN_WINDOW_P_BTN.ValueChanged, AddressOf OnACCEL_CHECK_OPEN_WINDOW_BTN
+            End If
+            If Not (TORQUE_TRIM_PANEL_OPEN_BTN Is Nothing) Then
+                RemoveHandler TORQUE_TRIM_PANEL_OPEN_BTN.ValueChanged, AddressOf OnTORQUE_TRIM_PANEL_OPEN_BTN
+            End If
+            If Not (TORQUE_TRIM_PANEL_CLOSE_BTN Is Nothing) Then
+                RemoveHandler TORQUE_TRIM_PANEL_CLOSE_BTN.ValueChanged, AddressOf OnTORQUE_TRIM_PANEL_CLOSE_BTN
+            End If
+            If Not (CELProject.LOG_TAKE_POINT_BTN Is Nothing) Then
+                RemoveHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+            End If
+            If Not (CRANK_S_BTN Is Nothing) Then
+                RemoveHandler CRANK_S_BTN.ValueChanged, AddressOf OnCRANK_BTN
+            End If
+            If Not (CRANK_P_BTN Is Nothing) Then
+                RemoveHandler CRANK_P_BTN.ValueChanged, AddressOf OnCRANK_P_BTN
+            End If
+            If Not (DYNO_SET_INLET_PCT Is Nothing) Then
+                RemoveHandler DYNO_SET_INLET_PCT.ValueChanged, AddressOf OnDYNO_INLET_VALIDATE
+            End If
+            If Not (DYNO_POS_DEMAND Is Nothing) Then
+                RemoveHandler DYNO_POS_DEMAND.ValueChanged, AddressOf OnDYNO_DEMAND_VALIDATE
+            End If
+            If Not (DYNO_SPEED_DEMAND Is Nothing) Then
+                RemoveHandler DYNO_SPEED_DEMAND.ValueChanged, AddressOf OnDYNO_DEMAND_VALIDATE
+            End If
+            If Not (DYNO_TORQUE_DEMAND Is Nothing) Then
+                RemoveHandler DYNO_TORQUE_DEMAND.ValueChanged, AddressOf OnDYNO_DEMAND_VALIDATE
+            End If
+            If Not (CELProject.NEW_TEST_BTN Is Nothing) Then
+                RemoveHandler CELProject.NEW_TEST_BTN.ValueChanged, AddressOf OnNEW_TEST_BTN
+            End If
+            If Not (ENGINE_AT_REST_S Is Nothing) Then
+                RemoveHandler ENGINE_AT_REST_S.ValueChanged, AddressOf OnENGINE_AT_REST
+            End If
+            If Not (ENGINE_AT_REST_P Is Nothing) Then
+                RemoveHandler ENGINE_AT_REST_P.ValueChanged, AddressOf OnENGINE_AT_REST
+            End If
+            If Not (CLOSE_TEST_BTN_OPC Is Nothing) Then
+                RemoveHandler CLOSE_TEST_BTN_OPC.ValueChanged, AddressOf OnCLOSE_TEST_BTN
+            End If
+            'Dim i As Integer
+            'For i = 0 To (MaxNumberOfTorqueTrimPoints - 1)
+            '    If Not (PERF_CAPTURE_TORQUE_BTN(i) Is Nothing) Then
+            '        RemoveHandler PERF_CAPTURE_TORQUE_BTN(i).ValueChanged, AddressOf OnPERF_CAPTURE_TORQUE_BTN
+            '    End If
+            'Next
+            'If Not (PERF_CALCULATE_TORQUE_TRIM_BTN Is Nothing) Then
+            '    RemoveHandler PERF_CALCULATE_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnPERF_CALCULATE_TORQUE_TRIM_BTN
+            'End If
+            If Not (PERF_CLEAR_TORQUE_BTN Is Nothing) Then
+                RemoveHandler PERF_CLEAR_TORQUE_BTN.ValueChanged, AddressOf OnPERF_CLEAR_TORQUE_BTN
+            End If
+        End Sub
+
+        Protected Overrides Sub Init_Engine_Controllers()
+
+            FlowmeterCtrl = New FlowmeterController(Me)
+
+            Dim PersistentValuesChannels() As String = {"OPERATING_TIME_SEC",
+                                                        "OPERATING_TIME_P_SEC",
+                                                        "FUEL_USED_INITIAL_LITERS",
+                                                        "FUEL_USED_TOTAL_LITERS",
+                                                        "PERF_CONDITION_NUMBER"}
+
+            Dim PersistentValuesFileName = "C:\CELDAS DATA\" & CELProject.EngineModel & "\" & UserInputs.EngineSerialNumber & "\" & UserInputs.WorkOrder & "\Log\PersistentValues.xml"
+
+            PersistentValuesCtrl = New PersistentValuesController(Me, PersistentValuesChannels, 1, PersistentValuesFileName)
+
+            If Double.IsNaN(FUEL_USED_TOTAL_LITERS.Value.ToDouble()) Then
+                FUEL_USED_INITIAL_LITERS.Value = Values.Zero
+                FUEL_USED_TOTAL_LITERS.Value = Values.Zero
+            Else
+                FUEL_USED_INITIAL_LITERS.Value = New KineticaRT.Values.Double(FUEL_USED_TOTAL_LITERS.Value.ToDouble())
+            End If
+
+
+
+            ' Default value if not overridden by the project
+            Dim RealNumberOfTEgtProbe As Integer = MaxNumberOfTEgtProbe
+            Dim RealNumberOfTInletProbe As Integer = MaxNumberOfTInletProbe
+
+            Select Case CELProject.Project.Number
+
+                Case 14086
+
+                    Dim ConfigPrefix As String = "//ConfigurationSettings/" & CELProject.EngineFamily & "/" & CELProject.EngineModel & "/"
+                    RealNumberOfTInletProbe = CELProject.Project.ReadOneIntegerConfigItem(ConfigPrefix & "T_T1_NUMBER_PROBE", 0)
+                    RealNumberOfTEgtProbe = CELProject.Project.ReadOneIntegerConfigItem(ConfigPrefix & "T_T7_NUMBER_PROBE", 0)
+
+                    Debug.Assert(RealNumberOfTInletProbe <> 0 And RealNumberOfTEgtProbe <> 0)
+
+                Case 17631
+
+                    Dim ConfigPrefix As String = "//ConfigurationSettings/" & CELProject.EngineModel & "/"
+                    RealNumberOfTInletProbe = CELProject.Project.ReadOneIntegerConfigItem(ConfigPrefix & "T_T1_NUMBER_PROBE", 0)
+                    RealNumberOfTEgtProbe = CELProject.Project.ReadOneIntegerConfigItem(ConfigPrefix & "T_T7_NUMBER_PROBE", 0)
+
+                    Debug.Assert(RealNumberOfTInletProbe <> 0 And RealNumberOfTEgtProbe <> 0)
+
+                Case Else
+                    Debug.Assert(False, "OnTestSessionRunning: Code Missing for this project")
+
+            End Select
+
+            ' Starboard side
+            DeletableTInletChStarboardCtrl = New DeletableChannelController(Me, RealNumberOfTInletProbe, MaxNumberOfTInletProbe, MaxNumberOfTInletProbe, "T_T1_S_", "_DEGF", "_DELETE_BTN", "T_T1_AVG_S_DEGF", "T_T1_MIN_S_DEGF", "T_T1_MAX_S_DEGF", "T_T1_SPREAD_S_DEGF")
+            DeletableTEgtChStarboardCtrl = New DeletableChannelController(Me, RealNumberOfTEgtProbe, MaxNumberOfTEgtProbe, MaxNumberOfTEgtProbe, "T_T7_S_", "_DEGF", "_DELETE_BTN", "T_T7_AVG_S_DEGF", "T_T7_MIN_S_DEGF", "T_T7_MAX_S_DEGF", "T_T7_SPREAD_S_DEGF")
+
+            ' Port side
+            DeletableTInletChPortCtrl = New DeletableChannelController(Me, RealNumberOfTInletProbe, MaxNumberOfTInletProbe, MaxNumberOfTInletProbe, "T_T1_P_", "_DEGF", "_DELETE_BTN", "T_T1_AVG_P_DEGF", "T_T1_MIN_P_DEGF", "T_T1_MAX_P_DEGF", "T_T1_SPREAD_P_DEGF")
+            DeletableTEgtChPortCtrl = New DeletableChannelController(Me, RealNumberOfTEgtProbe, MaxNumberOfTEgtProbe, MaxNumberOfTEgtProbe, "T_T7_P_", "_DEGF", "_DELETE_BTN", "T_T7_AVG_P_DEGF", "T_T7_MIN_P_DEGF", "T_T7_MAX_P_DEGF", "T_T7_SPREAD_P_DEGF")
+
+            'If CELProject.HierarchyType = CELDAS.eHierarchyType.Master Then
+            '    UnitronCtrl = New UnitronController(Me, "STARTER_RECTIFIER_BTN", "STARTER_RECTIFIER_STATUS_IND", "STARTER_RECTIFIER_OVERLOAD_IND", "CRANK_BTN", "STARTER_RECTIFIER_CONTACTOR_FEEDBACK_IND", "STARTER_VOLTAGE_SOURCE_OPC", "STARTER_CURRENT_SOURCE_OPC", Nothing, Nothing)
+            'End If
+
+
+
+            ' Starboard side max I and V at startup for Unitron
+            IgnitionMaxCurrentRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "IGNITION1_CURRENT_AMP", "IGNITION1_CURRENT_AMP_MAX", "CRANK_START_DEMAND_OPC")
+            IgnitionMaxVoltageRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "IGNITION1_VOLTAGE_VDC", "IGNITION1_VOLTAGE_VDC_MAX", "CRANK_START_DEMAND_OPC")
+
+            ' Starboard side max I and V at startup at starter
+            StarterMaxCurrentRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_CURRENT_AMP", "STARTER_CURRENT_AMP_MAX", "CRANK_START_DEMAND_OPC")
+            StarterMaxVoltageRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_VOLTAGE_VDC", "STARTER_VOLTAGE_VDC_MAX", "CRANK_START_DEMAND_OPC")
+
+            ' Starboard side Max temperature at T5
+            MGTMaxTemperatureRecordStarboardCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "T_T5_S_DEGF", "T_T5_MAX_S_DEGF", "CRANK_START_DEMAND_OPC")
+
+            ' Starboard side TTL, TTI and crank time
+            TimeToIdleTimerStarboardCtrl = New TimerController(Me, "TTI_TIME_START_CONDITION_LATCH", "TTI_TIME_STOP_CONDITION_LATCH", "TTI_TIME_CONDITION_RESET", "TTI_TIME_S_SEC", Nothing, 0, "NONE")
+            TimeToLightTimerStarboardCtrl = New TimerController(Me, "TTL_TIME_START_CONDITION_LATCH", "TTL_TIME_STOP_CONDITION_LATCH", "TTL_TIME_CONDITION_RESET", "TTL_TIME_S_SEC", Nothing, 0, "NONE")
+            CrankTimerStarboardCtrl = New TimerController(Me, "CRANK_TIME_START_CONDITION_LATCH", "CRANK_TIME_STOP_CONDITION_LATCH", "CRANK_TIME_CONDITION_RESET", "CRANK_TIME_S_SEC", Nothing, 45, "CRANK_TIME_MAX_VALUE_REACHED")
+
+
+
+
+
+            ' Port side max I and V at startup for Unitron
+            IgnitionMaxCurrentRecordPortCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "IGNITION2_CURRENT_AMP", "IGNITION2_CURRENT_AMP_MAX", "CRANK_START_DEMAND_PORT_OPC")
+            IgnitionMaxVoltageRecordPortCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "IGNITION2_VOLTAGE_VDC", "IGNITION2_VOLTAGE_VDC_MAX", "CRANK_START_DEMAND_PORT_OPC")
+
+            ' Starboard side max I and V at startup at starter
+            StarterMaxCurrentRecordPortCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_CURRENT_AMP", "STARTER_CURRENT_AMP_P_MAX", "CRANK_START_DEMAND_PORT_OPC")
+            StarterMaxVoltageRecordPortCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_VOLTAGE_VDC", "STARTER_VOLTAGE_VDC_P_MAX", "CRANK_START_DEMAND_PORT_OPC")
+
+            ' Port side Max temperature at T5
+            MGTMaxTemperatureRecordPortCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "T_T5_P_DEGF", "T_T5_MAX_P_DEGF", "CRANK_START_DEMAND_PORT_OPC")
+
+            ' Port side TTL, TTI and crank time
+            TimeToIdleTimerPortCtrl = New TimerController(Me, "TTI_TIME_START_P_CONDITION_LATCH", "TTI_TIME_STOP_P_CONDITION_LATCH", "TTI_TIME_P_CONDITION_RESET", "TTI_TIME_P_SEC", Nothing, 0, "NONE")
+            TimeToLightTimerPortCtrl = New TimerController(Me, "TTL_TIME_START_P_CONDITION_LATCH", "TTL_TIME_STOP_P_CONDITION_LATCH", "TTL_TIME_P_CONDITION_RESET", "TTL_TIME_P_SEC", Nothing, 0, "NONE")
+            CrankTimerPortCtrl = New TimerController(Me, "CRANK_TIME_START_P_CONDITION_LATCH", "CRANK_TIME_STOP_P_CONDITION_LATCH", "CRANK_TIME_P_CONDITION_RESET", "CRANK_TIME_P_SEC", Nothing, 45, "CRANK_TIME_MAX_P_VALUE_REACHED")
+
+
+            StarterTimerCtrl = New TimerController(Me, "STARTER_OVERCURRENT_START_CONDITION", "STARTER_OVERCURRENT_STOP_CONDITION", "STARTER_OVERCURRENT_CONDITION_RESET", "STARTER_OVERCURRENT_TIME_SEC", Nothing, 10, "STARTER_OVERCURRENT_MAX_VALUE_REACHED")
+
+            OperatingTimerCtrl = New TimerController(Me, "OPERATING_TIME_START_CONDITION", "OPERATING_TIME_STOP_CONDITION", "OPERATING_TIME_CONDITION_RESET", "OPERATING_TIME_SEC", Nothing, 0, "NONE", True)
+            OperatingTimerPortCtrl = New TimerController(Me, "OPERATING_TIME_P_START_CONDITION", "OPERATING_TIME_P_STOP_CONDITION", "OPERATING_TIME_P_CONDITION_RESET", "OPERATING_TIME_P_SEC", Nothing, 0, "NONE", True)
+
+            RundownTimerStarboardCtrl = New TimerController(Me, "RDT_TIME_START_CONDITION_S_LATCH", "RDT_TIME_STOP_CONDITION_S_LATCH", "RDT_TIME_CONDITION_S_RESET", "RDT_TIME_S_SEC", Nothing, 0, "NONE")
+            RundownTimerPortCtrl = New TimerController(Me, "RDT_TIME_START_CONDITION_P_LATCH", "RDT_TIME_STOP_CONDITION_P_LATCH", "RDT_TIME_CONDITION_P_RESET", "RDT_TIME_P_SEC", Nothing, 0, "NONE")
+
+            If CELProject.HierarchyType = CELDAS.eHierarchyType.Master Then
+                AccelCheckTimerCtrl = New TimerController(Me, "ACCEL_CHECK_TIMER_START_CONDITION_LATCH", "ACCEL_CHECK_TIMER_STOP_CONDITION_LATCH", "ACCEL_CHECK_TIMER_RESET_CONDITION", "ACCELERATION_TIME_SEC", Nothing, 0, "NONE")
+            End If
+
+        End Sub
+
+        Protected Overrides Sub Dispose_Engine_Controllers()
+            If Not (TransientControl Is Nothing) Then
+                TransientControl.ClearPresets()
+            End If
+
+            'Persistent Values Force Save
+            If Not (PersistentValuesCtrl Is Nothing) Then
+                PersistentValuesCtrl.SavePersistentValues(True)
+            End If
+
+            If Not (DeletableTInletChStarboardCtrl Is Nothing) Then
+                DeletableTInletChStarboardCtrl.Dispose()
+            End If
+
+            If Not (DeletableTEgtChStarboardCtrl Is Nothing) Then
+                DeletableTEgtChStarboardCtrl.Dispose()
+            End If
+
+            If Not (DeletableTEgtChPortCtrl Is Nothing) Then
+                DeletableTEgtChPortCtrl.Dispose()
+            End If
+
+            If Not (UnitronCtrl Is Nothing) Then
+                UnitronCtrl.Dispose()
+            End If
+
+            If Not (IgnitionMaxCurrentRecordCtrl Is Nothing) Then
+                IgnitionMaxCurrentRecordCtrl.Dispose()
+            End If
+
+            If Not (IgnitionMaxVoltageRecordCtrl Is Nothing) Then
+                IgnitionMaxVoltageRecordCtrl.Dispose()
+            End If
+
+            If Not (StarterMaxCurrentRecordCtrl Is Nothing) Then
+                StarterMaxCurrentRecordCtrl.Dispose()
+            End If
+
+            If Not (StarterMaxVoltageRecordCtrl Is Nothing) Then
+                StarterMaxVoltageRecordCtrl.Dispose()
+            End If
+
+            If Not (MGTMaxTemperatureRecordStarboardCtrl Is Nothing) Then
+                MGTMaxTemperatureRecordStarboardCtrl.Dispose()
+            End If
+
+            If Not (TimeToIdleTimerStarboardCtrl Is Nothing) Then
+                TimeToIdleTimerStarboardCtrl.Dispose()
+            End If
+
+            If Not (TimeToLightTimerStarboardCtrl Is Nothing) Then
+                TimeToLightTimerStarboardCtrl.Dispose()
+            End If
+
+            If Not (CrankTimerStarboardCtrl Is Nothing) Then
+                CrankTimerStarboardCtrl.Dispose()
+            End If
+
+            If Not (StarterTimerCtrl Is Nothing) Then
+                StarterTimerCtrl.Dispose()
+            End If
+
+            If Not (OperatingTimerCtrl Is Nothing) Then
+                OperatingTimerCtrl.Dispose()
+            End If
+
+            If Not (OperatingTimerPortCtrl Is Nothing) Then
+                OperatingTimerPortCtrl.Dispose()
+            End If
+
+            If Not (RundownTimerStarboardCtrl Is Nothing) Then
+                RundownTimerStarboardCtrl.Dispose()
+            End If
+
+            If Not (RundownTimerPortCtrl Is Nothing) Then
+                RundownTimerPortCtrl.Dispose()
+            End If
+
+            If Not (AccelCheckTimerCtrl Is Nothing) Then
+                AccelCheckTimerCtrl.Dispose()
+            End If
+
+            If Not (PersistentValuesCtrl Is Nothing) Then
+                PersistentValuesCtrl.Dispose()
+            End If
+
+            If Not (FlowmeterCtrl Is Nothing) Then
+                FlowmeterCtrl.Dispose()
+            End If
+        End Sub
+
+        Protected Overrides Sub Init_Engine_Controls()
+            MyBase.InitializeObject(TransientControl, "PT6T_Slave_Screen.GraphicsFrame1.transientControl")
+            Me.TransientControl.SetEngineModel(CELProject.EngineModel)
+        End Sub
+
+        Protected Overrides Sub OnCLOSE_TEST_BTN(sender As IChannel, newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    If CELProject.EngineFamily = "PT6T" Then
+                        CELProject.EngineWindowCollection.Item(0).EngineWindow.BeginInvoke(New MethodInvoker(AddressOf Me.OnCLOSE_TEST_BTN_DISPOSE))
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("OnCLOSE_TEST_BTN: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnCLOSE_TEST_BTN_DISPOSE()
+            Try
+                MyBase.StopWorkingThread()
+                PersistentValuesCtrl.SavePersistentValues(True)
+                RemoveHandlers()
+                Dispose_Engine_Controllers()
+            Catch ex As Exception
+                MessageBox.Show("OnCLOSE_TEST_BTN_DISPOSE: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionClosing(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionClosing(newStatus)
+                'For All Engine
+
+                If CELProject.EngineFamily = "PT6T" Then
+                    MyBase.StopWorkingThread()
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionClosing: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Function Init_Engine_Channels() As Boolean
+            Dim Return_Value As New ArrayList()
+
+            Return_Value.Clear()
+
+            Try
+                Return_Value.Add(MyBase.InitializeChannel(ACCEL_CHECK_CLOSE_WINDOW_BTN, "ACCEL_CHECK_CLOSE_WINDOW_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(ACCEL_CHECK_OPEN_WINDOW_S_BTN, "ACCEL_CHECK_OPEN_WINDOW_S_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(ACCEL_CHECK_OPEN_WINDOW_P_BTN, "ACCEL_CHECK_OPEN_WINDOW_P_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(ARCHIVE_RECORD_BTN, "ARCHIVE_RECORD_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(ARCHIVE_STOP_BTN, "ARCHIVE_STOP_BTN"))
+
+                Return_Value.Add(MyBase.InitializeChannel(ENGINE_AT_REST_S, "ENGINE_AT_REST_S"))
+                Return_Value.Add(MyBase.InitializeChannel(ENGINE_AT_REST_P, "ENGINE_AT_REST_P"))
+                Return_Value.Add(MyBase.InitializeChannel(ENGINE_AT_REST, "ENGINE_AT_REST"))
+
+                Return_Value.Add(MyBase.InitializeChannel(CRANK_START_DEMAND_OPC, "CRANK_START_DEMAND_OPC"))
+                Return_Value.Add(MyBase.InitializeChannel(CRANK_START_DEMAND_PORT_OPC, "CRANK_START_DEMAND_PORT_OPC"))
+
+                Return_Value.Add(MyBase.InitializeChannel(CRANK_S_BTN, "CRANK_S_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CRANK_P_BTN, "CRANK_P_BTN"))
+
+                Return_Value.Add(MyBase.InitializeChannel(CRANK_BTN_PRESSED, "CRANK_BTN_PRESSED"))
+                Return_Value.Add(MyBase.InitializeChannel(CRANK_P_BTN_PRESSED, "CRANK_P_BTN_PRESSED"))
+
+                Return_Value.Add(MyBase.InitializeChannel(DYNO_POS_DEMAND, "DYNO_POS_DEMAND"))
+                Return_Value.Add(MyBase.InitializeChannel(DYNO_SPEED_DEMAND, "DYNO_SPEED_DEMAND"))
+                Return_Value.Add(MyBase.InitializeChannel(DYNO_SPEED_100_PCT_RPM, "DYNO_SPEED_100_PCT_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(DYNO_SPEED_MODE_BTN, "DYNO_SPEED_MODE_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(DYNO_POWLAW_DEMAND, "DYNO_POWLAW_DEMAND"))
+                Return_Value.Add(MyBase.InitializeChannel(DYNO_POWERLAW_DEFAULT_TDEMAND, "DYNO_POWERLAW_DEFAULT_TDEMAND"))
+                Return_Value.Add(MyBase.InitializeChannel(DYNO_SET_INLET_PCT, "DYNO_SET_INLET_PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(DYNO_TORQUE_DEMAND, "DYNO_TORQUE_DEMAND"))
+                Return_Value.Add(MyBase.InitializeChannel(FACILITY_CLOSE_WINDOW_BTN, "FACILITY_CLOSE_WINDOW_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(FACILITY_OPEN_WINDOW_BTN, "FACILITY_OPEN_WINDOW_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_INITIAL_LITERS, "FUEL_USED_INITIAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_TOTAL_LITERS, "FUEL_USED_TOTAL_LITERS"))
+
+                Return_Value.Add(MyBase.InitializeChannel(T_T5_S_DEGF, "T_T5_S_DEGF")) 'Is called T4 on PT6A-6,6A and 6B but value is read on the same thermocouple
+                Return_Value.Add(MyBase.InitializeChannel(T_T5_CURRENT_S_DEGF, "T_T5_CURRENT_S_DEGF")) 'Is called T4 on PT6A-6,6A and 6B but value is read on the same thermocouple
+                Return_Value.Add(MyBase.InitializeChannel(T_T5_P_DEGF, "T_T5_P_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(T_T5_CURRENT_P_DEGF, "T_T5_CURRENT_P_DEGF"))
+
+                Return_Value.Add(MyBase.InitializeChannel(IGNITION_P_BTN, "IGNITION_P_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(IGNITION_S_BTN, "IGNITION_S_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CLOSE_TEST_BTN_OPC, "CLOSE_TEST_BTN_OPC"))
+                Return_Value.Add(MyBase.InitializeChannel(NG_S_RPM, "NG_S_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(NG_P_RPM, "NG_P_RPM"))
+
+                Return_Value.Add(MyBase.InitializeChannel(SHP_HP, "SHP_HP"))
+                Return_Value.Add(MyBase.InitializeChannel(SHP_S_HP, "SHP_S_HP"))
+                Return_Value.Add(MyBase.InitializeChannel(SHP_P_HP, "SHP_P_HP"))
+
+                Return_Value.Add(MyBase.InitializeChannel(ACCEL_CHECK_S_SIDE, "ACCEL_CHECK_S_SIDE"))
+                Return_Value.Add(MyBase.InitializeChannel(ACCEL_CHECK_P_SIDE, "ACCEL_CHECK_P_SIDE"))
+
+                Return_Value.Add(MyBase.InitializeChannel(IGNITION1_CURRENT_AMP_MAX, "IGNITION1_CURRENT_AMP_MAX"))
+                Return_Value.Add(MyBase.InitializeChannel(IGNITION2_CURRENT_AMP_MAX, "IGNITION2_CURRENT_AMP_MAX"))
+                Return_Value.Add(MyBase.InitializeChannel(IGNITION2_VOLTAGE_VDC_MAX, "IGNITION2_VOLTAGE_VDC_MAX"))
+                Return_Value.Add(MyBase.InitializeChannel(IGNITION1_VOLTAGE_VDC_MAX, "IGNITION1_VOLTAGE_VDC_MAX"))
+
+
+                If CELProject.EngineModel = "PT6A-68" Then
+
+                    Return_Value.Add(MyBase.InitializeChannel(TORQUE_TRIM_PANEL_OPEN_BTN, "TORQUE_TRIM_PANEL_OPEN_BTN"))
+                    Return_Value.Add(MyBase.InitializeChannel(TORQUE_TRIM_PANEL_CLOSE_BTN, "TORQUE_TRIM_PANEL_CLOSE_BTN"))
+
+                    If CELProject.HierarchyType = CELDAS.eHierarchyType.Slave Then
+                        Dim i As Integer
+                        For i = 0 To (MaxNumberOfTorqueTrimPoints - 1)
+                            Return_Value.Add(MyBase.InitializeChannel(PERF_Q_ENG(i), "PERF_Q_ENG_" + (i + 1).ToString("D2")))
+                            Return_Value.Add(MyBase.InitializeChannel(PERF_TQCOMPEN(i), "PERF_TQCOMPEN_" + (i + 1).ToString("D2")))
+                            Return_Value.Add(MyBase.InitializeChannel(PERF_CAPTURE_TORQUE_BTN(i), "PERF_CAPTURE_TORQUE_BTN_" + (i + 1).ToString("D2")))
+                        Next
+
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_CLEAR_TORQUE_BTN, "PERF_CLEAR_TORQUE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_NEW_QTRMGN, "PERF_NEW_QTRMGN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_NEW_QTRMBS, "PERF_NEW_QTRMBS"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_CALCULATE_TORQUE_TRIM_BTN, "PERF_CALCULATE_TORQUE_TRIM_BTN"))
+                    End If
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Init_Engine_Channels: " & ex.Message)
+                Return_Value.Add(False)
+            Finally
+
+            End Try
+
+            If Return_Value.Contains(False) Then
+                Init_Engine_Channels = False
+            Else
+                Init_Engine_Channels = True
+            End If
+
+        End Function
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+        '************
+        '* Channels *
+        '************
+
+        Private ACCEL_CHECK_CLOSE_WINDOW_BTN As IBooleanChannel
+        Private ACCEL_CHECK_OPEN_WINDOW_S_BTN As IBooleanChannel
+        Private ACCEL_CHECK_OPEN_WINDOW_P_BTN As IBooleanChannel
+
+        'Private PMU_CONTROL_PANEL_OPEN_BTN As IBooleanChannel
+        'Private PMU_CONTROL_PANEL_CLOSE_BTN As IBooleanChannel
+        'Private ONE_P_MOMENT_RIG_CONTROL_PANEL_OPEN_BTN As IBooleanChannel
+        'Private ONE_P_MOMENT_RIG_CONTROL_PANEL_CLOSE_BTN As IBooleanChannel
+        Private TORQUE_TRIM_PANEL_OPEN_BTN As IBooleanChannel
+        Private TORQUE_TRIM_PANEL_CLOSE_BTN As IBooleanChannel
+        Private ARCHIVE_RECORD_BTN As IBooleanChannel
+        Private ARCHIVE_STOP_BTN As IBooleanChannel
+
+        Private ENGINE_AT_REST_S As IBooleanChannel
+        Private ENGINE_AT_REST_P As IBooleanChannel
+        Private ENGINE_AT_REST As IBooleanChannel
+
+        Private CRANK_BTN_PRESSED As IBooleanChannel
+        Private CRANK_P_BTN_PRESSED As IBooleanChannel
+
+        Private CRANK_S_BTN As IBooleanChannel
+        Private CRANK_P_BTN As IBooleanChannel
+
+        Private CRANK_START_DEMAND_OPC As IBooleanChannel
+        Private CRANK_START_DEMAND_PORT_OPC As IBooleanChannel
+
+        Private DYNO_POS_DEMAND As INumericChannel
+        Private DYNO_SET_INLET_PCT As INumericChannel
+        Private DYNO_SPEED_MODE_BTN As IBooleanChannel
+        Private DYNO_SPEED_DEMAND As INumericChannel
+        Private DYNO_SPEED_100_PCT_RPM As INumericChannel
+        Private DYNO_POWLAW_DEMAND As INumericChannel
+        Private DYNO_POWERLAW_DEFAULT_TDEMAND As INumericChannel
+        Private DYNO_TORQUE_DEMAND As INumericChannel
+        Private FACILITY_CLOSE_WINDOW_BTN As IBooleanChannel
+        Private FACILITY_OPEN_WINDOW_BTN As IBooleanChannel
+        Private FUEL_USED_INITIAL_LITERS As INumericChannel
+        Private FUEL_USED_TOTAL_LITERS As INumericChannel
+
+        Private IGNITION_AUTO_MANUAL_BTN As IBooleanChannel
+        Private IGNITION_P_BTN As IBooleanChannel
+        Private IGNITION_S_BTN As IBooleanChannel
+        Private CLOSE_TEST_BTN_OPC As IBooleanChannel
+
+        Private T_T5_CURRENT_S_DEGF As INumericChannel
+        Private T_T5_S_DEGF As INumericChannel
+
+        Private T_T5_CURRENT_P_DEGF As INumericChannel
+        Private T_T5_P_DEGF As INumericChannel
+
+        'Private UPS_ON_BATTERY_MAX_TIME_REACHED As IBooleanChannel
+
+        'Private CRANK_BTN As IBooleanChannel = Nothing
+        'Private IGNITION1_BTN As IBooleanChannel = Nothing
+        'Private IGNITION_AUTO_MANUAL_BTN As IBooleanChannel = Nothing
+        'Private READY_TO_START_IND As IBooleanChannel = Nothing
+        'Private P_POP_PSIG As INumericChannel
+        Private NG_S_RPM As INumericChannel
+        Private NG_P_RPM As INumericChannel
+        Private SHP_HP As INumericChannel
+        Private SHP_S_HP As INumericChannel
+        Private SHP_P_HP As INumericChannel
+
+        Private ACCEL_CHECK_S_SIDE As IBooleanChannel
+        Private ACCEL_CHECK_P_SIDE As IBooleanChannel
+
+
+        'PT6A-68
+        Private MaxNumberOfTorqueTrimPoints As Integer = 17
+        Private PERF_Q_ENG(MaxNumberOfTorqueTrimPoints - 1) As INumericChannel
+        Private PERF_TQCOMPEN(MaxNumberOfTorqueTrimPoints - 1) As INumericChannel
+        Private PERF_CAPTURE_TORQUE_BTN(MaxNumberOfTorqueTrimPoints - 1) As IBooleanChannel
+        Private PERF_CLEAR_TORQUE_BTN As IBooleanChannel
+        Private PERF_NEW_QTRMGN As INumericChannel
+        Private PERF_NEW_QTRMBS As INumericChannel
+        Private PERF_CALCULATE_TORQUE_TRIM_BTN As IBooleanChannel
+
+        Private IGNITION1_CURRENT_AMP_MAX As INumericChannel
+        Private IGNITION2_CURRENT_AMP_MAX As INumericChannel
+        Private IGNITION2_VOLTAGE_VDC_MAX As INumericChannel
+        Private IGNITION1_VOLTAGE_VDC_MAX As INumericChannel
+
+
+        '*********************
+        '* Forms and Control *
+        '*********************
+
+        'Private Inlet_Dem_Display As KineticaRT.Studio.Controls.Display
+
+        'Frame
+        'Private Control_Frame As KineticaRT.Controls.Control
+        'Private TestStep_List As System.Windows.Forms.ComboBox
+        Private TransientControl As CEL.KineticaRT.Controls.ZedGraphControl
+
+        '********
+        '* Misc *
+        '********
+        'Private CurrentSpeed As Double = 0
+
+        'Private LastStart As Boolean = False
+        'Private Log_Condition As Integer
+        'Private OperatingTime_Start As System.DateTime
+        'Private OperatingTime_Stop As System.DateTime
+        'Private ts As System.TimeSpan 'Used to calculate operating time
+
+        '***************
+        '* Controllers *
+        '***************
+
+        Private IgnitionMaxCurrentRecordCtrl As MinMaxRecordController = Nothing
+        Private IgnitionMaxCurrentRecordPortCtrl As MinMaxRecordController = Nothing
+
+        Private IgnitionMaxVoltageRecordCtrl As MinMaxRecordController = Nothing
+        Private IgnitionMaxVoltageRecordPortCtrl As MinMaxRecordController = Nothing
+
+        Private StarterMaxCurrentRecordCtrl As MinMaxRecordController = Nothing
+        Private StarterMaxCurrentRecordPortCtrl As MinMaxRecordController = Nothing
+
+        Private StarterMaxVoltageRecordCtrl As MinMaxRecordController = Nothing
+        Private StarterMaxVoltageRecordPortCtrl As MinMaxRecordController = Nothing
+
+        Private MGTMaxTemperatureRecordStarboardCtrl As MinMaxRecordController = Nothing
+        Private MGTMaxTemperatureRecordPortCtrl As MinMaxRecordController = Nothing
+
+        Private DeletableTInletChStarboardCtrl As DeletableChannelController = Nothing
+        Private DeletableTInletChPortCtrl As DeletableChannelController = Nothing
+
+        Private DeletableTEgtChStarboardCtrl As DeletableChannelController = Nothing
+        Private DeletableTEgtChPortCtrl As DeletableChannelController = Nothing
+
+
+        Private PersistentValuesCtrl As PersistentValuesController = Nothing
+        Private ExhaustFanCtrl As ExhaustFanController = Nothing
+
+        Private UnitronCtrl As UnitronController = Nothing
+
+        Private TimeToIdleTimerStarboardCtrl As TimerController = Nothing
+        Private TimeToLightTimerStarboardCtrl As TimerController = Nothing
+        Private CrankTimerStarboardCtrl As TimerController = Nothing
+
+        Private TimeToIdleTimerPortCtrl As TimerController = Nothing
+        Private TimeToLightTimerPortCtrl As TimerController = Nothing
+        Private CrankTimerPortCtrl As TimerController = Nothing
+
+        Private StarterTimerCtrl As TimerController = Nothing
+
+        Private OperatingTimerCtrl As TimerController = Nothing
+        Private OperatingTimerPortCtrl As TimerController = Nothing
+
+        Private RundownTimerStarboardCtrl As TimerController = Nothing
+        Private RundownTimerPortCtrl As TimerController = Nothing
+
+        Private AccelCheckTimerCtrl As TimerController = Nothing
+
+        'Private StatisticsCtrl As StatisticsController = Nothing
+
+        Private UserInputs As New UserInput14086()
+        Private UserInputs17631 As New UserInput17631()
+
+        Private FlowmeterCtrl As FlowmeterController = Nothing
+
+        Private clearingPerformanceDone As Boolean = False
+
+        Public Class UserInput14086
+
+            Public EngineSerialNumber As String = ""
+            Public WorkOrder As String = ""
+            Public PartNumber As String = ""
+            Public LHV As String = ""
+            Public OilType As String = ""
+            Public FuelType As String = ""
+            Public CustomerName As String = ""
+            Public VaneArea1 As String = ""
+            Public VaneArea2 As String = ""
+            Public TSO As String = ""
+            Public TBO As String = ""
+
+            Public TestType As String = ""
+            Public BuildSpec As String = ""
+            Public Limits As String = ""
+            Public OperatorName As String = ""
+            Public ObserverName As String = ""
+            Public InspectorName As String = ""
+            Public SupervisorName As String = ""
+
+            Public ServiceBulletin1 As String = ""
+            Public ServiceBulletin2 As String = ""
+
+            Public BedType As String = "" 'Used to determine if the PT6A-68 Engine is on a 1P Moment Rig or not
+
+            ' Allow friend access to the empty constructor.
+            Friend Sub New()
+
+            End Sub
+
+            ' Récupère les informations du UserInput 
+            Public Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+                EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+                PartNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+                LHV = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+                OilType = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+                FuelType = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+                CustomerName = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+                TSO = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+                TBO = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+
+                VaneArea1 = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+                VaneArea2 = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+
+                BuildSpec = CELProject.Test_Mgr_UUT_PwBuildSpecification.Value.ToString()
+
+                TestType = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+                BedType = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+                OperatorName = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+                InspectorName = CELProject.Test_Mgr_UUT_Choice(5).Value.ToString()
+
+                ServiceBulletin1 = CELProject.Test_Mgr_UUT_PwServiceBulletin(0).Value.ToString()
+                ServiceBulletin2 = CELProject.Test_Mgr_UUT_PwServiceBulletin(1).Value.ToString()
+            End Sub
+
+        End Class
+
+        Public Class UserInput17631
+
+            Public EngineSerialNumber As String = String.Empty
+            Public WorkOrder As String = String.Empty
+            Public PartNumber As String = String.Empty
+            Public LHV As String = String.Empty
+            Public FuelSG As String = String.Empty
+            Public FuelTemperature As String = String.Empty
+            Public OilType As String = String.Empty
+            Public FuelType As String = String.Empty
+            Public CustomerName As String = String.Empty
+            Public TSO As String = String.Empty
+            Public TBO As String = String.Empty
+            Public VaneArea1 As String = String.Empty
+            Public VaneArea2 As String = String.Empty
+
+            Public TestType As String = String.Empty
+            Public Limits As String = String.Empty
+
+            Public OperatorName As String = String.Empty
+            Public InspectorName As String = String.Empty
+
+            Public BuildSpec As String = String.Empty
+            Public ServiceBulletin1 As String = String.Empty
+            Public ServiceBulletin2 As String = String.Empty
+
+            Public ObserverName As String = String.Empty
+            Public SupervisorName As String = String.Empty
+
+
+            Public BedType As String = String.Empty 'Used to determine if the PT6A-68 Engine is on a 1P Moment Rig or not
+
+            ' Allow friend access to the empty constructor.
+            Friend Sub New()
+
+            End Sub
+
+            ' Récupère les informations du UserInput 
+            Public Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+                EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+                PartNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+                LHV = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+                FuelSG = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+                FuelTemperature = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+                OilType = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+                FuelType = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+                CustomerName = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+                TSO = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+                TBO = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+                VaneArea1 = CELProject.Test_Mgr_UUT_Answer(11).Value.ToString()
+                VaneArea2 = CELProject.Test_Mgr_UUT_Answer(12).Value.ToString()
+
+
+                TestType = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+                Limits = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+                OperatorName = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+                InspectorName = CELProject.Test_Mgr_UUT_Choice(5).Value.ToString()
+
+                BuildSpec = CELProject.Test_Mgr_UUT_PwBuildSpecification.Value.ToString()
+                ServiceBulletin1 = CELProject.Test_Mgr_UUT_PwServiceBulletin(0).Value.ToString()
+                ServiceBulletin2 = CELProject.Test_Mgr_UUT_PwServiceBulletin(1).Value.ToString()
+            End Sub
+
+        End Class
+
+
+    End Class
+End Namespace

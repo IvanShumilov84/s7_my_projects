@@ -1,0 +1,2 @@
+<Window BackColor="Black" Font="Microsoft Sans Serif, 8.25pt" ForeColor="White" RightToLeft="0" TabIndex="0" BorderColor="LightSteelBlue" BorderStyle="1" BorderWidth="0.1" Name="tab" Shape="0" ToolTipText="" UpdateSpeed="1" HorizontalGrid.Size="2" HorizontalGrid.Spacing="2" VerticalGrid.Size="2" VerticalGrid.Spacing="2" TitleEnabled="false" Title="GTCP85-129 SERIES - Performance" WindowState="0" Left="300" Top="50" Width="1400" Height="940" CurrentPanelIndex="0">  <Panel File="GTCP85_129\GTCP85_129_Performance_Panel.dll" Text="Panel 1" />
+</Window>

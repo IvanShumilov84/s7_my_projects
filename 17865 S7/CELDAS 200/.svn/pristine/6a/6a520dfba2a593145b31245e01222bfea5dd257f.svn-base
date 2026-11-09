@@ -1,0 +1,1221 @@
+<SOAP-ENV:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:clr="http://schemas.microsoft.com/soap/encoding/clr/1.0" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<SOAP-ENV:Body>
+<a1:ChannelCollection id="ref-1" xmlns:a1="http://schemas.microsoft.com/clr/nsassem/KineticaRT/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<OPC_AUTOCAL_FLAG href="#ref-4"/>
+<OPC_CHECK_FCS href="#ref-5"/>
+<OPC_DIAG_FUEL_LOW href="#ref-6"/>
+<OPC_DYNO_INLET_VALVE_POS_PCT href="#ref-7"/>
+<OPC_DYNO_LDS_MODE href="#ref-8"/>
+<OPC_DYNO_MANUAL href="#ref-9"/>
+<OPC_DYNO_OUTLET_VALVE_POS_PCT href="#ref-10"/>
+<OPC_DYNO_POS_DOWN href="#ref-11"/>
+<OPC_DYNO_POS_MODE href="#ref-12"/>
+<OPC_DYNO_POS_MODE_LED href="#ref-13"/>
+<OPC_DYNO_POS_UP href="#ref-14"/>
+<OPC_DYNO_PRESET href="#ref-15"/>
+<OPC_DYNO_SPEED href="#ref-16"/>
+<OPC_DYNO_SPEED_MODE href="#ref-17"/>
+<OPC_DYNO_SPEED_MODE_LED href="#ref-18"/>
+<OPC_DYNO_T_BEARING1_1 href="#ref-19"/>
+<OPC_DYNO_T_BEARING1_2 href="#ref-20"/>
+<OPC_DYNO_T_BEARING2_1 href="#ref-21"/>
+<OPC_DYNO_T_BEARING2_2 href="#ref-22"/>
+<OPC_DYNO_T_WATER_IN href="#ref-23"/>
+<OPC_DYNO_T_WATER_OUT1 href="#ref-24"/>
+<OPC_DYNO_T_WATER_OUT2 href="#ref-25"/>
+<OPC_DYNO_TORQUE_MODE href="#ref-26"/>
+<OPC_DYNO_TORQUE_MODE_LED href="#ref-27"/>
+<OPC_DYNO_USER_INLET_VALVE_DEMAND href="#ref-28"/>
+<OPC_DYNO_USER_POS_DEMAND href="#ref-29"/>
+<OPC_DYNO_USER_SPEED_DEMAND href="#ref-30"/>
+<OPC_DYNO_USER_TORQUE_DEMAND href="#ref-31"/>
+<OPC_E_STOP_TRIP href="#ref-32"/>
+<OPC_ELDT href="#ref-33"/>
+<OPC_ENGINE_STOP href="#ref-34"/>
+<OPC_FCS_ANTI_STRAT_FAN href="#ref-35"/>
+<OPC_FCS_ANTI_STRAT_FAN_STATUS href="#ref-36"/>
+<OPC_FCS_BROMINATOR_SOV href="#ref-37"/>
+<OPC_FCS_COOLER_WATER_SUPPLY_STATUS href="#ref-38"/>
+<OPC_FCS_COOLING_TOWER_FAN href="#ref-39"/>
+<OPC_FCS_COOLING_TOWER_FAN_STATUS href="#ref-40"/>
+<OPC_FCS_COOLING_TOWER_PUMP href="#ref-41"/>
+<OPC_FCS_COOLING_TOWER_PUMP_STATUS href="#ref-42"/>
+<OPC_FCS_CR_ER_VENTILATION_FAN href="#ref-43"/>
+<OPC_FCS_CR_ER_VENTILATION_FAN_STATUS href="#ref-44"/>
+<OPC_FCS_DYNO_AIR_SOV href="#ref-45"/>
+<OPC_FCS_DYNO_WATER_SUPPLY href="#ref-46"/>
+<OPC_FCS_DYNO_WATER_SUPPLY_STATUS href="#ref-47"/>
+<OPC_FCS_EPS_TRIP_LATCH_Q href="#ref-48"/>
+<OPC_FCS_EXHAUST_HAT href="#ref-49"/>
+<OPC_FCS_FLOOR_EXTRACTION_FAN href="#ref-50"/>
+<OPC_FCS_FLOOR_EXTRACTION_FAN_STATUS href="#ref-51"/>
+<OPC_FCS_FLYWHEEL_PWR_PACK href="#ref-52"/>
+<OPC_FCS_FLYWHEEL_PWR_PACK_STATUS href="#ref-53"/>
+<OPC_FCS_FLYWHEEL_SCAV_1_STATUS href="#ref-54"/>
+<OPC_FCS_FLYWHEEL_SCAV_2_STATUS href="#ref-55"/>
+<OPC_FCS_FLYWHEEL_SOL_VLV href="#ref-56"/>
+<OPC_FCS_FUEL_LL_LED href="#ref-57"/>
+<OPC_FCS_FUEL_SUPPLY_PUMP href="#ref-58"/>
+<OPC_FCS_FUEL_SUPPLY_PUMP_STATUS href="#ref-59"/>
+<OPC_FCS_HS150_1_PACK_STATUS href="#ref-60"/>
+<OPC_FCS_HS150_1_SCAV_1_STATUS href="#ref-61"/>
+<OPC_FCS_HS150_1_SCAV_2_STATUS href="#ref-62"/>
+<OPC_FCS_HS150_1_SOL_VLV href="#ref-63"/>
+<OPC_FCS_HS150_2_PACK_STATUS href="#ref-64"/>
+<OPC_FCS_HS150_2_SCAV_1_STATUS href="#ref-65"/>
+<OPC_FCS_HS150_2_SCAV_2_STATUS href="#ref-66"/>
+<OPC_FCS_HS150_2_SOL_VLV href="#ref-67"/>
+<OPC_FCS_SHUTDOWN href="#ref-68"/>
+<OPC_FCS_START_HS150_PWR_PACK href="#ref-69"/>
+<OPC_FCS_TQMETER_AIR_SEAL_FAN_STATUS href="#ref-70"/>
+<OPC_FCS_TQMETER_HYD_LUBE_STATUS href="#ref-71"/>
+<OPC_FCS_TQMETER_PWR_PACK href="#ref-72"/>
+<OPC_FCS_TQMETER_SOL_VLV href="#ref-73"/>
+<OPC_FCU_ANG_VALUE href="#ref-74"/>
+<OPC_FLOWMETER1_OFFSET href="#ref-75"/>
+<OPC_FLOWMETER1_SLOPE href="#ref-76"/>
+<OPC_FLOWMETER2_OFFSET href="#ref-77"/>
+<OPC_FLOWMETER2_SLOPE href="#ref-78"/>
+<OPC_GOV_ANG_VALUE href="#ref-79"/>
+<OPC_NG_TRIP href="#ref-80"/>
+<OPC_NGK href="#ref-81"/>
+<OPC_NP_TRIP href="#ref-82"/>
+<OPC_Q_TRIP href="#ref-83"/>
+<OPC_T1_TRIP href="#ref-84"/>
+<OPC_T45H_LIMIT href="#ref-85"/>
+<OPC_TC_ARMING href="#ref-86"/>
+<OPC_TC_FAIL href="#ref-87"/>
+<OPC_TC_READY href="#ref-88"/>
+<OPC_TQMETER_POWER href="#ref-89"/>
+<OPC_TQMETER_SPEED href="#ref-90"/>
+<OPC_TQMETER_TEMP_SHAFT href="#ref-91"/>
+<OPC_TQMETER_TEMPERATURE href="#ref-92"/>
+<OPC_TQMETER_TORQUE href="#ref-93"/>
+<OPC_VIB_AGB href="#ref-94"/>
+<OPC_VIB_BLOWER href="#ref-95"/>
+<OPC_VIB_EXHAUST_1 href="#ref-96"/>
+<OPC_VIB_EXHAUST_4 href="#ref-97"/>
+<OPC_VIB_FLYWHEEL href="#ref-98"/>
+</a1:ChannelCollection>
+<a2:BooleanItem id="ref-4" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-99">OPC_AUTOCAL_FLAG</Name>
+<Description id="ref-100">Autocal Flag</Description>
+<ToolTip id="ref-101"></ToolTip>
+<TrueText id="ref-102">True</TrueText>
+<FalseText id="ref-103">False</FalseText>
+<Group id="ref-104">Group_Fast</Group>
+<ItemID id="ref-105">dacn1.dacn1_uut_cruncher.autocal_flag</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-5" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-106">OPC_CHECK_FCS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-107">True</TrueText>
+<FalseText id="ref-108">False</FalseText>
+<Group id="ref-109">Group_Fast</Group>
+<ItemID id="ref-110">dacn1.dacn1_user_interface.dacn1_facility_controller_check_fcs</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-6" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-111">OPC_DIAG_FUEL_LOW</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-112">True</TrueText>
+<FalseText id="ref-113">False</FalseText>
+<Group id="ref-114">Group_Fast</Group>
+<ItemID id="ref-115">dacn1.dacn1_user_interface.dacn1_facility_controller_disp_fuello</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-7" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-116">OPC_DYNO_INLET_VALVE_POS_PCT</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-117">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-118">Group_Fast</Group>
+<ItemID id="ref-119">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_dyno_inlet_vlv_pos</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-8" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-120">OPC_DYNO_LDS_MODE</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-121">True</TrueText>
+<FalseText id="ref-122">False</FalseText>
+<Group id="ref-123">Group_Fast</Group>
+<ItemID id="ref-124">dacn1.dacn1_texcel_v100_iomgr.user_lds_mode_on</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-9" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-125">OPC_DYNO_MANUAL</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-126">True</TrueText>
+<FalseText id="ref-127">False</FalseText>
+<Group id="ref-128">Group_Fast</Group>
+<ItemID id="ref-129">dacn1.dacn1_texcel_v100_iomgr.user_inlet_valve_manual</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-10" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-130">OPC_DYNO_OUTLET_VALVE_POS_PCT</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-131">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-132">Group_Fast</Group>
+<ItemID id="ref-133">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_dyno_outlet_vlv_pos</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-11" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-134">OPC_DYNO_POS_DOWN</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-135">True</TrueText>
+<FalseText id="ref-136">False</FalseText>
+<Group id="ref-137">Group_Fast</Group>
+<ItemID id="ref-138">dacn1.dacn1_texcel_v100_iomgr.user_beepdown_pos</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-12" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-139">OPC_DYNO_POS_MODE</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-140">True</TrueText>
+<FalseText id="ref-141">False</FalseText>
+<Group id="ref-142">Group_Fast</Group>
+<ItemID id="ref-143">dacn1.dacn1_texcel_v100_iomgr.user_pos_mode_on</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-13" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-144">OPC_DYNO_POS_MODE_LED</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-145">True</TrueText>
+<FalseText id="ref-146">False</FalseText>
+<Group id="ref-147">Group_Fast</Group>
+<ItemID id="ref-148">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_user_pos_ind</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-14" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-149">OPC_DYNO_POS_UP</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-150">True</TrueText>
+<FalseText id="ref-151">False</FalseText>
+<Group id="ref-152">Group_Fast</Group>
+<ItemID id="ref-153">dacn1.dacn1_texcel_v100_iomgr.user_beepup_pos</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-15" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-154">OPC_DYNO_PRESET</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-155">True</TrueText>
+<FalseText id="ref-156">False</FalseText>
+<Group id="ref-157">Group_Fast</Group>
+<ItemID id="ref-158">dacn1.dacn1_texcel_v100_iomgr.user_inlet_preset</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-16" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-159">OPC_DYNO_SPEED</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-160">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-161">Group_Fast</Group>
+<ItemID id="ref-162">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_dyno_speed</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-17" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-163">OPC_DYNO_SPEED_MODE</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-164">True</TrueText>
+<FalseText id="ref-165">False</FalseText>
+<Group id="ref-166">Group_Fast</Group>
+<ItemID id="ref-167">dacn1.dacn1_texcel_v100_iomgr.user_speed_mode_on</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-18" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-168">OPC_DYNO_SPEED_MODE_LED</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-169">True</TrueText>
+<FalseText id="ref-170">False</FalseText>
+<Group id="ref-171">Group_Fast</Group>
+<ItemID id="ref-172">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_user_speed_ind</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-19" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-173">OPC_DYNO_T_BEARING1_1</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-174">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-175">Group_Fast</Group>
+<ItemID id="ref-176">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_t_hs150_1_brg1</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-20" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-177">OPC_DYNO_T_BEARING1_2</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-178">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-179">Group_Fast</Group>
+<ItemID id="ref-180">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_t_hs150_1_brg2</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-21" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-181">OPC_DYNO_T_BEARING2_1</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-182">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-183">Group_Fast</Group>
+<ItemID id="ref-184">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_t_hs150_2_brg1</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-22" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-185">OPC_DYNO_T_BEARING2_2</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-186">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-187">Group_Fast</Group>
+<ItemID id="ref-188">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_t_hs150_2_brg2</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-23" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-189">OPC_DYNO_T_WATER_IN</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-190">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-191">Group_Fast</Group>
+<ItemID id="ref-192">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_t_hs150_1_winlet</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-24" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-193">OPC_DYNO_T_WATER_OUT1</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-194">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-195">Group_Fast</Group>
+<ItemID id="ref-196">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_t_hs150_1_woutlet</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-25" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-197">OPC_DYNO_T_WATER_OUT2</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-198">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-199">Group_Fast</Group>
+<ItemID id="ref-200">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_t_hs150_2_woutlet</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-26" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-201">OPC_DYNO_TORQUE_MODE</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-202">True</TrueText>
+<FalseText id="ref-203">False</FalseText>
+<Group id="ref-204">Group_Fast</Group>
+<ItemID id="ref-205">dacn1.dacn1_texcel_v100_iomgr.user_torque_mode_on</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-27" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-206">OPC_DYNO_TORQUE_MODE_LED</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-207">True</TrueText>
+<FalseText id="ref-208">False</FalseText>
+<Group id="ref-209">Group_Fast</Group>
+<ItemID id="ref-210">dacn1.dacn1_user_interface.dacn1_texcel_v100_iomgr_user_torque_ind</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-28" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-211">OPC_DYNO_USER_INLET_VALVE_DEMAND</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-212">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-213">Group_Fast</Group>
+<ItemID id="ref-214">dacn1.dacn1_texcel_v100_iomgr.user_inlet_valve_demand</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-29" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-215">OPC_DYNO_USER_POS_DEMAND</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-216">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-217">Group_Fast</Group>
+<ItemID id="ref-218">dacn1.dacn1_texcel_v100_iomgr.user_pos_demand</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-30" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-219">OPC_DYNO_USER_SPEED_DEMAND</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-220">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-221">Group_Fast</Group>
+<ItemID id="ref-222">dacn1.dacn1_texcel_v100_iomgr.user_speed_demand</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-31" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-223">OPC_DYNO_USER_TORQUE_DEMAND</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-224">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-225">Group_Fast</Group>
+<ItemID id="ref-226">dacn1.dacn1_texcel_v100_iomgr.user_torque_demand</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-32" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-227">OPC_E_STOP_TRIP</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-228">True</TrueText>
+<FalseText id="ref-229">False</FalseText>
+<Group id="ref-230">Group_Fast</Group>
+<ItemID id="ref-231">dacn1.dacn1_user_interface.dacn1_uut_controller_e_stop_trip</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-33" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-232">OPC_ELDT</Name>
+<Description id="ref-233">ELDT</Description>
+<ToolTip href="#ref-101"/>
+<Units id="ref-234"> °C</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-235">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-236">Group_Fast</Group>
+<ItemID id="ref-237">dacn1.dacn1_user_interface.eldt</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-34" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-238">OPC_ENGINE_STOP</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-239">True</TrueText>
+<FalseText id="ref-240">False</FalseText>
+<Group id="ref-241">Group_Fast</Group>
+<ItemID id="ref-242">dacn1.dacn1_user_interface.user_engine_stop</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-35" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-243">OPC_FCS_ANTI_STRAT_FAN</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-244">True</TrueText>
+<FalseText id="ref-245">False</FalseText>
+<Group id="ref-246">Group_Fast</Group>
+<ItemID id="ref-247">dacn1.dacn1_facility_controller.com_anti_strat_fan</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-36" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-248">OPC_FCS_ANTI_STRAT_FAN_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-249">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-250">Group_Fast</Group>
+<ItemID id="ref-251">dacn1.dacn1_user_interface.dacn1_facility_controller_status_anti_strat_fan</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-37" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-252">OPC_FCS_BROMINATOR_SOV</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-253">True</TrueText>
+<FalseText id="ref-254">False</FalseText>
+<Group id="ref-255">Group_Fast</Group>
+<ItemID id="ref-256">dacn1.dacn1_facility_controller.bromsv</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-38" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-257">OPC_FCS_COOLER_WATER_SUPPLY_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-258">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-259">Group_Fast</Group>
+<ItemID id="ref-260">dacn1.dacn1_user_interface.dacn1_facility_controller_status_cooling_pump</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-39" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-261">OPC_FCS_COOLING_TOWER_FAN</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-262">True</TrueText>
+<FalseText id="ref-263">False</FalseText>
+<Group id="ref-264">Group_Fast</Group>
+<ItemID id="ref-265">dacn1.dacn1_facility_controller.com_cts_fan</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-40" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-266">OPC_FCS_COOLING_TOWER_FAN_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-267">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-268">Group_Fast</Group>
+<ItemID id="ref-269">dacn1.dacn1_user_interface.dacn1_facility_controller_status_cts_fan</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-41" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-270">OPC_FCS_COOLING_TOWER_PUMP</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-271">True</TrueText>
+<FalseText id="ref-272">False</FalseText>
+<Group id="ref-273">Group_Fast</Group>
+<ItemID id="ref-274">dacn1.dacn1_facility_controller.com_cts_pump</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-42" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-275">OPC_FCS_COOLING_TOWER_PUMP_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-276">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-277">Group_Fast</Group>
+<ItemID id="ref-278">dacn1.dacn1_user_interface.dacn1_facility_controller_status_cts_pump</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-43" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-279">OPC_FCS_CR_ER_VENTILATION_FAN</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-280">True</TrueText>
+<FalseText id="ref-281">False</FalseText>
+<Group id="ref-282">Group_Fast</Group>
+<ItemID id="ref-283">dacn1.dacn1_facility_controller.com_cooling_fan</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-44" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-284">OPC_FCS_CR_ER_VENTILATION_FAN_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-285">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-286">Group_Fast</Group>
+<ItemID id="ref-287">dacn1.dacn1_user_interface.dacn1_facility_controller_status_cooling_fan</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-45" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-288">OPC_FCS_DYNO_AIR_SOV</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-289">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-290">Group_Fast</Group>
+<ItemID id="ref-291">dacn1.dacn1_user_interface.dacn1_facility_controller_dyno_air_valve</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-46" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-292">OPC_FCS_DYNO_WATER_SUPPLY</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-293">True</TrueText>
+<FalseText id="ref-294">False</FalseText>
+<Group id="ref-295">Group_Fast</Group>
+<ItemID id="ref-296">dacn1.dacn1_facility_controller.com_dws_pump_1</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-47" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-297">OPC_FCS_DYNO_WATER_SUPPLY_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-298">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-299">Group_Fast</Group>
+<ItemID id="ref-300">dacn1.dacn1_user_interface.dacn1_facility_controller_status_dws_pump_1</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-48" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-301">OPC_FCS_EPS_TRIP_LATCH_Q</Name>
+<Description id="ref-302">EPS_TRIP_LATCH_Q1</Description>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-303">True</TrueText>
+<FalseText id="ref-304">False</FalseText>
+<Group id="ref-305">Group_Fast</Group>
+<ItemID id="ref-306">dacn1.dacn1_uut_controller.eps_trip_latch.q1</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-49" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-307">OPC_FCS_EXHAUST_HAT</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-308">True</TrueText>
+<FalseText id="ref-309">False</FalseText>
+<Group id="ref-310">Group_Fast</Group>
+<ItemID id="ref-311">dacn1.dacn1_facility_controller.exhaust_hat</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-50" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-312">OPC_FCS_FLOOR_EXTRACTION_FAN</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-313">True</TrueText>
+<FalseText id="ref-314">False</FalseText>
+<Group id="ref-315">Group_Fast</Group>
+<ItemID id="ref-316">dacn1.dacn1_facility_controller.com_floor_extraction_fan</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-51" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-317">OPC_FCS_FLOOR_EXTRACTION_FAN_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-318">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-319">Group_Fast</Group>
+<ItemID id="ref-320">dacn1.dacn1_user_interface.dacn1_facility_controller_status_floor_extraction_fan</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-52" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-321">OPC_FCS_FLYWHEEL_PWR_PACK</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-322">True</TrueText>
+<FalseText id="ref-323">False</FalseText>
+<Group id="ref-324">Group_Fast</Group>
+<ItemID id="ref-325">dacn1.dacn1_facility_controller.start_flywheel</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-53" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-326">OPC_FCS_FLYWHEEL_PWR_PACK_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-327">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-328">Group_Fast</Group>
+<ItemID id="ref-329">dacn1.dacn1_user_interface.dacn1_facility_controller_status_flywheel_power_pack</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-54" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-330">OPC_FCS_FLYWHEEL_SCAV_1_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-331">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-332">Group_Fast</Group>
+<ItemID id="ref-333">dacn1.dacn1_user_interface.dacn1_facility_controller_status_flywheel_scav_pump_1</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-55" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-334">OPC_FCS_FLYWHEEL_SCAV_2_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-335">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-336">Group_Fast</Group>
+<ItemID id="ref-337">dacn1.dacn1_user_interface.dacn1_facility_controller_status_flywheel_scav_pump_2</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-56" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-338">OPC_FCS_FLYWHEEL_SOL_VLV</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-339">True</TrueText>
+<FalseText id="ref-340">False</FalseText>
+<Group id="ref-341">Group_Fast</Group>
+<ItemID id="ref-342">dacn1.dacn1_user_interface.dacn1_facility_controller_flywheel_pk_wsv</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-57" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-343">OPC_FCS_FUEL_LL_LED</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-344">True</TrueText>
+<FalseText id="ref-345">False</FalseText>
+<Group id="ref-346">Group_Fast</Group>
+<ItemID id="ref-347">dacn1.dacn1_facility_controller.disp_fuello</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-58" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-348">OPC_FCS_FUEL_SUPPLY_PUMP</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-349">True</TrueText>
+<FalseText id="ref-350">False</FalseText>
+<Group id="ref-351">Group_Fast</Group>
+<ItemID id="ref-352">dacn1.dacn1_facility_controller.com_fuel_supply_pump</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-59" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-353">OPC_FCS_FUEL_SUPPLY_PUMP_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-354">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-355">Group_Fast</Group>
+<ItemID id="ref-356">dacn1.dacn1_user_interface.dacn1_facility_controller_status_fuel_supply_pump</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-60" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-357">OPC_FCS_HS150_1_PACK_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-358">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-359">Group_Fast</Group>
+<ItemID id="ref-360">dacn1.dacn1_user_interface.dacn1_facility_controller_status_pp1_supply_pump_1</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-61" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-361">OPC_FCS_HS150_1_SCAV_1_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-362">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-363">Group_Fast</Group>
+<ItemID id="ref-364">dacn1.dacn1_user_interface.dacn1_facility_controller_status_pp1_scav_pump_1</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-62" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-365">OPC_FCS_HS150_1_SCAV_2_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-366">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-367">Group_Fast</Group>
+<ItemID id="ref-368">dacn1.dacn1_user_interface.dacn1_facility_controller_status_pp1_scav_pump_2</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-63" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-369">OPC_FCS_HS150_1_SOL_VLV</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-370">True</TrueText>
+<FalseText id="ref-371">False</FalseText>
+<Group id="ref-372">Group_Fast</Group>
+<ItemID id="ref-373">dacn1.dacn1_user_interface.dacn1_facility_controller_pwrpk1wsv</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-64" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-374">OPC_FCS_HS150_2_PACK_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-375">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-376">Group_Fast</Group>
+<ItemID id="ref-377">dacn1.dacn1_user_interface.dacn1_facility_controller_status_pp2_supply_pump_1</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-65" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-378">OPC_FCS_HS150_2_SCAV_1_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-379">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-380">Group_Fast</Group>
+<ItemID id="ref-381">dacn1.dacn1_user_interface.dacn1_facility_controller_status_pp2_scav_pump_1</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-66" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-382">OPC_FCS_HS150_2_SCAV_2_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-383">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-384">Group_Fast</Group>
+<ItemID id="ref-385">dacn1.dacn1_user_interface.dacn1_facility_controller_status_pp2_scav_pump_2</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-67" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-386">OPC_FCS_HS150_2_SOL_VLV</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-387">True</TrueText>
+<FalseText id="ref-388">False</FalseText>
+<Group id="ref-389">Group_Fast</Group>
+<ItemID id="ref-390">dacn1.dacn1_user_interface.dacn1_facility_controller_pwrpk2wsv</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-68" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-391">OPC_FCS_SHUTDOWN</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-392">True</TrueText>
+<FalseText id="ref-393">False</FalseText>
+<Group id="ref-394">Group_Fast</Group>
+<ItemID id="ref-395">dacn1.dacn1_user_interface.dacn1_facility_controller_fcs_trip</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-69" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-396">OPC_FCS_START_HS150_PWR_PACK</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-397">True</TrueText>
+<FalseText id="ref-398">False</FalseText>
+<Group id="ref-399">Group_Fast</Group>
+<ItemID id="ref-400">dacn1.dacn1_facility_controller.start_hs150</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-70" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-401">OPC_FCS_TQMETER_AIR_SEAL_FAN_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-402">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-403">Group_Fast</Group>
+<ItemID id="ref-404">dacn1.dacn1_user_interface.dacn1_facility_controller_status_air_supply_fan</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-71" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-405">OPC_FCS_TQMETER_HYD_LUBE_STATUS</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-406">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-407">Group_Fast</Group>
+<ItemID id="ref-408">dacn1.dacn1_user_interface.dacn1_facility_controller_status_lube_supply_pump</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-72" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-409">OPC_FCS_TQMETER_PWR_PACK</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-410">True</TrueText>
+<FalseText id="ref-411">False</FalseText>
+<Group id="ref-412">Group_Fast</Group>
+<ItemID id="ref-413">dacn1.dacn1_facility_controller.start_tqmeter</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-73" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-414">OPC_FCS_TQMETER_SOL_VLV</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-415">True</TrueText>
+<FalseText id="ref-416">False</FalseText>
+<Group id="ref-417">Group_Fast</Group>
+<ItemID id="ref-418">dacn1.dacn1_user_interface.dacn1_facility_controller_ttronicswsv</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-74" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-419">OPC_FCU_ANG_VALUE</Name>
+<Description id="ref-420">HMU</Description>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-421">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-422">Group_Fast</Group>
+<ItemID id="ref-423">dacn1.dacn1_sm1720_iomgr.fcu_ang.value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-75" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-424">OPC_FLOWMETER1_OFFSET</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-425">N</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-426">Group_Fast</Group>
+<ItemID id="ref-427">dacn1.dacn1_scu_iomgr.flowmeter1_offset</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-76" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-428">OPC_FLOWMETER1_SLOPE</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-429">N</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-430">Group_Fast</Group>
+<ItemID id="ref-431">dacn1.dacn1_scu_iomgr.flowmeter1_slope</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-77" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-432">OPC_FLOWMETER2_OFFSET</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-433">N</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-434">Group_Fast</Group>
+<ItemID id="ref-435">dacn1.dacn1_scu_iomgr.flowmeter2_offset</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-78" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-436">OPC_FLOWMETER2_SLOPE</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-437">N</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-438">Group_Fast</Group>
+<ItemID id="ref-439">dacn1.dacn1_scu_iomgr.flowmeter2_slope</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-79" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-440">OPC_GOV_ANG_VALUE</Name>
+<Description id="ref-441">LDS</Description>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-442">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-443">Group_Fast</Group>
+<ItemID id="ref-444">dacn1.dacn1_sm1720_iomgr.gov_ang.value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-80" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-445">OPC_NG_TRIP</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-446">True</TrueText>
+<FalseText id="ref-447">False</FalseText>
+<Group id="ref-448">Group_Fast</Group>
+<ItemID id="ref-449">dacn1.dacn1_user_interface.dacn1_uut_controller_n_trip[1]</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-81" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-450">OPC_NGK</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-451">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-452">Group_Fast</Group>
+<ItemID id="ref-453">dacn1.dacn1_user_interface.hmi_ngk</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-82" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-454">OPC_NP_TRIP</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-455">True</TrueText>
+<FalseText id="ref-456">False</FalseText>
+<Group id="ref-457">Group_Fast</Group>
+<ItemID id="ref-458">dacn1.dacn1_user_interface.dacn1_uut_controller_n_trip[2]</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-83" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-459">OPC_Q_TRIP</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-460">True</TrueText>
+<FalseText id="ref-461">False</FalseText>
+<Group id="ref-462">Group_Fast</Group>
+<ItemID id="ref-463">dacn1.dacn1_user_interface.dacn1_uut_controller_q_trip[1]</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-84" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-464">OPC_T1_TRIP</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-465">True</TrueText>
+<FalseText id="ref-466">False</FalseText>
+<Group id="ref-467">Group_Fast</Group>
+<ItemID id="ref-468">dacn1.dacn1_user_interface.dacn1_uut_controller_t_trip[1]</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-85" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-469">OPC_T45H_LIMIT</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-470">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-471">Group_Fast</Group>
+<ItemID id="ref-472">dacn1.dacn1_user_interface.dacn1_uut_controller_t_trip_point[1]</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:BooleanItem id="ref-86" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-473">OPC_TC_ARMING</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-474">True</TrueText>
+<FalseText id="ref-475">False</FalseText>
+<Group id="ref-476">Group_Fast</Group>
+<ItemID id="ref-477">dacn1.dacn1_facility_controller.test_cell_arming</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-87" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-478">OPC_TC_FAIL</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-479">True</TrueText>
+<FalseText id="ref-480">False</FalseText>
+<Group id="ref-481">Group_Fast</Group>
+<ItemID id="ref-482">dacn1.dacn1_user_interface.dacn1_facility_controller_test_cell_fail</ItemID>
+</a2:BooleanItem>
+<a2:BooleanItem id="ref-88" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-483">OPC_TC_READY</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<TrueText id="ref-484">True</TrueText>
+<FalseText id="ref-485">False</FalseText>
+<Group id="ref-486">Group_Fast</Group>
+<ItemID id="ref-487">dacn1.dacn1_user_interface.dacn1_facility_controller_test_cell_ready</ItemID>
+</a2:BooleanItem>
+<a2:Item id="ref-89" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-488">OPC_TQMETER_POWER</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-489">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-490">Group_Fast</Group>
+<ItemID id="ref-491">dacn1.dacn1_user_interface.dacn1_torquetronics_700_iomgr_power</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-90" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-492">OPC_TQMETER_SPEED</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-493">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-494">Group_Fast</Group>
+<ItemID id="ref-495">dacn1.dacn1_user_interface.dacn1_torquetronics_700_iomgr_speed</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-91" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-496">OPC_TQMETER_TEMP_SHAFT</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-497">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-498">Group_Fast</Group>
+<ItemID id="ref-499">dacn1.dacn1_user_interface.dacn1_torquetronics_700_iomgr_temperature</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-92" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-500">OPC_TQMETER_TEMPERATURE</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-501">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-502">Group_Fast</Group>
+<ItemID id="ref-503">dacn1.dacn1_user_interface.dacn1_torquetronics_700_iomgr_temperature</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-93" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-504">OPC_TQMETER_TORQUE</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-505">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-506">Group_Fast</Group>
+<ItemID id="ref-507">dacn1.dacn1_user_interface.dacn1_torquetronics_700_iomgr_torque</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-94" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-508">OPC_VIB_AGB</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-509">N</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-510">Group_Fast</Group>
+<ItemID id="ref-511">dacn1.dacn1_user_interface.dacn1_ccas_iomgr_vibb[3].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-95" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-512">OPC_VIB_BLOWER</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-513">N</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-514">Group_Fast</Group>
+<ItemID id="ref-515">dacn1.dacn1_user_interface.dacn1_ccas_iomgr_vibt[1].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-96" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-516">OPC_VIB_EXHAUST_1</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-517">N</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-518">Group_Fast</Group>
+<ItemID id="ref-519">dacn1.dacn1_user_interface.dacn1_ccas_iomgr_vibb[1].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-97" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-520">OPC_VIB_EXHAUST_4</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-521">N</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-522">Group_Fast</Group>
+<ItemID id="ref-523">dacn1.dacn1_user_interface.dacn1_ccas_iomgr_vibb[2].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+<a2:Item id="ref-98" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-524">OPC_VIB_FLYWHEEL</Name>
+<Description href="#ref-101"/>
+<ToolTip href="#ref-101"/>
+<Units href="#ref-101"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-525">N</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-526">Group_Fast</Group>
+<ItemID id="ref-527">dacn1.dacn1_user_interface.dacn1_ccas_iomgr_vibb[4].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a2:Item>
+</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

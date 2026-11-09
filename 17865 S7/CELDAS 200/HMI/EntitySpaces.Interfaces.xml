@@ -1,0 +1,1909 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>EntitySpaces.Interfaces</name>
+    </assembly>
+    <members>
+        <member name="T:EntitySpaces.Interfaces.esPrefetchParameters">
+            <summary>
+            Used internally by EntitySpaces in support of the DynamicQuery Prefetch logic. This is passed to each
+            esPrefetchDelegate delegate 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchParameters.Root">
+            <summary>
+            The Root query when the Prefetch path is complete
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchParameters.You">
+            <summary>
+            In the esPrefetchDelegate if this is non-null this is "you" so don't create your Query, it was created in the 
+            esPrefetchDelegate just before you were called
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchParameters.Alias">
+            <summary>
+            Used by the prefetch logic, alias = "a" + Alias++.ToString()
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esPrefetchMap">
+            <summary>
+            Used internally by EntitySpaces in support of the DynamicQuery Prefetch logic
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchMap.Query">
+            <summary>
+            The Query for the Prefetch, only on the root esPrefetchMap will contain a query
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchMap.Table">
+            <summary>
+            The Query for the Prefetch, only on the root esPrefetchMap will contain a DataTable (after the call to Query.Load())
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchMap.PrefetchDelegate">
+            <summary>
+            The Prefetch delegate itself. This is used when building the query
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchMap.PropertyName">
+            <summary>
+            The Property name this prefetch Property, ie, "OrdersCollectionByEmployeeID"
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchMap.MyColumnName">
+            <summary>
+            The name of the column in this entity
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchMap.ParentColumnName">
+            <summary>
+            The name of the column in the parent entity
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchMap.Path">
+            <summary>
+            If this is a SubPath 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esPrefetchMap.IsMultiPartKey">
+            <summary>
+            True if the foreignkey is a composite key
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esPrefetchDelegate">
+            <summary>
+            A Prefetch delegate map entry used when building a Prefetch path
+            </summary>
+            <param name="data">Used to pass state to each esPrefetchDelegate delegate as the query is being created</param>
+        </member>
+        <!-- Badly formed XML comment ignored for member "T:EntitySpaces.Interfaces.esDynamicQuery" -->
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.#ctor">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.#ctor(System.String)">
+            <summary>
+            The Constructor used when using this query in a "Join"
+            </summary>
+            <param name="joinAlias">The alias of the associated Table to be used in the "Join"</param>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esDynamicQuery.Meta">
+            <summary>
+            Read-only metadata for the entity.
+            </summary>
+            <remarks>
+            The sample below loops through the <see cref="T:EntitySpaces.Interfaces.esColumnMetadataCollection"/> in provided
+            by the <see cref="T:EntitySpaces.Interfaces.IMetadata"/> interface. There is a lot of useful information here, in fact,
+            there is enough information for EntitySpaces to build all of the dynamic sql required during
+            operations that use dynamic sql.
+            <code>
+            public partial class Employees : esEmployees
+            {
+            	public void CustomMethod()
+            	{
+            		foreach(esColumnMetadata col in this.Meta.Columns)
+            		{
+            			if(col.IsInPrimaryKey)
+            			{
+            				// do something ...
+            			}
+            		}
+            	}
+            }
+            </code>
+            </remarks>
+            <seealso cref="T:EntitySpaces.Interfaces.esColumnMetadata"/>
+            <seealso cref="T:EntitySpaces.Interfaces.esColumnMetadataCollection"/>
+            <seealso cref="T:EntitySpaces.Interfaces.esProviderSpecificMetadata"/>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.GetConnectionName">
+            <summary>
+            Called whenever the Entity needs a connection. This can be used to override the default connection 
+            per object manually, or automatically by filling in the "Connection Name" on the "Generated Master"
+            template. 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.AssignProviderMetadata(EntitySpaces.DynamicQuery.esDynamicQuerySerializable,System.Collections.Generic.List{EntitySpaces.DynamicQuery.esDynamicQuerySerializable})">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esDynamicQuery.QueryLoadedDelegate">
+            <summary>
+            This is called when DynamicQuery.Load() is called,
+            this occurs when code like this is executed:  emps.Query.Load(), 
+            by default this method does nothing.
+            When overriding you don't use the internal keyword.
+            </summary>
+            <param name="Query">The DynamicQuery that was just loaded</param>        
+            <param name="table">The DataTable as passed into Query.Load()</param>
+            <returns>True if at least one record was loaded</returns>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDynamicQuery.OnLoadDelegate">
+            <summary>
+            This is called when DynamicQuery.Load() is called,
+            this occurs when code like this is executed:  emps.Query.Load(), 
+            by default this method does nothing.
+            When overriding you don't use the internal keyword.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.PopulateRequest(EntitySpaces.Interfaces.esDataRequest)">
+            <summary>
+            This initializes the esDataRequest for the query.
+            </summary>
+            <param name="request">The request to populate.</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.Load">
+            <summary>
+            Execute the Query and loads your BusinessEntity. 
+            If you need to be notified that this is being called
+            override BusinessEntity.Query.OnLoadEvent().
+            </summary>
+            <remarks>
+            The default conjunction is AND.
+            You can change the default conjunction this way:
+            <code>
+            emps.Query.es.DefaultConjunction = esConjunction.Or;
+            </code>
+            </remarks>
+            <returns>True if at least one record was loaded</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.Parse">
+            <summary>
+            This merely parses and returns the SQL Syntax, no SQL is executed. 
+            </summary>
+            <remarks>
+            The default conjunction is AND.
+            You can change the default conjunction this way:
+            <code>
+            emps.Query.es.DefaultConjunction = esConjunction.Or;
+            </code>
+            </remarks>
+            <returns>The SQL Syntax, the same as query.es.LastQuery when a query is executed.</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.LoadDataTable">
+            <summary>
+            Execute the Query and load a DataTable. 
+            </summary>
+            <returns>A DataTable containing the loaded records.</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.ExecuteReader">
+            <summary>
+            Execute the query and return a DataReader. You must use the 'using' syntax or Close the reader 
+            when finished with it.
+            </summary>
+            <returns>The DataReader</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.ExecuteScalar">
+            <summary>
+            Execute the query and return a single value. 
+            </summary>
+            <returns>The value</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.ExecuteScalar``1">
+            <summary>
+            Execute the query and return a single value. 
+            </summary>
+            <returns>The value</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.Prefetch``1(EntitySpaces.Interfaces.esPrefetchMap[])">
+            <summary>
+            Used when Prefetching data. This is called once per each prefetched set of data 
+            </summary>
+            <remarks>
+            The code below loads EmployeeID number 1, and prefetches it's Orders and OrderDetail records.
+            We could also load many Employees via a Collection and prefetch their Orders and OrderDetail records.
+            <code>
+            // The Main Query
+            EmployeesQuery q = new EmployeesQuery("e");
+            q.Where(q.EmployeeID == 1);
+            
+            // The OrdersCollection
+            OrdersQuery o = q.Prefetch&lt;OrdersQuery&gt;(Employees.Prefetch_OrdersCollectionByEmployeeID);
+            EmployeesQuery emp1 = o.GetQuery&lt;EmployeesQuery&gt;();
+            o.Where(emp1.EmployeeID == 1);
+            
+            // The OrdersDetailsCollection
+            OrderDetailsQuery od = q.Prefetch&lt;OrderDetailsQuery&gt;(Employees.Prefetch_OrdersCollectionByEmployeeID, Orders.Prefetch_OrderDetailsCollectionByOrderID);
+            EmployeesQuery emp2 = od.GetQuery&lt;EmployeesQuery&gt;();
+            od.Where(emp2.EmployeeID == 1);
+            
+            // Load It
+            Employees emp = new Employees();
+            emp.Load(q);
+            </code>
+            </remarks>        
+            <typeparam name="T">The Type of the esDynamicQuery returned</typeparam> 
+            <param name="maps">The Path to the data</param>
+            <returns>The esDynamicQuery for the Type of query you intend to load</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.Prefetch``1(System.Boolean,EntitySpaces.Interfaces.esPrefetchMap[])">
+            <summary>
+            This Prefetch allows you to fill in the Select() statement for the query to control what columns are brought back
+            </summary>
+            <typeparam name="T">The Type of the esDynamicQuery returned</typeparam> 
+            <param name="provideSelect">If true then you must fill in the Query.Select() clause</param>
+            <param name="maps">The Path to the data</param>
+            <returns>The esDynamicQuery for the Type of query you intend to load</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.Prefetch(EntitySpaces.Interfaces.esPrefetchMap[])">
+            <summary>
+            This Prefetch call is a simpler API for when you are not interested in tweaking the Query
+            </summary>
+            <param name="maps">The Path to the data</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.SelectAllExcept(EntitySpaces.DynamicQuery.esQueryItem[])">
+            <summary>
+            This method will create a Select statement for all of the columns in the entity except for the ones passed in.
+            This is very useful when you want to eliminate blobs and other fields for performance.
+            </summary>
+            <param name="columns">The columns which you wish to exclude from the Select statement</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.SelectAll">
+            <summary>
+            This method will select all of the columns that were present when you generated your
+            classes as opposed to doing a SELECT *
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esDynamicQuery.es2">
+            <summary>
+            This is to help hide some details from Intellisense.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esDynamicQuery.DynamicQueryProps">
+            <summary>
+            The Dynamic Query properties.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDynamicQuery.DynamicQueryProps.#ctor(EntitySpaces.Interfaces.esDynamicQuery)">
+            <summary>
+            The Dynamic Query properties.
+            </summary>
+            <param name="query">The esDynamicQuery's properties.</param>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esDynamicQuery.DynamicQueryProps.HasConnection">
+            <summary>
+            Returns true if this Query has been assigned it's own Connection
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esDynamicQuery.DynamicQueryProps.Connection">
+            <summary>
+            esConnection Connection.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esDynamicQuery.DynamicQueryProps.PrefetchMaps">
+            <summary>
+            Used internally by Entityspaces, do not use this Property
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDynamicQuery.metadataDictionary">
+            <summary>
+            Used when deserializing the queries send from the client side
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDynamicQuery.connection">
+            <summary>
+            This property is in "es2" because the client side queries cannot have connections
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDynamicQuery.prefetchMaps">
+            <summary>
+            Holds the information for each Prefetch property to be loaded
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esColumnMetadata">
+            <summary>
+            This class is contained in an <see cref="T:EntitySpaces.Interfaces.esColumnMetadataCollection"/> and used to store
+            the onboard metadata in the generated Metadata class. For example, for a table named Employee
+            a class named EmployeeMetadata will be generated. The Metadata class contains an 
+            esColumnMetadataCollection containing an esColumnMetadata for each column in the table.<br></br>
+            The EntitySpaces data provider use this information to build dynamic sql statements. This
+            data can be very useful and you have full access to the this onboard metadata as a protected
+            method as shown below:
+            </summary>
+            <remarks>
+            This sample code shows how to iterate over the on-board meta data.
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+            	public void CheckoutTheMetadata()
+            	{
+            		foreach(esColumnMetadata esCol in this.Meta.Columns)
+            		{
+            			Console.WriteLine(esCol.IsInPrimaryKey.ToString());
+            		}
+            	}
+            }	
+            </code>
+            </remarks>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esColumnMetadata.#ctor">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esColumnMetadata.#ctor(System.String,System.Int32,System.Type)">
+            <summary>
+            The Constructor
+            </summary>
+            <param name="name">Physical Column Name</param>
+            <param name="ordinal">The Orderinal position in the Table or View</param>
+            <param name="type">The .NET Data Type of the Column</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esColumnMetadata.#ctor(System.String,System.Int32,System.Type,EntitySpaces.DynamicQuery.esSystemType)">
+            <summary>
+            The Constructor
+            </summary>
+            <param name="name">Physical Column Name</param>
+            <param name="ordinal">The Orderinal position in the Table or View</param>
+            <param name="type">The .NET Data Type of the Column</param>
+            <param name="esType">The EntitySpaces data type</param>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esColumnMetadata.Name">
+            <summary>
+            The physical name of the column in the table or view.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esColumnMetadata.Alias">
+            <summary>
+            Taken from MyGeneration as the column alias (if provided).
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.PropertyName">
+            <summary>
+            The property name in the esEntity that exposes this column.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.Ordinal">
+            <summary>
+            The ordinal postition of this column in the table or view
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.NumericPrecision">
+            <summary>
+            The numerical precision of this column, valid only if this column
+            is a decimal or some similiar type.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.NumericScale">
+            <summary>
+            The numerical scale (number of decimal points) in this column, 
+            valid only if this column is a decimal or some similiar type.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.CharacterMaxLength">
+            <summary>
+            For all string types this contains the maximum length of the
+            column in the table or view.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.Default">
+            <summary>
+            The "raw" default value as stored in the DBMS system.
+            </summary>
+            <seealso cref="F:EntitySpaces.Interfaces.esColumnMetadata.HasDefault"/>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.Description">
+            <summary>
+            The description of the column in the table or view provided
+            by MyGeneration.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.Type">
+            <summary>
+            The System type of this column
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.esType">
+            <summary>
+            The esSystemType enum, can be useful if you need to perform a switch
+            statement on the Type.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.HasDefault">
+            <summary>
+            True if <see cref="F:EntitySpaces.Interfaces.esColumnMetadata.Default"/> has a value.
+            </summary>
+            <seealso cref="F:EntitySpaces.Interfaces.esColumnMetadata.Default"/>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.IsInPrimaryKey">
+            <summary>
+            True if this column is all or part of the primary key.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.IsAutoIncrement">
+            <summary>
+            True if this column is an auto identity column. This is true
+            for SQL. MySQL, and Access auto-incrementing columns. This is also
+            true for Oracle Sequences if mapped properly in MyGeneration.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.AutoKeyText">
+            <summary>
+            Contains the Custom autokey text such as the name of the sequencer
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.IsNullable">
+            <summary>
+            True if this column can be NULL in the database.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.IsComputed">
+            <summary>
+            True if this column is a derived or computed column in the database.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.IsReadOnly">
+            <summary>
+            True if this column is read only, not all databases support read-only fields
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.IsConcurrency">
+            <summary>
+            True if this column is used for concurrency checking, such as Microsoft SQL Server's
+            timestamp column. EntitySpaces can also support this for Oracle.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.IsEntitySpacesConcurrency">
+            <summary>
+            True if this column is used for EntitySpaces Multiprovider concurrency checking model
+            This column must be an integer type for this to work
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esColumnMetadata.IsTransient">
+            <summary>
+            True if this is a transient column
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esColumnMetadataCollection">
+            <summary>
+            This is the collection used to house the onboard metadata created during 
+            code generation.
+            </summary>
+            <remarks>
+            This collection contains one <see cref="T:EntitySpaces.Interfaces.esColumnMetadata"/> for each column in 
+            the table or view. This data is used by EntitySpaces data providers to create dynamic
+            sql and by EntitySpaces during databinding.
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+            	public void CheckoutTheMetadata()
+            	{
+            		foreach(esColumnMetadata esCol in this.Meta.Columns)
+            		{
+            			Console.WriteLine(esCol.IsInPrimaryKey.ToString());
+            		}
+            	}
+            }
+            </code>
+            </remarks>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esColumnMetadataCollection.Count">
+            <summary>
+            The number of <see cref="T:EntitySpaces.Interfaces.esColumnMetadata"/> objects in the collection.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esColumnMetadataCollection.ThereAreDefaults">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esColumnMetadataCollection.PrimaryKeys">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esColumnMetadataCollection.Item(System.String)">
+            <summary>
+            Provides direct access into the collection by column name. 
+            </summary>
+            <param name="columnName">The name of the desired column. This parameter is expected
+            to be the physical name of the column as in the table or view, for example, 
+            Employees.ColumnNames.LastName</param>
+            <returns></returns>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esColumnMetadataCollection.Item(System.Int32)">
+            <summary>
+            Provides sequential access into the collection.
+            </summary>
+            <param name="ordinal"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esColumnMetadataCollection.Add(EntitySpaces.Interfaces.esColumnMetadata)">
+            <summary>
+            Used internally by EntitySpaces. This should never be called by user code
+            </summary>
+            <param name="column">The new esColumnMetadata to add to the array</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esColumnMetadataCollection.FindByColumnName(System.String)">
+            <summary>
+            Searches for an esColumnMetadata by the propery name. This method is the same as
+            using the indexer.
+            </summary>
+            <param name="columnName">The high level PropertyName, for example, Employees.ColumnNames.LastName</param>
+            <returns>The esColumnMetadata or null if not found.</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esColumnMetadataCollection.FindByPropertyName(System.String)">
+            <summary>
+            Searches for an esColumnMetadata by the propery name.
+            </summary>
+            <param name="propertyName">The high level PropertyName, for example, Employees.PropertyNames.LastName</param>
+            <returns>The esColumnMetadata or null if not found.</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esColumnMetadataCollection.GetEnumerator">
+            <summary>
+            Supports the foreach() syntax over the collection.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esProviderSpecificMetadata">
+            <summary>
+            This class houses the specific meta data for a given database type. When doing multi-database
+            development with EntitySpaces a given class will have a different esProviderSpecificMetadata
+            for each database. 
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esProviderSpecificMetadata.#ctor">
+            <summary>
+            The Constructor
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esDataProvider">
+            <summary>
+            This class is used by EntitySpaces to issue loosely coupled calls to the actual EntitySpaces
+            data provider as defined in the web.config or app.config file. 
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDataProvider.esLoadDataTable(EntitySpaces.Interfaces.esDataRequest,EntitySpaces.Interfaces.esProviderSignature)">
+            <summary>
+            Used to populate an esEntity or esEntityCollection with data.
+            </summary>
+            <param name="request">Contains all of the information necessary to issue and carry out the request</param>
+            <param name="sig">Contains the required information to locate the EntitySpaces DataProvider</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDataProvider.esSaveDataTable(EntitySpaces.Interfaces.esDataRequest,EntitySpaces.Interfaces.esProviderSignature)">
+            <summary>
+            Used to issue a Save command on an esEntity or esEntityCollection.
+            </summary>
+            <param name="request">Contains all of the information necessary to issue and carry out the request</param>
+            <param name="sig">Contains the required information to locate the EntitySpaces DataProvider</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDataProvider.ExecuteNonQuery(EntitySpaces.Interfaces.esDataRequest,EntitySpaces.Interfaces.esProviderSignature)">
+            <summary>
+            Used to execute a non-data return query through the EntitySpaces DataProvider
+            </summary>
+            <param name="request">Contains all of the information necessary to issue and carry out the request</param>
+            <param name="sig">Contains the required information to locate the EntitySpaces DataProvider</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDataProvider.ExecuteReader(EntitySpaces.Interfaces.esDataRequest,EntitySpaces.Interfaces.esProviderSignature)">
+            <summary>
+            Used to execute a command against the EntitySpaces DataProvider that returns data in the form of
+            a IDataReader.
+            </summary>
+            <param name="request">Contains all of the information necessary to issue and carry out the request</param>
+            <param name="sig">Contains the required information to locate the EntitySpaces DataProvider</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDataProvider.ExecuteScalar(EntitySpaces.Interfaces.esDataRequest,EntitySpaces.Interfaces.esProviderSignature)">
+            <summary>
+            Used to issue a command against the EntitySpaces DataProvider that returns a single scalar value.
+            </summary>
+            <param name="request">Contains all of the information necessary to issue and carry out the request</param>
+            <param name="sig">Contains the required information to locate the EntitySpaces DataProvider</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDataProvider.FillDataSet(EntitySpaces.Interfaces.esDataRequest,EntitySpaces.Interfaces.esProviderSignature)">
+            <summary>
+            Not used by EntitySpaces but provided so that you can issue commands against the EntitySpaces DataProvider
+            that return mult-resultsets (many DataTables).
+            </summary>
+            <param name="request">Contains all of the information necessary to issue and carry out the request</param>
+            <param name="sig">Contains the required information to locate the EntitySpaces DataProvider</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDataProvider.FillDataTable(EntitySpaces.Interfaces.esDataRequest,EntitySpaces.Interfaces.esProviderSignature)">
+            <summary>
+            Similiar to esLoadDataTable only this method merely returns a DataTable and does not 
+            actually populate an esEntity or esEntityCollection.
+            </summary>
+            <param name="request">Contains all of the information necessary to issue and carry out the request</param>
+            <param name="sig">Contains the required information to locate the EntitySpaces DataProvider</param>
+            <returns></returns>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esDataResponse">
+            <summary>
+            Returned by the EntitySpaces DataProvider in response to a request. 
+            </summary>
+            <seealso cref="T:EntitySpaces.Interfaces.esDataRequest"/>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataResponse.Table">
+            <summary>
+            The DataTable containing the data. Depending on the type of command
+            issued against the provider this may or may not be null.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataResponse.DataSet">
+            <summary>
+            Valid when esDataProvider.FillDataSet was called.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataResponse.DataReader">
+            <summary>
+            Valid when esDataProvider.ExecuteReader was called.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataResponse.Scalar">
+            <summary>
+            Valid when esDataProvider.ExecuteScalar was called.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataResponse.LastQuery">
+            <summary>
+            Valid when a EntitySpaces dynamic query has been executed. This is the 
+            raw sql generated by the query itself.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataResponse.Exception">
+            <summary>
+            The exception returned by the EntitySpaces DataProvider, if any. See <see cref="P:EntitySpaces.Interfaces.esDataResponse.IsException"/>
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataResponse.RowsEffected">
+            <summary>
+            The number of rows effected by the command.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataResponse.AsyncResult">
+            <summary>
+            Currently not used, but will be when the Asyncronous Commands are added.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataResponse.Parameters">
+            <summary>
+            The parameters need to carry out the command. May also contain output
+            parameters.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esDataResponse.IsException">
+            <summary>
+            True if the <see cref="F:EntitySpaces.Interfaces.esDataResponse.Exception"/> property is non-null.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esTransactionScope">
+            <summary>
+            This is the EntitySpaces ADO.NET connection based transaction class that mimics the System.Transactions.TransactionScope class.
+            </summary>
+            <remarks>
+            EntitySpaces supports two transactions models, connection based via this class (esTransactionScope) and the 
+            new System.Transactions.TransactionScope. Some databases such as Microsoft Access don't support the new System.Transactions.TransactionScope
+            class. And still there are other cases where the System.Transactions.TransactionScope class cannot be used as is the case with a lot
+            of hosting companies. Thus EntitySpaces provides a very nice ADO.NET connection based transaction handler.
+            
+            The Syntax should be as follows:
+            <code>
+            using (esTransactionScope scope = new esTransactionScope())
+            {
+                // Logic here ...
+            
+                scope.Complete(); // last line of using statement
+            }
+            </code>
+            Note that if an exception is thrown scope.Complete will not be called, and the transaction upon leaving the using statement
+            will be rolled back. You indicate whether you want the provider to use the esTransactionScope or the System.Transactions.TransactionScope
+            class in your .config file. Notice in the config file setting below that providerClass="DataProvider". This indicates that you want to use
+            the esTransactionScope class, use providerClass="DataProviderEnterprise" to use System.Transactions.TransactionScope.
+            <code>
+               &lt;add name="SQL" 
+                  providerMetadataKey="esDefault" 
+                  sqlAccessType="DynamicSQL" 
+                  provider="EntitySpaces.SqlClientProvider" 
+                  providerClass="DataProvider" 
+                  connectionString="User ID=sa;Password=griffinski;Initial Catalog=Northwind;Data Source=localhost" 
+                  databaseVersion="2005"/&gt;
+            </code>
+            
+            
+            </remarks>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.#ctor">
+            <summary>
+            The default constructor, this transactions <see cref="T:EntitySpaces.Interfaces.esTransactionScopeOption"/> will be
+            set to Required. The IsolationLevel is set to Unspecified.
+            <code>
+            using (esTransactionScope scope = new esTransactionScope())
+            {
+            	// Do your work here
+            	scope.Complete();
+            }
+            </code>
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.#ctor(EntitySpaces.Interfaces.esTransactionScopeOption)">
+            <summary>
+            Use this constructor to control the esTransactionScopeOption as it applies
+            to this transaction.
+            <code>
+            using (esTransactionScope scope = new esTransactionScope(esTransactionScopeOption.RequiresNew))
+            {
+            	// Do your work here
+            	scope.Complete();
+            }
+            </code>
+            </summary>
+            <param name="option">See <see cref="T:EntitySpaces.Interfaces.esTransactionScopeOption"/></param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.#ctor(EntitySpaces.Interfaces.esTransactionScopeOption,System.Data.IsolationLevel)">
+            <summary>
+            Use this constructor to control the esTransactionScopeOption as it applies
+            to this transaction.
+            <code>
+            using (esTransactionScope scope = new 
+              esTransactionScope(esTransactionScopeOption.RequiresNew, IsolationLevel.ReadCommitted))
+            {
+            	// Do your work here
+            	scope.Complete();
+            }
+            </code>
+            </summary>
+            <param name="option">See <see cref="T:EntitySpaces.Interfaces.esTransactionScopeOption"/></param>
+            <param name="level">See IsolationLevel in the System.Data namespace</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.Complete">
+            <summary>
+            You must call Complete to commit the transaction. Calls and transactions can be nested, only the final outer call to
+            Complete will commit the transaction.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.System#IDisposable#Dispose">
+            <summary>
+            Internal. Called when the "using" statement is exited.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.Rollback">
+            <summary>
+            Internal method, called if the "using" statement is left without calling scope.Complete()
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esTransactionScope.CreateIDbConnectionDelegate">
+            <summary>
+            EntitySpaces providers register this callback so that the esTransactionScope class can ask it to create the proper
+            type of connection, ie, SqlConnection, OracleConnection, OleDbConnection and so on ...
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.GetCurrentTransactionScopeOption">
+            <summary>
+            This can be used to get the esTransactionScopeOption from the current esTransactionScope (remember transactions can be nested).
+            If there is no on-going transaction then esTransactionScopeOption.None is returned.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.Enlist(System.Data.IDbCommand,System.String,EntitySpaces.Interfaces.esTransactionScope.CreateIDbConnectionDelegate)">
+            <summary>
+            You should never call this directly, the providers call this method.
+            </summary>
+            <param name="cmd">The command to enlist into a transaction</param>
+            <param name="connectionString">The connection string passed to the CreateIDbConnectionDelegate delegate</param>
+            <param name="creator">The delegate previously registered by the provider</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.DeEnlist(System.Data.IDbCommand)">
+            <summary>
+            You should never call this directly, the providers call this method.
+            </summary>
+            <param name="cmd">The command to enlist into a transaction</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.AddForCommit(EntitySpaces.Interfaces.ICommittable)">
+            <summary>
+            You should never call this directly, EntitySpaces calls this internally.
+            </summary>
+            <param name="commit">Any class that implements ICommittable</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.CommonInit(EntitySpaces.Interfaces.esTransactionScope)">
+            <summary>
+            This is the common constructor logic, tx is "this" from the constructor
+            </summary>
+            <param name="tx"></param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTransactionScope.GetCurrentTx">
+            <summary>
+            Internal method.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esTransactionScope.IsolationLevel">
+            <summary>
+            This is the Transaction's strength. The default is "IsolationLevel.Unspecified, the strongest is "IsolationLevel.Serializable" which is what
+            is recommended for serious enterprize level projects.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esTypeMap">
+            <summary>
+            Used by the generated metadata classes and used to map raw database types to .NET types. 
+            </summary>
+            <example>
+            This code was taken from EmployeeMetadata class generated from Microsoft SQL's Northwind database.
+            Notice the use of the esTypeMap class.
+            <code>
+            private esProviderSpecificMetadata esDefault(string mapName)
+            {
+            	if(!_providerMetadataMaps.ContainsKey(mapName))
+            	{
+            		esProviderSpecificMetadata meta = new esProviderSpecificMetadata();
+            		
+            		meta.AddTypeMap("EmployeeID", new esTypeMap("int", "System.Int32"));
+            		meta.AddTypeMap("LastName", new esTypeMap("varchar", "System.String"));
+            		meta.AddTypeMap("FirstName", new esTypeMap("varchar", "System.String"));
+            		meta.AddTypeMap("Supervisor", new esTypeMap("int", "System.Int32"));
+            		meta.AddTypeMap("Age", new esTypeMap("int", "System.Int32"));			
+            		
+            		this._providerMetadataMaps["esDefault"] = meta;
+            	}
+            	
+            	return this._providerMetadataMaps["esDefault"];
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTypeMap.#ctor">
+            <summary>
+            Null constructor, never used
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esTypeMap.#ctor(System.String,System.String)">
+            <summary>
+            This constructor is used by the generated metadata map classes
+            </summary>
+            <param name="nativeType"></param>
+            <param name="systemType"></param>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esTypeMap.NativeType">
+            <summary>
+            The low level database type for this column.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esTypeMap.SystemType">
+            <summary>
+            The .NET System type to use for this column.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esConcurrencyException">
+            <summary>
+            This is thrown whenever a concurrency (write collision) exception occurs.
+            </summary>
+            <remarks>
+            This can occur in two situations. The first being when a call
+            to delete, insert, or update on a row results in zero rows being
+            changed. The second occurs when EntitySpaces recognizes that
+            an overwrite was about to take place. EntitySpaces can detect
+            overwrites using the SQL "timestamp" data type and in other
+            databases systems as well.
+            </remarks>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esConfigSettings">
+            <summary>
+            Used to read the EntitySpaces section from the app or web config file.
+            </summary>
+            <remarks>
+            Below is an example EntitySpaces configuration section as would be stored in your
+            web.config or app.config file.
+            <code>
+            &lt;EntitySpaces&gt;
+            	&lt;connectionInfo default="SQLDynamic"&gt;
+            		&lt;connections&gt;
+            		   &lt;add name="SQLDynamic"
+            			   providerMetadataKey="esDefault"
+            			   sqlAccessType="DynamicSQL"
+            			   provider="EntitySpaces.SqlClientProvider"
+            			   providerClass="DataProvider"
+            			   connectionString="User ID=sa;Password=griffinski;Initial Catalog=Northwind;Data Source=griffo;" 
+            			   databaseVersion="2005"/&gt;
+            		   &lt;/connections&gt;
+            	&lt;/connectionInfo&gt;
+            &lt;/EntitySpaces&gt;
+            </code>
+            </remarks>
+            
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConfigSettings.DefaultConnection">
+            <summary>
+            Returns the default as esConnectionElement.
+            represented by &lt;connectionInfo default="SQLDynamic"&gt;
+            </summary>
+            <remarks>
+            For example, if the EntitySpaces config section contained &lt;connectionInfo default="SQLDynamic"&gt;
+            the <see cref="T:EntitySpaces.Interfaces.esConnectionElement"/> for "SQLDynamic" would be returned.
+            </remarks>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConfigSettings.Default">
+            <summary>
+            Unless otherwise specified, the connection information defined by this property
+            is used by all EntitySpaces object to read and write to the database.
+            </summary>
+            <remarks>
+            The default can be overridden at runtime as follows:
+            <code>
+            Employees emp = new Employees();
+            emp.es.Connection.Name = "Oracle";
+            emp.LoadByPrimaryKey(1);
+            </code>
+            </remarks>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConfigSettings.Connections">
+            <summary>
+            This can be used to iterate over all of the Connections in the EntitySpaces configuration section.
+            </summary>
+            <remarks>
+            The example below demonstrates how to loop through all of the Connection information stored
+            in the EntitySpaces configuration section.
+            <code>
+            esConfigSettings ConnectionInfoSettings = esConfigSettings.ConnectionInfo;
+            foreach (esConnectionElement connection in ConnectionInfoSettings.Connections)
+            {
+            	Console.WriteLine(connection.ConnectionString);
+            }
+            </code>
+            </remarks>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esConnectionsCollection">
+            <summary>
+            This class serves as a collection for all of the connections in the 
+            EntitySpaces configuration section. See the .NET Framework class
+            <see cref="T:System.Configuration.ConfigurationElementCollection"/>
+            </summary>
+            <seealso cref="T:EntitySpaces.Interfaces.esConfigSettings"/>
+            <seealso cref="T:EntitySpaces.Interfaces.esConnectionElement"/>
+            <seealso cref="T:System.Configuration.ConfigurationElementCollection"/>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esConnectionElement">
+            <summary>
+            This contains the detail connection information for an entry in the
+            EntitySpaces configuration section.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esConnectionElement.#ctor(System.String,System.String)">
+            <summary>
+            Constructor used internally by EntitySpaces
+            </summary>
+            <param name="provider"></param>
+            <param name="connectionString"></param>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.Name">
+            <summary>
+            The name moniker of the connection.
+            </summary>
+            <remarks>
+            The name of a connection can be used to override the default connection
+            as follows.
+            <code>
+            Employees emp = new Employees();
+            emp.es.Connection.Name = "Oracle";
+            emp.LoadByPrimaryKey(1);
+            </code>
+            </remarks>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.Provider">
+            <summary>
+            The EntitySpaces DataProvider to which all commands using this connection are routed.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.ProviderClass">
+            <summary>
+            Either "DataProvider" or "DataProviderEnterprise"
+            </summary>
+            <remarks>
+            When using "DataProvider" the esTransactionScope class is used internally by
+            EntitySpaces and uses ADO.NET connection based transactions. When "DataProviderEnterprise"
+            is used the TransactionScope classes is used thereby using true distributed transactions.
+            </remarks>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.SqlAccessType">
+            <summary>
+            Set to either "DynamicSQL" or "StoredProcedure". This can be overridden at
+            the command level if needed, but this isn't usually overridden.
+            </summary>
+            <remarks>
+            An example of explicity declaring the sqlAccessType.
+            <code>
+            Employees emp = new Employees();
+            emp.es.Connection.Name = "Oracle";
+            emp.LoadByPrimaryKey(esSqlAccessType.StoredProcedure, 1);
+            emp.FirstName = "Joe";
+            emp.Save(esSqlAccessType.DynamicSQL);
+            </code>
+            </remarks>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.ProviderMetadataKey">
+            <summary>
+            This is normally created as "esDefault" and should only be explicitly
+            provided during code generation if you want the same
+            exact binary to run on two different DBMS systems.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.ConnectionString">
+            <summary>
+            The actually connection string. This can be encrypted. 
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.DatabaseVersion">
+            <summary>
+            There are certain cases where a provider might use different logic
+            based on the database version. For instance, Microsoft SQL 2005
+            depreciated the TSEQUAL function that was used in SQL 2000 with
+            timestamp columns. For SQL Server we recommend you provide EntitySpaces
+            with either 2000 or 2005.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.CommandTimeout">
+            <summary>
+            This is optional. You can use this to override the default timeout
+            for all commands issued agains this database.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.Catalog">
+            <summary>
+            This is optional. You can use this to indiate the catalog for your 
+            database access
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnectionElement.Schema">
+            <summary>
+            This is optional. You can use this to indiate the schema for your 
+            database access
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esConnection">
+            <summary>
+            Configured by the EntitySpaces section from the app or web config file.
+            </summary>
+            <remarks>
+            Below is an example EntitySpaces configuration section as would be stored in the
+            web.config or app.config file. Notice below on the "connectionInfo" element that
+            the default is "MyMicrosoftDB". The default, in this case, "MyMicrosoftDB" will
+            be used for all of your EntitySpaces provider calls. However, this can be easily
+            overridden by overriding the connection name property. See the Name property of this
+            class for more information. Notice that the "MyOracleDB" connection uses the
+            providerMetadataKey of "esOracle". You SHOULD always use "esDefault" unless you
+            are building a binary compatible, multi-database application.<BR></BR>
+            Connection information is not serialized.
+            <code>
+            &lt;EntitySpaces&gt;
+            	&lt;connectionInfo default="MyMicrosoftDB"&gt;
+            		&lt;connections&gt;
+            		
+            		   &lt;add name="MyMicrosoftDB"
+            			   providerMetadataKey="esDefault"
+            			   sqlAccessType="DynamicSQL"
+            			   provider="EntitySpaces.SqlClientProvider"
+            			   providerClass="DataProvider"
+            			   connectionString="User ID=sa;Password=secret;Initial Catalog=Northwind;Data Source=localhost;" 
+            			   commandTimeout="90"
+            			   databaseVersion="2005"/&gt;
+            			   
+            			&lt;add name="MyOracleDB" 
+            			  providerMetadataKey="esOracle" 
+            			  sqlAccessType="DynamicSQL" 
+            			  provider="EntitySpaces.OracleClientProvider" 
+            			  providerClass="DataProvider"           
+            			  connectionString="Password=retina;Persist Security Info=True;User ID=MyDB;Data Source=127.0.0.1;" /&gt;
+            			  
+            		   &lt;/connections&gt;
+            	&lt;/connectionInfo&gt;
+            &lt;/EntitySpaces&gt;
+            </code>
+            </remarks>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.ConnectionService">
+            <summary>
+            If assigned this interface is responsible for service up all connection names.
+            <seealso cref="T:EntitySpaces.Interfaces.IConnectionNameService"/>
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.ProviderSignature">
+            <summary>
+            This nested class is used to extract the information from the EntitySpaces configuration section
+            of a connection in order to invoke the provider. 
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.ConnectionString">
+            <summary>
+            Maps to the "connectionString" in the EntitySpaces configuration section. It is possible for 
+            this connection string to be encrypted.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.ProviderMetadataKey">
+            <summary>
+            Maps to the "providerMetadataKey" in the EntitySpaces configuration section.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.SqlAccessType">
+            <summary>
+            Maps to the "sqlAccessType" in the EntitySpaces configuration section. See <see cref="T:EntitySpaces.Interfaces.esSqlAccessType"/>
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.DatabaseVersion">
+            <summary>
+            Optional. Maps to the "databaseVersion" in the EntitySpaces configuration section.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.CommandTimeout">
+            <summary>
+            Optional. Maps to the "commandTimeout" in the EntitySpaces configuration section.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.Schema">
+            <summary>
+            Optional. Allows you to set the Schema for you database access.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.Catalog">
+            <summary>
+            Optional. Allows you to set the Catalog for you database access.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esConnection.Name">
+            <summary>
+            Maps to the "name" in the EntitySpaces configuration section. 
+            </summary>
+            <remarks>
+            The default "name" in the EntitySpaces configuration section 
+            can be overridden at runtime as follows:
+            <code>
+            Employees emp = new Employees();
+            emp.es.Connection.Name = "Oracle";
+            emp.LoadByPrimaryKey(1);
+            </code>
+            </remarks>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esDataRequest">
+            <summary>
+            Sent to the EntitySpaces DataProviders to carry out commands.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esDataRequest.OnErrorHandler">
+            <summary>
+            Delegate used by our OnError event handler
+            </summary>
+            <param name="packet">The esEntityPacket in error</param>
+            <param name="ex">The exception that was thrown</param>
+        </member>
+        <member name="E:EntitySpaces.Interfaces.esDataRequest.OnError">
+            <summary>
+            The OnError event handler, used interally by EntitySpaces
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esDataRequest.FireOnError(EntitySpaces.Interfaces.esEntitySavePacket,System.String)">
+            <summary>
+            Called by the DataProviders to invoke the OnError event handler
+            </summary>
+            <param name="packet">The esEntityPacket in error</param>
+            <param name="ex">The exception that was thrown</param>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.ContinueUpdateOnError">
+            <summary>
+            This is used during the Saving of a collection, if true, exceptions do not prevent successful records from being saved.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.ConnectionString">
+            <summary>
+            The connection string to connect to the actual DBMS system
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.Catalog">
+            <summary>
+            The name of the catalog, for instance, in SQL Server this 
+            could be "Northwind".
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.Schema">
+            <summary>
+            The name of the Schema, for instance, in SQL Server this 
+            is typically "dbo".
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.DatabaseVersion">
+            <summary>
+            This is optional and typically for SQL Server it is either
+            2000 or 2005. 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.DataID">
+            <summary>
+            Currently not used.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.SqlAccessType">
+            <summary>
+            Whether to use Stored Procedures or Dynamic SQL
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.Table">
+            <summary>
+            The DataTable containing only the changed rows to commit
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.EntitySavePacket">
+            <summary>
+            Used when a single entity is being saved
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.CollectionSavePacket">
+            <summary>
+            Used when saving a collection
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.IgnoreComputedColumns">
+            <summary>
+            Set to true by esEntityCollection.SaveAndDiscard() so it doesn't bother returning
+            indentity column values, timestamps, or other computed columns.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.QueryType">
+            <summary>
+            The form of the query itself, see <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.QueryText">
+            <summary>
+            Depending on what the value of <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/> is, this could
+            be the actual name of a stored procedure, DBMS function, raw text, or 
+            whatever else is possible.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.Parameters">
+            <summary>
+            The parameters if any required to carry out the command. Remember, do not
+            tack on decorators such as @ or ? on the front of your parameters, the EntitySpaces
+            DataProviders do that for you so you can write provider independent queries.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.DynamicQuery">
+            <summary>
+            Automatically populated whenver you use the EntitySpaces dynamic query mechanism.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.LinqContext">
+            <summary>
+            The DataContext for the LINQ query
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.LinqQuery">
+            <summary>
+            The LINQ to SQL query
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.CommandTimeout">
+            <summary>
+            Optional, the command timeout as defined in the web.config or app.config file
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.Columns">
+            <summary>
+            These are the columns from the generated Metadata class. These columns contain
+            enough metadata to generate the dynamic sql.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.ModifiedColumns">
+            <summary>
+            A List of Lists, each nested list contains the modified columns for each
+            DataRow contained in the DataTable
+            </summary>
+            <seealso cref="F:EntitySpaces.Interfaces.esDataRequest.Table"/>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.ProviderMetadata">
+            <summary>
+            This contains metadata that may be specific to an EntitySpaces DataProvider. The
+            data in this property is driven by the "providerMetadataKey" in the config file.
+            This allows stored procedure names, for instance, to have different names on
+            different databases and yet the esEntity and esEntityCollection objects are
+            oblivious to that fact.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esDataRequest.Properties">
+            <summary>
+            Transient data using during the SQL insert/update/delete process
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esTransactionScopeOption">
+            <summary>
+            Provides additional options for creating a transaction scope
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esTransactionScopeOption.None">
+            <summary>
+            This setting of 'None' is returned by esTransactionScope.GetCurrentTransactionScopeOption()
+            if there is no ongoing esTransactionScope. The value of 'None' can never be passed to the
+            constructor of the esTransactionScope class.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esTransactionScopeOption.Required">
+            <summary>
+            A transaction is required by the scope. It uses an ambient transaction if
+            one already exists. Otherwise, it creates a new transaction before entering
+            the scope. This is the default value.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esTransactionScopeOption.RequiresNew">
+            <summary>
+            A new transaction is always created for the scope.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esTransactionScopeOption.Suppress">
+            <summary>
+            The ambient transaction context is suppressed when creating the scope. All
+            operations within the scope are done without an ambient transaction context.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esSqlAccessType">
+            <summary>
+            Sql access type, dynamic or stored procedures
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esSqlAccessType.Unassigned">
+            <summary>
+            Unassigned
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esSqlAccessType.StoredProcedure">
+            <summary>
+            Use StoredProcedures for CRUD operations
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esSqlAccessType.DynamicSQL">
+            <summary>
+            Create CRUD operations dynamically
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esException">
+            <summary>
+            Acts as a base class for EntitySpaces exceptions. EntitySpaces itself throws very few exceptions however.
+            See <see cref="T:EntitySpaces.Interfaces.esConcurrencyException"/>
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esException.#ctor(System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="message">The text of the exception.</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esException.#ctor(System.String,System.Exception)">
+            <summary>
+            Alternate Connstructor
+            </summary>
+            <param name="message">The text of the exception.</param>
+            <param name="innerException">The exception we are wrapping</param>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.ICommittable">
+            <summary>
+            This interface is implemented by both esEntity and esEntityCollection so that
+            the esTransactionScope class can ask that they put themselves in committed
+            state which basically means calling AcceptChanges(). 
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.ICommittable.Commit">
+            <summary>
+            Called by esTransactionScope during the final Complete() call
+            </summary>
+            <returns>true if successful</returns>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.IConnectionNameService">
+            <summary>
+            If Implemented is asked to serve up all connection names for your
+            application. This can be useful for providing ASP.NET session based
+            connections names on a per user, role, or company.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IConnectionNameService.GetName">
+            <summary>
+            You must return a connection name (not string) for an entry in your
+            EntitySpaces connection list (whether it is config or configless based).
+            </summary>
+            <returns>The Name of the connection</returns>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.IDataProvider">
+            <summary>
+            The EntitySpaces DataProviders such as EntitySpaces.SqlClientProvider implement this interface. 
+            </summary>
+            <remarks>
+            This interface helps to de-couple an EntitySpaces application from the actual provider such as
+            SqlClientProvider, OracleClientProvider and so on. The providers take an esDataRequest as the 
+            input and return an esDataResponse. EntitySpaces developers don't have to worry about loading providers, 
+            instead, you access these methods through the <see cref="T:EntitySpaces.Interfaces.esDataProvider"/> which will carry out the
+            call.
+            </remarks>
+            <seealso cref="T:EntitySpaces.Interfaces.esDataProvider"/>
+        </member>
+        <member name="E:EntitySpaces.Interfaces.IDataProvider.TraceHandler">
+            <summary>
+            Used when Profiling this Provider
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IDataProvider.IsTracing">
+            <summary>
+            Can be used to determine if this provider is already tracing
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IDataProvider.TraceChannel">
+            <summary>
+            The Channel to use for this provider when Profiling.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IDataProvider.esLoadDataTable(EntitySpaces.Interfaces.esDataRequest)">
+            <summary>
+            Used to populate an esEntity or an esEntityCollection with data. Whatever type of query is
+            in the esDataRequest must return a resultset (DataTable) in order to the properly load
+            the EntitySpaces object.
+            </summary>
+            <param name="request"></param>
+            <returns>Any exception thrown by the provider will be in the returned esDataResponse</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IDataProvider.esSaveDataTable(EntitySpaces.Interfaces.esDataRequest)">
+            <summary>
+            This method is used to save an esEntity or esEntityCollection to the database.
+            </summary>
+            <param name="request"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IDataProvider.ExecuteNonQuery(EntitySpaces.Interfaces.esDataRequest)">
+            <summary>
+            This method can be used to execute any query which does not return a result set. See 
+            the help for the ADO.NET SqlCommand.ExecuteNonQuery method. This method utlimately maps to the 
+            the low level ADO.NET data provider's Command.ExecuteNonQuery method.
+            </summary>
+            <param name="request"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IDataProvider.ExecuteReader(EntitySpaces.Interfaces.esDataRequest)">
+            <summary>
+            This method is used to return an IDataReader which will be found in the returned esDataResponse.
+            See the help for the ADO.NET SqlCommand.ExecuteReader method. This method utlimately maps to the 
+            the low level ADO.NET data provider's Command.ExecuteReader method.
+            </summary>
+            <param name="request"></param>
+            <returns>See the esDataResponse.DataReader property</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IDataProvider.ExecuteScalar(EntitySpaces.Interfaces.esDataRequest)">
+            <summary>
+            This method is used to return a single value from the database. 
+            See the help for the ADO.NET SqlCommand.ExecuteScalar method. This method utlimately maps to the 
+            the low level ADO.NET data provider's Command.ExecuteScalar method.
+            </summary>
+            <param name="request">See the esDataResponse.Scalar property</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IDataProvider.FillDataSet(EntitySpaces.Interfaces.esDataRequest)">
+            <summary>
+            This method can be used to execute a query that returns multiple resultsets.
+            </summary>
+            <param name="request"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IDataProvider.FillDataTable(EntitySpaces.Interfaces.esDataRequest)">
+            <summary>
+            This method can be used to return a DataTable. The returned DataTable is not used to 
+            populate an esEntity or esEntityCollection. See <see cref="M:EntitySpaces.Interfaces.IDataProvider.esLoadDataTable(EntitySpaces.Interfaces.esDataRequest)"/> if your
+            desire is to populate an EntitySpaces object with data.
+            </summary>
+            <param name="request"></param>
+            <returns></returns>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.IDataProviderFactory">
+            <summary>
+            Used by EntitySpaces to abstract the Loader and LoaderMT classes. See <see cref="T:EntitySpaces.Interfaces.esProviderFactory"/>
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IDataProviderFactory.GetDataProvider(System.String,System.String)">
+            <summary>
+            This abstracts the fetching of the appropriate EntitySpaces data provider.
+            </summary>
+            <param name="providerName">The name of the EntitySpaces DataProvider, for example, "EntitySpaces.SqlClientProvider"</param>
+            <param name="providerClass">The class to use, either "DataProvider" or "DataProviderEnterprise"</param>
+            <returns>The appropriate EntitySpaces data provider such as "EntitySpaces.SqlClientProvider"</returns>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.IMetadata">
+            <summary>
+            Used Internally by EntitySpaces and its data providers to get at the internal data of 
+            the generated Metdata classes.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IMetadata.DataID">
+            <summary>
+            The DataID - Currently this is not really used.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IMetadata.MultiProviderMode">
+            <summary>
+            True if this class is meant to operator with multiple EntitySpaces data providers in a 
+            database independent fashion.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IMetadata.Columns">
+            <summary>
+            The columns collection and their data mappings for the type of database currently
+            being accessed.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IMetadata.GetProviderMetadata(System.String)">
+            <summary>
+            Database specific meta data, such as <see cref="T:EntitySpaces.Interfaces.esTypeMap"/> and other Metadata class properties.
+            </summary>
+            <param name="key">This is driven by the 'providerMetadataKey' in the app.config or web.config file on the EntitySpaces connection section.</param>
+            <returns>The provider specific metadata</returns>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esParameters">
+             <summary>
+             This class is used to pass parameters to the providers. 
+             </summary>
+             <example>
+             The example below calls a stored procedure that concatenates an Employees first name and last name
+             and returns them as an output parameter. Notice that when the FullName parameter is added it is
+             necessary to provide the direction, type and size. This is ONLY necessary when adding output parameters
+             and you are encouraged to only provide the name/value for all other parameters. This will make your code
+             much more provider independent.
+             <code>
+             public partial class Employees : esEmployees
+             {
+            		public string GetFullName(int employeeID)
+            		{
+            			esParameters parms = new esParameters();
+            
+            			parms.Add("EmployeeID", employeeID);
+            			parms.Add("FullName", esParameterDirection.Output, DbType.String, 40);
+            
+            			this.ExecuteNonQuery(esQueryType.StoredProcedure, "proc_GetEmployeeFullName", parms);
+            
+            			return parms["FullName"].Value as string;
+            		}
+            }
+             </code>
+             <seealso cref="T:EntitySpaces.Interfaces.esParameter"/>, <seealso cref="T:EntitySpaces.Interfaces.esDataProvider"/>, <seealso cref="T:EntitySpaces.Interfaces.IDataProvider"/>
+             </example> 
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameters.Add(EntitySpaces.Interfaces.esParameter)">
+            <summary>
+            
+            </summary>
+            <param name="parameter">An already created esParameter. This is mostly used internally.</param>
+            <returns>The same parameter passed in</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameters.Add(System.String,System.Object)">
+            <summary>
+            This is the preferred overload for adding parameters.
+            </summary>
+            <remarks>
+            Do not add prefixes such as @ or ? or : as the providers append the proper prefix. This allows you 
+            to pass parameters in a provider independent fashion. All parameters added via this method are input
+            parameters.
+            </remarks>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <param name="value">The value of the parameter</param>
+            <returns>The newly created parameter</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameters.Add(System.String,EntitySpaces.Interfaces.esParameterDirection)">
+            <summary>
+            If you need to add a parameter with an esParameterDirection other than Input use this method.
+            </summary>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <param name="direction">The parameter direction</param>
+            <returns>The newly created parameter</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameters.Add(System.String,System.Object,EntitySpaces.Interfaces.esParameterDirection)">
+            <summary>
+            This should ONLY be used for parameters other than input parameters.
+            </summary>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <param name="value">The value of the parameter</param>
+            <param name="direction">The parameter direction</param>
+            <returns>The newly created parameter</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameters.Add(System.String,EntitySpaces.Interfaces.esParameterDirection,System.Data.DbType,System.Int32)">
+            <summary>
+            This should ONLY be used for parameters other than input parameters.
+            </summary>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <param name="direction">The parameter direction</param>
+            <param name="type">The System.Data.DbType of the parameter</param>
+            <param name="size">The size. For strings the length, for most others 0 can be passed in</param>
+            <returns>The newly created parameter</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameters.Add(System.String,System.Object,EntitySpaces.Interfaces.esParameterDirection,System.Data.DbType,System.Int32)">
+            <summary>
+            This should ONLY be used for parameters other than input parameters.
+            </summary>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <param name="value">The value of the parameter</param>
+            <param name="direction">The parameter direction</param>
+            <param name="type">The System.Data.DbType of the parameter</param>
+            <param name="size">The size. For strings the length, for most others 0 can be passed in</param>
+            <returns>The newly created parameter</returns>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameters.Count">
+            <summary>
+            The number of parameters in the collection
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameters.Item(System.String)">
+            <summary>
+            Use this method to fetch a given esParameter by name. There should be no prefix such as @, ? or : in the name.
+            </summary>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <returns>The desired parameter or null/Nothing if not found</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameters.Merge(EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Used Internally to merge parameters returned by the provider back into the original collection.
+            </summary>
+            <param name="parms"></param>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esParameter">
+            <summary>
+            Represents a parameter typically passed into a stored procedure.
+            </summary>
+            <remarks>
+            Normally you don't directly create esParameter objects, instead you call the Add method on the esParameters Collection.
+            It is important not to add prefixes to the parameter names such as @, ?, : as the providers will do this.
+            </remarks>
+            <seealso cref="T:EntitySpaces.Interfaces.esParameters"/>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameter.#ctor(System.String,System.Object)">
+            <summary>
+            This is the provider independent way to use parameters, you can do so with the other methods as well but 
+            this is the preferred constructor for all input parameters.
+            </summary>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <param name="value">The value of the parameter</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameter.#ctor(System.String,System.Object,EntitySpaces.Interfaces.esParameterDirection)">
+            <summary>
+            Use this constructor for non-input parameters only.
+            </summary>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <param name="value">The value of the parameter</param>
+            <param name="direction">The direction of the parameter</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameter.#ctor(System.String,EntitySpaces.Interfaces.esParameterDirection,System.Data.DbType,System.Int32)">
+            <summary>
+            Use this constructor for non-input parameters only.
+            </summary>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <param name="direction">The parameter direction</param>
+            <param name="type">The System.Data.DbType of the parameter</param>
+            <param name="size">The size. For strings the length, for most others 0 can be passed in</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esParameter.#ctor(System.String,System.Object,EntitySpaces.Interfaces.esParameterDirection,System.Data.DbType,System.Int32)">
+            <summary>
+            Use this constructor for non-input parameters only.
+            </summary>
+            <param name="name">The name of the parameter without a prefix, for example, "EmployeeID" not "@EmployeeID".</param>
+            <param name="value">The value of the parameter</param>
+            <param name="direction">The parameter direction</param>
+            <param name="type">The System.Data.DbType of the parameter</param>
+            <param name="size">The size. For strings the length, for most others 0 can be passed in</param>
+            <returns>The newly created parameter</returns>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameter.Name">
+            <summary>
+            The Name of the parameter
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameter.Value">
+            <summary>
+            The Value of the parameter. After the call to the EntitySpaces DataProvider is made any output or return
+            parameters will have their "Value" set accordingly.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameter.Direction">
+            <summary>
+            The parameter direction. The default is Input.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameter.DbType">
+            <summary>
+            See System.Data.DbType, this should only be used for parameters other than input parameters.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameter.UdtTypeName">
+            <summary>
+            Used for things such as SqlGeometry/SqlGeography. You use the SQL column type, ie, "geometry" or geography" 
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameter.Size">
+            <summary>
+            This should only be used for parameters other than input parameters. For strings this is the length, for most
+            other types set to 0.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameter.Scale">
+            <summary>
+            This should only be used for parameters other than input parameters.
+            </summary>
+            <remarks>
+            "Obsolete" for Oracle.
+            Not supported for Access.
+            </remarks>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.esParameter.Precision">
+            <summary>
+            This should only be used for parameters other than input parameters.
+            </summary>
+            <remarks>
+            "Obsolete" for Oracle.
+            Not supported for Access.
+            </remarks>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esParameterDirection">
+            <summary>
+            Used to determine the direction of the esParameter class. The default is Input
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esParameterDirection.Input">
+            <summary>
+            The parameter is an input parameter. 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esParameterDirection.InputOutput">
+            <summary>
+            The parameter is capable of both input and output. 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esParameterDirection.Output">
+            <summary>
+            The parameter is an output parameter. 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esParameterDirection.ReturnValue">
+            <summary>
+            The parameter represents a return value from an operation such as a stored procedure, built-in function, or user-defined function. 
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.IProviderSpecificMetadata">
+            <summary>
+            Used Internally by EntitySpaces and its data providers to get at the database specific metadata information.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.Item(System.String)">
+            <summary>
+            Accesses the extended data for a given provider
+            </summary>
+            <param name="key">The key of the item in the extended data.</param>
+            <returns>The Value associated with the key</returns>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IProviderSpecificMetadata.AddTypeMap(System.String,EntitySpaces.Interfaces.esTypeMap)">
+            <summary>
+            Used by the generated metadata classes. See <see cref="T:EntitySpaces.Interfaces.esTypeMap"/>
+            </summary>
+            <param name="columnName">The name of the database column</param>
+            <param name="typeMap">The raw database column and its appropriate .NET data type</param>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.IProviderSpecificMetadata.GetTypeMap(System.String)">
+            <summary>
+            This is used by the EntitySpaces providers to get the appropriate data mappings for a given column
+            </summary>
+            <param name="columnName">The name of the database column</param>
+            <returns>The column mapping</returns>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.Catalog">
+            <summary>
+            The name of the catalog (or database) can be null.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.Schema">
+            <summary>
+             The name of the schema. This can be null.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.Destination">
+            <summary>
+            The name of the destination. This is always the Table or View the class was generated against.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.Source">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.spInsert">
+            <summary>
+            The name of the 'INSERT' stored procedure
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.spUpdate">
+            <summary>
+            The name of the 'UPDATE' stored procedure
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.spDelete">
+            <summary>
+            The name of the 'DELETE' stored procedure
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.spLoadAll">
+            <summary>
+            The name of the 'LoadAll' stored procedure
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Interfaces.IProviderSpecificMetadata.spLoadByPrimaryKey">
+            <summary>
+            The name of the 'LoadByPrimaryKey' stored procedure
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esProviderFactory">
+            <summary>
+            Used to decouple the EntitySpaces DataProviders from your application. 
+            </summary>
+            <remarks>
+            Reflection is used only once to load and cache the provider. The information for 
+            the provider comes for the EntitySpaces configuration section of the config file, 
+            specifically the "provider" element. See the <see cref="T:EntitySpaces.Interfaces.esConnection"/> class for
+            more information.
+            </remarks>
+        </member>
+        <member name="M:EntitySpaces.Interfaces.esProviderFactory.GetDataProvider(System.String,System.String)">
+            <summary>
+            Loads and Caches the EntitySpaces DataProvider.
+            </summary>
+            <remarks>
+            The providerClass parameter determines whether or not distributed transactions are used or
+            if ADO.NET connection based transactions are used. When "DataProvider" is used the <see cref="T:EntitySpaces.Interfaces.esTransactionScope"/>
+            class is used to enforce transactions. When "DataProviderEnterprise" is used then the Microsoft TransactionScope
+            class is used
+            </remarks>
+            <param name="providerName">The name of the EntitySpaces DataProvider, for example, "EntitySpaces.SqlClientProvider"</param>
+            <param name="providerClass">The class to use, either "DataProvider" or "DataProviderEnterprise"</param>
+            <returns>The approprate data provider such as "EntitySpaces.SqlClientProvider"</returns>
+        </member>
+        <member name="T:EntitySpaces.Interfaces.esProviderSignature">
+            <summary>
+            Used by the <see cref="T:EntitySpaces.Interfaces.esConnection"/> class. This returns the signature necessary to invoke a
+            command on an EntitySpaces DataProvider. Returned by the "ProviderSignature" property on the 
+            <see cref="T:EntitySpaces.Interfaces.esConnection"/> class.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esProviderSignature.DataProviderName">
+            <summary>
+            Maps to the "provider" element in the EntitySpaces configuration section of the configuration
+            file. 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esProviderSignature.DataProviderClass">
+            <summary>
+            Maps to the "providerClass" element in the EntitySpaces configuration section of the configuration
+            file. 
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Interfaces.esProviderSignature.DatabaseVersion">
+            <summary>
+            Optional. Maps to the "databaseVersion" element in the EntitySpaces configuration section of the configuration
+            file. 
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,1270 @@
+Imports Microsoft.Office.Interop 'Excel
+Imports KineticaRT
+Imports KineticaRT.Channels
+Imports KineticaRT.Logic.Message
+Imports KineticaRT.Sequence
+Imports KineticaRT.Servers.OpcClient
+Imports KineticaRT.Values
+Imports Microsoft.VisualBasic
+Imports System
+Imports System.Collections
+Imports System.Data 
+Imports System.Data.OleDb 
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Runtime.InteropServices
+'Client/Server
+Imports PwcSharedInterface
+Imports System.ServiceModel
+'Imports System.ServiceModel.Channels
+'
+Imports System.Security
+Imports System.Security.Permissions
+Imports System.Text
+Imports System.Threading
+Imports System.Windows.Forms
+
+Imports CEL.HMI
+
+Namespace StudioDemonstration
+    Public Class PWC83040_Sequence
+        Inherits CEL.KineticaRT.Sequence.Sequence
+
+        Private CELProject As CELDAS = CELDAS.Instance()
+
+        Private Const sPWCConfigurationPath As String = "C:\Program Files\Pratt & Whitney Canada\PWC83040\configuration\"
+        Private Const sDataPath As String = "C:\Program Files\Pratt & Whitney Canada\PWC83040\data\"
+        Private Const sConfigurationPath As String = ".\PWC\PWC83040_configuration\"
+
+        Private Sub CopyConfigurationFiles()
+            Dim files As String() = Directory.GetFiles(sPWCConfigurationPath)
+            Dim baseFileName, fileName As String
+
+            If Directory.Exists(sConfigurationPath) = True Then 'TODO sur un pc en x64 le programme de Pratt PWC83025 s'installe dans Program FIles (x86) et non dans Program Files
+                Directory.Delete(sConfigurationPath, True)
+            End If
+
+            Directory.CreateDirectory(sConfigurationPath)
+
+            For Each fileName In files
+                baseFileName = Path.GetFileName(fileName)
+
+                File.Copy(fileName, sConfigurationPath + baseFileName)
+            Next
+        End Sub
+
+        Protected Overrides Sub OnEngineWorkingThread()
+            'DoNothing
+        End Sub
+        Private Function CreateHandler() As Boolean
+            Try
+                If CELProject.EngineFamily = "PW210" Then
+                    AddHandler DEW_POINT_METHOD_CHKBOX.ValueChanged, AddressOf OnHUMIDITY_METHOD
+                    AddHandler PERF_50PC_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_50PC_TORQUE_TRIM
+                    AddHandler PERF_CLEAR_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_CLEAR_TORQUE_TRIM
+                    AddHandler PERF_PERFORMANCE_RUN_BTN.ValueChanged, AddressOf OnBTN_PERFORMANCE_RUN
+                    AddHandler PERF_TO_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_TO_TORQUE_TRIM
+                    AddHandler PERF_COMPUTE_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_TORQUE_TRIM
+                    AddHandler RELATIVE_HUMIDITY_METHOD_CHKBOX.ValueChanged, AddressOf OnHUMIDITY_METHOD
+                End If
+
+                Return True
+            Catch ex As Exception
+                MessageBox.Show("PWC83040_Sequence : CreateHandler()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        Private Function DeleteHandler() As Boolean
+            Try
+                If Not CELProject.EngineModel Is Nothing Then
+                    If CELProject.EngineFamily = "PW210" Then
+                        If Not DEW_POINT_METHOD_CHKBOX Is Nothing Then
+                            RemoveHandler DEW_POINT_METHOD_CHKBOX.ValueChanged, AddressOf OnHUMIDITY_METHOD
+                        End If
+                        If Not PERF_50PC_TORQUE_TRIM_BTN Is Nothing Then
+                            RemoveHandler PERF_50PC_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_50PC_TORQUE_TRIM
+                        End If
+                        If Not PERF_CLEAR_TORQUE_TRIM_BTN Is Nothing Then
+                            RemoveHandler PERF_CLEAR_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_CLEAR_TORQUE_TRIM
+                        End If
+                        If Not PERF_PERFORMANCE_RUN_BTN Is Nothing Then
+                            RemoveHandler PERF_PERFORMANCE_RUN_BTN.ValueChanged, AddressOf OnBTN_PERFORMANCE_RUN
+                        End If
+                        If Not PERF_TO_TORQUE_TRIM_BTN Is Nothing Then
+                            RemoveHandler PERF_TO_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_TO_TORQUE_TRIM
+                        End If
+                        If Not PERF_COMPUTE_TORQUE_TRIM_BTN Is Nothing Then
+                            RemoveHandler PERF_COMPUTE_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_TORQUE_TRIM
+                        End If
+                        If Not RELATIVE_HUMIDITY_METHOD_CHKBOX Is Nothing Then
+                            RemoveHandler RELATIVE_HUMIDITY_METHOD_CHKBOX.ValueChanged, AddressOf OnHUMIDITY_METHOD
+                        End If
+                    End If
+                End If
+
+                Return True
+            Catch ex As Exception
+                MessageBox.Show("PWC83040_Sequence : DeleteHandler()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        Private Function GetOutputFilename() As String
+            Dim conditionNo As Integer
+            Dim engineBuildNo As Integer
+            Dim engineSN As String = ""
+            Dim fileName As String
+
+            pwc83025.GetEngine(engineSN)
+            pwc83025.GetBuild(engineBuildNo)
+            pwc83025.GetCondition(conditionNo)
+
+            fileName = sDataPath + "OUT_" + engineSN + "_" + Format(engineBuildNo, "0000") + _
+                "_" + Format(conditionNo, "0000") + ".DAT"
+
+            Return fileName
+        End Function
+
+        Private Function Init_Engine_Channels() As Boolean
+            Dim Return_Value As New ArrayList()
+
+            Return_Value.Clear()
+
+            Try
+
+                Select Case CELProject.EngineFamily
+                    'Not For "DAS CALIBRATION"
+                    Case "PW210"
+                        'Initialise Engine Channels		
+
+
+                        Return_Value.Add(MyBase.InitializeChannel(DEW_POINT_METHOD_CHKBOX, "DEW_POINT_METHOD_CHKBOX"))
+                        Return_Value.Add(MyBase.InitializeChannel(DYNO_TORQUE_LBSFT_MEAN, "DYNO_TORQUE_LBSFT_MEAN"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DYNO_TORQUE_LBSFT, "LOG_PERF_DYNO_TORQUE_LBSFT"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BARO_PSIA, "LOG_PERF_P_BARO_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_P1_1_PSID, "LOG_PERF_P_P1_1_PSID"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_P1_2_PSID, "LOG_PERF_P_P1_2_PSID"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_P3_PSIG, "LOG_PERF_P_P3_PSIG"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_P8_PSID, "LOG_PERF_P_P8_PSID"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_RGB_PSIG, "LOG_PERF_P_RGB_PSIG"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_FUEL_AVG_DEGF, "LOG_PERF_T_FUEL_AVG_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_MOT_DEGF, "LOG_PERF_T_MOT_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_1_DEGF, "LOG_PERF_T_T1_1_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_2_DEGF, "LOG_PERF_T_T1_2_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_3_DEGF, "LOG_PERF_T_T1_3_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_4_DEGF, "LOG_PERF_T_T1_4_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_5_DEGF, "LOG_PERF_T_T1_5_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_6_DEGF, "LOG_PERF_T_T1_6_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_7_DEGF, "LOG_PERF_T_T1_7_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_8_DEGF, "LOG_PERF_T_T1_8_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_1_DEGF, "LOG_PERF_T_T7_1_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_2_DEGF, "LOG_PERF_T_T7_2_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_3_DEGF, "LOG_PERF_T_T7_3_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_4_DEGF, "LOG_PERF_T_T7_4_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_5_DEGF, "LOG_PERF_T_T7_5_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_6_DEGF, "LOG_PERF_T_T7_6_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_7_DEGF, "LOG_PERF_T_T7_7_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_8_DEGF, "LOG_PERF_T_T7_8_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_9_DEGF, "LOG_PERF_T_T7_9_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_10_DEGF, "LOG_PERF_T_T7_10_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_11_DEGF, "LOG_PERF_T_T7_11_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_12_DEGF, "LOG_PERF_T_T7_12_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_13_DEGF, "LOG_PERF_T_T7_13_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_14_DEGF, "LOG_PERF_T_T7_14_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_15_DEGF, "LOG_PERF_T_T7_15_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_16_DEGF, "LOG_PERF_T_T7_16_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_17_DEGF, "LOG_PERF_T_T7_17_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_18_DEGF, "LOG_PERF_T_T7_18_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_19_DEGF, "LOG_PERF_T_T7_19_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_20_DEGF, "LOG_PERF_T_T7_20_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_21_DEGF, "LOG_PERF_T_T7_21_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_22_DEGF, "LOG_PERF_T_T7_22_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_23_DEGF, "LOG_PERF_T_T7_23_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_24_DEGF, "LOG_PERF_T_T7_24_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_25_DEGF, "LOG_PERF_T_T7_25_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_26_DEGF, "LOG_PERF_T_T7_26_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_27_DEGF, "LOG_PERF_T_T7_27_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_28_DEGF, "LOG_PERF_T_T7_28_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_29_DEGF, "LOG_PERF_T_T7_29_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_30_DEGF, "LOG_PERF_T_T7_30_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_31_DEGF, "LOG_PERF_T_T7_31_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_32_DEGF, "LOG_PERF_T_T7_32_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_33_DEGF, "LOG_PERF_T_T7_33_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_34_DEGF, "LOG_PERF_T_T7_34_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_35_DEGF, "LOG_PERF_T_T7_35_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_36_DEGF, "LOG_PERF_T_T7_36_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TORQUE_ARINC_PCT, "LOG_PERF_TORQUE_ARINC_PCT"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF_PPH, "LOG_PERF_WF_PPH"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_RELATIVE_HUMIDITY_PCT, "PERF_RELATIVE_HUMIDITY_PCT"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_50PC_TORQUE_TRIM_BTN, "PERF_50PC_TORQUE_TRIM_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_CLEAR_TORQUE_TRIM_BTN, "PERF_CLEAR_TORQUE_TRIM_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_PERFORMANCE_RUN_BTN, "PERF_PERFORMANCE_RUN_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_TO_TORQUE_TRIM_BTN, "PERF_TO_TORQUE_TRIM_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_COMPUTE_TORQUE_TRIM_BTN, "PERF_COMPUTE_TORQUE_TRIM_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_TRIM_TOLERANCE_BTN, "PERF_TRIM_TOLERANCE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_CONDITION_NUMBER, "PERF_CONDITION_NUMBER"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_EEC_R3, "PERF_EEC_R3"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_EEC_R4, "PERF_EEC_R4"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_ITT_TRIM_DEGF, "PERF_ITT_TRIM_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_REMARK_TEXT, "PERF_REMARK_TEXT"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_T_DEW_PT_DEGF, "PERF_T_DEW_PT_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_T_REF_TEMP_DEGF, "PERF_T_REF_TEMP_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(RELATIVE_HUMIDITY_METHOD_CHKBOX, "RELATIVE_HUMIDITY_METHOD_CHKBOX"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T1_1_DELETE_BTN, "T_T1_1_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T1_2_DELETE_BTN, "T_T1_2_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T1_3_DELETE_BTN, "T_T1_3_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T1_4_DELETE_BTN, "T_T1_4_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T1_5_DELETE_BTN, "T_T1_5_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T1_6_DELETE_BTN, "T_T1_6_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T1_7_DELETE_BTN, "T_T1_7_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T1_8_DELETE_BTN, "T_T1_8_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_1_DELETE_BTN, "T_T7_1_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_2_DELETE_BTN, "T_T7_2_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_3_DELETE_BTN, "T_T7_3_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_4_DELETE_BTN, "T_T7_4_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_5_DELETE_BTN, "T_T7_5_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_6_DELETE_BTN, "T_T7_6_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_7_DELETE_BTN, "T_T7_7_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_8_DELETE_BTN, "T_T7_8_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_9_DELETE_BTN, "T_T7_9_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_10_DELETE_BTN, "T_T7_10_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_11_DELETE_BTN, "T_T7_11_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_12_DELETE_BTN, "T_T7_12_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_13_DELETE_BTN, "T_T7_13_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_14_DELETE_BTN, "T_T7_14_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_15_DELETE_BTN, "T_T7_15_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_16_DELETE_BTN, "T_T7_16_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_17_DELETE_BTN, "T_T7_17_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_18_DELETE_BTN, "T_T7_18_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_19_DELETE_BTN, "T_T7_19_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_20_DELETE_BTN, "T_T7_20_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_21_DELETE_BTN, "T_T7_21_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_22_DELETE_BTN, "T_T7_22_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_23_DELETE_BTN, "T_T7_23_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_24_DELETE_BTN, "T_T7_24_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_25_DELETE_BTN, "T_T7_25_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_26_DELETE_BTN, "T_T7_26_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_27_DELETE_BTN, "T_T7_27_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_28_DELETE_BTN, "T_T7_28_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_29_DELETE_BTN, "T_T7_29_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_30_DELETE_BTN, "T_T7_30_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_31_DELETE_BTN, "T_T7_31_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_32_DELETE_BTN, "T_T7_32_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_33_DELETE_BTN, "T_T7_33_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_34_DELETE_BTN, "T_T7_34_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_35_DELETE_BTN, "T_T7_35_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_36_DELETE_BTN, "T_T7_36_DELETE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(TORQUE_ARINC_PCT_MEAN, "TORQUE_ARINC_PCT_MEAN"))
+
+                End Select
+
+            Catch ex As Exception
+                MessageBox.Show("Init_Engine_Channels: " & ex.Message)
+                Return_Value.Add(False)
+            Finally
+
+            End Try
+
+            If Return_Value.Contains(False) Then
+                Init_Engine_Channels = False
+            Else
+                Init_Engine_Channels = True
+            End If
+        End Function
+
+        Private Function Initialize() As Boolean
+            Try
+
+                Dyno_Tq_50PC = 0
+                Dyno_Tq_TO = 0
+                EEC_Tq_50PC = 0
+                EEC_Tq_TO = 0
+                PERF_RELATIVE_HUMIDITY_PCT.Value = Values.Zero
+                PERF_CONDITION_NUMBER.Value = Values.One
+                PERF_EEC_R3.Value = Values.Zero
+                PERF_EEC_R4.Value = Values.Zero
+                PERF_REMARK_TEXT.Value = New KineticaRT.Values.Text("")
+                PERF_T_DEW_PT_DEGF.Value = Values.Zero
+                PERF_T_REF_TEMP_DEGF.Value = Values.Zero
+                PERF_ITT_TRIM_DEGF.Value = Values.Zero
+
+                DEW_POINT_METHOD_CHKBOX.Value = Values.True
+
+                Return True
+
+            Catch Ex As Exception
+                MessageBox.Show("PWC83040_Sequence : Initialize()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        Private Function Initialize_Perf() As Boolean
+            Dim iError As Integer
+
+            Try
+                ' Set Configuration Files 
+                CopyConfigurationFiles()
+                pwc83040.SetConfigurationPath(sConfigurationPath)
+                pwc83040.SetDataPath(sDataPath)
+
+                ' Unit Setting
+                'pwc83040.PutUnitValue(iError) (optional, only if you are changing units)
+                'pwc83040.SaveUnitData(iError) (optional, only if you are changing units)
+                pwc83040.GetUnitData(iError)
+                If iError <> 0 Then
+                    MessageBox.Show("PWC83040_Sequence : Initialize_Perf() Couldn't load Unit Data", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Return False
+                End If
+
+                ' Service Bulletin Setting
+                Dim ServiceBulletinsSplitted As String() = {}
+
+                If UserInputs.ServiceBulletins <> String.Empty Then
+                    ServiceBulletinsSplitted = UserInputs.ServiceBulletins.Split(New Char() {"-"})
+                End If
+
+                If ServiceBulletinsSplitted.Length = 0 Then
+
+                    pwc83040.LoadBuildSpec(iError, UserInputs.BuildSpec.ToString, "", "")
+
+                ElseIf ServiceBulletinsSplitted.Length = 1 Then
+
+                    pwc83040.LoadBuildSpec(iError, UserInputs.BuildSpec.ToString, ServiceBulletinsSplitted(0), "")
+
+                ElseIf ServiceBulletinsSplitted.Length = 2 Then
+
+                    pwc83040.LoadBuildSpec(iError, UserInputs.BuildSpec.ToString, ServiceBulletinsSplitted(0), ServiceBulletinsSplitted(1))
+
+                Else
+                    Debug.Assert(False, "PWC83018 Load Model : One or two Service Bulletins are supported : User Inputs Error")
+                    iError = 1
+                End If
+
+                If iError <> 0 Then
+                    MessageBox.Show("PWC83040_Sequence : Initialize_Perf() Couldn't load Build Spec" + iError.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Return False
+                End If
+
+
+                'PWC83040SetStaus (unnecessary at present, provided only to accommodate future growth)
+                pwc83040.SetEngine(UserInputs.EngineSerialNumber)
+
+
+                pwc83040.SetBuild(1)
+
+                Return True
+
+            Catch Ex As Exception
+                MessageBox.Show("PWC83040_Sequence : Initialize_Perf() : Cannot communicate with P&WC DLL Processing Server" & vbCrLf & vbCrLf & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Function
+
+        Private Sub ProcessCondition()
+            Dim Cond_nb As Integer
+            Dim FileName As String
+            Dim iError As Integer
+
+            Try
+                Cond_nb = CInt(PERF_CONDITION_NUMBER.Value.ToDouble())
+                pwc83025.SetCondition(Cond_nb)
+                SubmitPerfValues()
+                pwc83025.Process(iError, 1, 1)
+
+                If (iError = 0) Then
+                    FileName = GetOutputFilename()
+
+                    PerfFileName = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + UserInputs.EngineSerialNumber + "\" + UserInputs.WorkOrder + "\Perf\" + "Performance " + Format(Now, "yyyy-MM-dd HH'h'mm'm'ss's'") + ".txt"
+
+                    If (System.IO.File.Exists(PerfFileName)) Then
+                        System.IO.File.Delete(PerfFileName)
+                    End If
+
+                    System.IO.File.Copy(FileName, PerfFileName)
+                    ShowOutputFile(FileName)
+                    PERF_CONDITION_NUMBER.Value = New KineticaRT.Values.Double(PERF_CONDITION_NUMBER.Value.ToDouble + 1)
+                Else
+                    MessageBox.Show("UNEXPECTED ERROR:" + vbCrLf + "==== ERROR PROCESSING CONDITION ====" + vbCrLf)
+                    ShowOutputFile("TEMP.OUT")
+                End If
+            Catch ex As Exception
+                MessageBox.Show("PWC83020_Sequence : ProcessCondition() : Cannot communicate with P&WC DLL Processing Server" & vbCrLf & vbCrLf & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub SampleValues()
+            Try
+                'Sending SGBase=SG Measured, TFuel=TFuel Measured so that we feed directly the corrected values of fuel flows and the dll doesnt correct them
+                'Was using WF Perf values before but I couldnt confirm at the time if the USGPM value from the massflowmeter is corrected or not
+                'Facility
+                Var_T_FUEL_DEGF = LOG_PERF_T_FUEL_AVG_DEGF.Value.ToDouble()
+                Var_WF1_PPH = LOG_PERF_WF_PPH.Value.ToDouble()
+                Var_WF2_PPH = LOG_PERF_WF_PPH.Value.ToDouble()
+                Var_P_BARO_PSIA = LOG_PERF_P_BARO_PSIA.Value.ToDouble()
+
+                'TORQUE & POWER
+
+                Var_DYNO_TORQUE_LBSFT = LOG_PERF_DYNO_TORQUE_LBSFT.Value.ToDouble()
+                Var_Q_LBSFT = LOG_PERF_TORQUE_ARINC_PCT.Value.ToDouble()
+
+                'TEMPERATURES
+
+                Var_T_T1_1_DEGF = LOG_PERF_T_T1_1_DEGF.Value.ToDouble()
+                Var_T_T1_2_DEGF = LOG_PERF_T_T1_2_DEGF.Value.ToDouble()
+                Var_T_T1_3_DEGF = LOG_PERF_T_T1_3_DEGF.Value.ToDouble()
+                Var_T_T1_4_DEGF = LOG_PERF_T_T1_4_DEGF.Value.ToDouble()
+                Var_T_T1_5_DEGF = LOG_PERF_T_T1_5_DEGF.Value.ToDouble()
+                Var_T_T1_6_DEGF = LOG_PERF_T_T1_6_DEGF.Value.ToDouble()
+                Var_T_T1_7_DEGF = LOG_PERF_T_T1_7_DEGF.Value.ToDouble()
+                Var_T_T1_8_DEGF = LOG_PERF_T_T1_8_DEGF.Value.ToDouble()
+                Var_T_MOT_DEGF = LOG_PERF_T_MOT_DEGF.Value.ToDouble()
+                'Var_ITT_DEGF = LOG_PERF_ITT_DEGF.Value.ToDouble()
+                Var_T_T7_1_DEGF = LOG_PERF_T_T7_1_DEGF.Value.ToDouble()
+                Var_T_T7_2_DEGF = LOG_PERF_T_T7_2_DEGF.Value.ToDouble()
+                Var_T_T7_3_DEGF = LOG_PERF_T_T7_3_DEGF.Value.ToDouble()
+                Var_T_T7_4_DEGF = LOG_PERF_T_T7_4_DEGF.Value.ToDouble()
+                Var_T_T7_5_DEGF = LOG_PERF_T_T7_5_DEGF.Value.ToDouble()
+                Var_T_T7_6_DEGF = LOG_PERF_T_T7_6_DEGF.Value.ToDouble()
+                Var_T_T7_7_DEGF = LOG_PERF_T_T7_7_DEGF.Value.ToDouble()
+                Var_T_T7_8_DEGF = LOG_PERF_T_T7_8_DEGF.Value.ToDouble()
+                Var_T_T7_9_DEGF = LOG_PERF_T_T7_9_DEGF.Value.ToDouble()
+                Var_T_T7_10_DEGF = LOG_PERF_T_T7_10_DEGF.Value.ToDouble()
+                Var_T_T7_11_DEGF = LOG_PERF_T_T7_11_DEGF.Value.ToDouble()
+                Var_T_T7_12_DEGF = LOG_PERF_T_T7_12_DEGF.Value.ToDouble()
+                Var_T_T7_13_DEGF = LOG_PERF_T_T7_13_DEGF.Value.ToDouble()
+                Var_T_T7_14_DEGF = LOG_PERF_T_T7_14_DEGF.Value.ToDouble()
+                Var_T_T7_15_DEGF = LOG_PERF_T_T7_15_DEGF.Value.ToDouble()
+                Var_T_T7_16_DEGF = LOG_PERF_T_T7_16_DEGF.Value.ToDouble()
+                Var_T_T7_17_DEGF = LOG_PERF_T_T7_17_DEGF.Value.ToDouble()
+                Var_T_T7_18_DEGF = LOG_PERF_T_T7_18_DEGF.Value.ToDouble()
+                Var_T_T7_19_DEGF = LOG_PERF_T_T7_19_DEGF.Value.ToDouble()
+                Var_T_T7_20_DEGF = LOG_PERF_T_T7_20_DEGF.Value.ToDouble()
+                Var_T_T7_21_DEGF = LOG_PERF_T_T7_21_DEGF.Value.ToDouble()
+                Var_T_T7_22_DEGF = LOG_PERF_T_T7_22_DEGF.Value.ToDouble()
+                Var_T_T7_23_DEGF = LOG_PERF_T_T7_23_DEGF.Value.ToDouble()
+                Var_T_T7_24_DEGF = LOG_PERF_T_T7_24_DEGF.Value.ToDouble()
+                Var_T_T7_25_DEGF = LOG_PERF_T_T7_25_DEGF.Value.ToDouble()
+                Var_T_T7_26_DEGF = LOG_PERF_T_T7_26_DEGF.Value.ToDouble()
+                Var_T_T7_27_DEGF = LOG_PERF_T_T7_27_DEGF.Value.ToDouble()
+                Var_T_T7_28_DEGF = LOG_PERF_T_T7_28_DEGF.Value.ToDouble()
+                Var_T_T7_29_DEGF = LOG_PERF_T_T7_29_DEGF.Value.ToDouble()
+                Var_T_T7_30_DEGF = LOG_PERF_T_T7_30_DEGF.Value.ToDouble()
+                Var_T_T7_31_DEGF = LOG_PERF_T_T7_31_DEGF.Value.ToDouble()
+                Var_T_T7_32_DEGF = LOG_PERF_T_T7_32_DEGF.Value.ToDouble()
+                Var_T_T7_33_DEGF = LOG_PERF_T_T7_33_DEGF.Value.ToDouble()
+                Var_T_T7_34_DEGF = LOG_PERF_T_T7_34_DEGF.Value.ToDouble()
+                Var_T_T7_35_DEGF = LOG_PERF_T_T7_35_DEGF.Value.ToDouble()
+                Var_T_T7_36_DEGF = LOG_PERF_T_T7_36_DEGF.Value.ToDouble()
+
+                'PRESSURES
+                Var_P_P3_PSIG = LOG_PERF_P_P3_PSIG.Value.ToDouble()
+                Var_P_P1_1_PSIG = LOG_PERF_P_P1_1_PSID.Value.ToDouble()
+                Var_P_P1_2_PSIG = LOG_PERF_P_P1_2_PSID.Value.ToDouble()
+                Var_P_P8_PSIG = LOG_PERF_P_P8_PSID.Value.ToDouble()
+                Var_P_RGB_PSIA = LOG_PERF_P_RGB_PSIG.Value.ToDouble()
+
+                Var_ITT_TRIM_DEGF = PERF_ITT_TRIM_DEGF.Value.ToDouble()
+
+            Catch ex As Exception
+                MessageBox.Show("PWC83040_Sequence : SampleValues()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub SetUnitValues()
+            Dim i As Integer
+
+            For i = UnitValues.GetLowerBound(0) To UnitValues.GetUpperBound(0)
+                If Not pwc83025.PutUnitValue(UnitValues(i, 0), UnitValues(i, 1), "") Then
+                    MessageBox.Show("SetUnitValues: Unknown label Or unit '" + _
+                        UnitValues(i, 0) + "' (" + UnitValues(i, 1) + ")")
+                End If
+            Next
+        End Sub
+
+        Private Sub ShowOutputFile(fileName As String)
+            Dim DetailsForm As CEL.Forms.DisplayFile = Nothing
+
+            Try
+                DetailsForm = New CEL.Forms.DisplayFile(fileName)
+
+                DetailsForm.MinimizeBox = False
+                DetailsForm.MaximizeBox = False
+                DetailsForm.Text = fileName
+                DetailsForm.ShowDialog()
+            Catch e As Exception
+                MsgBox(e.ToString(), MsgBoxStyle.OkOnly Or MsgBoxStyle.Critical, _
+                    fileName)
+            Finally
+                If (Not (DetailsForm Is Nothing)) Then
+                    DetailsForm.Dispose()
+                End If
+            End Try
+        End Sub
+
+        Private Sub SubmitPerfValues()
+            pwc83025.SetEngine(UserInputs.EngineSerialNumber)
+
+            pwc83025.PutValue("DATE", Format(Now, "yyyy/MM/dd"), "")
+            pwc83025.PutValue("TIME", Format(Now, "hh:mm"), "")
+            pwc83025.PutValue("CELL", "VECTOR", "")
+            pwc83025.PutValue("REMARK", PERF_REMARK_TEXT.Value.ToString(), "")
+            pwc83025.PutValue("WORK", UserInputs.WorkOrder, "")
+            If UserInputs.TestType = "Overhaul new" Then
+                pwc83025.PutValue("LIM_CODE", "1", "")
+            ElseIf UserInputs.TestType = "HSI / refurbish" Then
+                pwc83025.PutValue("LIM_CODE", "2", "")
+            ElseIf UserInputs.TestType = "Repair" Then
+                pwc83025.PutValue("LIM_CODE", "3", "")
+            End If
+            If UserInputs.TestType = "Overhaul new" Then
+                pwc83025.PutValue("TEST_TYPE", "OVERHAUL", "")
+            ElseIf UserInputs.TestType = "HSI / refurbish" Then
+                pwc83025.PutValue("TEST_TYPE", "HSI", "")
+            ElseIf UserInputs.TestType = "Repair" Then
+                pwc83025.PutValue("TEST_TYPE", "REPAIR", "")
+            End If
+            pwc83025.PutValue("TSG", Var_SAMPLE_T_FUEL.ToString(), "")
+            pwc83025.PutValue("SG", Var_SAMPLE_SG_FUEL.ToString(), "")
+            pwc83025.PutValue("SG_BASE", Var_SG_BASE.ToString(), "")
+            pwc83025.PutValue("LHV", UserInputs.LHV, "")
+            If DEW_POINT_METHOD_CHKBOX.Value = Values.True Then
+                pwc83025.PutValue("HUM_METHOD", "D", "")
+                pwc83025.PutValue("TDWPT", PERF_T_DEW_PT_DEGF.Value.ToString(), "")
+                pwc83025.PutValue("TREFTEMP", PERF_T_REF_TEMP_DEGF.Value.ToString(), "")
+            ElseIf RELATIVE_HUMIDITY_METHOD_CHKBOX.Value = Values.True Then
+                pwc83025.PutValue("HUM_METHOD", "R", "")
+                pwc83025.PutValue("RH", PERF_RELATIVE_HUMIDITY_PCT.Value.ToString(), "")
+            End If
+            pwc83025.PutValue("NH", Var_NH_RPM.ToString(), "")
+            pwc83025.PutValue("NL", Var_NL_RPM.ToString(), "")
+            pwc83025.PutValue("NPT", Var_NPT_RPM.ToString(), "")
+            pwc83025.PutValue("PCELL", Var_P_BARO_PSIA.ToString(), "")
+            pwc83025.PutValue("BARO", Var_P_BARO_PSIA.ToString(), "")
+
+            pwc83025.PutValue("P1.1", Var_P_P1_1_PSIG.ToString(), "")
+            pwc83025.PutValue("P1.1", Var_P_P1_2_PSIG.ToString(), "")
+            'In the engine manual, RGBOIL(S1707) is defined as PRGB in the DRP
+            pwc83025.PutValue("PRGB", Var_P_RGBOIL_PSIA.ToString(), "")
+
+            pwc83025.PutValue("P3", Var_P_P3_PSIG.ToString(), "1")
+            pwc83025.PutValue("P8", Var_P_P8_PSIG.ToString(), "")
+            pwc83025.PutValue("PDPT", Var_P_PDPT_PSIA.ToString(), "")
+            pwc83025.PutValue("TEMP_TRIM", Var_ITT_TRIM_DEGF.ToString(), "")
+            pwc83025.PutValue("MOT", Var_T_MOT_DEGF.ToString(), "")
+            'We feed a WF Perf specifically for PWC software : Volumetric value x 8.3278 (water density at 60F) x SG_BASE x 60
+            pwc83025.PutValue("WF1", Var_WF1_PPH.ToString(), "")
+            pwc83025.PutValue("WF2", Var_WF2_PPH.ToString(), "")
+            'We are using Fuel Temperature from the probe as the precision is better from the value from the mass flowmeter
+            pwc83025.PutValue("TF", Var_T_FUEL_DEGF.ToString(), "")
+
+            pwc83025.PutValue("LPBOV", Var_LPBOV_PCT.ToString(), "")
+            pwc83025.PutValue("TMEEC", Var_Q_LBSFT.ToString(), "")
+            pwc83025.PutValue("DYNO_TQ", Var_DYNO_TORQUE_LBSFT.ToString(), "")
+            pwc83025.PutValue("ITT", Var_ITT_DEGF.ToString(), "")
+
+            If T_T1_1_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T1", "-10001.000", "1")
+            Else
+                pwc83025.PutValue("T1", Var_T_T1_1_DEGF.ToString(), "1")
+            End If
+            If T_T1_2_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T1", "-10001.000", "2")
+            Else
+                pwc83025.PutValue("T1", Var_T_T1_2_DEGF.ToString(), "2")
+            End If
+            If T_T1_3_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T1", "-10001.000", "3")
+            Else
+                pwc83025.PutValue("T1", Var_T_T1_3_DEGF.ToString(), "3")
+            End If
+            If T_T1_4_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T1", "-10001.000", "4")
+            Else
+                pwc83025.PutValue("T1", Var_T_T1_4_DEGF.ToString(), "4")
+            End If
+            If T_T1_5_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T1", "-10001.000", "5")
+            Else
+                pwc83025.PutValue("T1", Var_T_T1_5_DEGF.ToString(), "5")
+            End If
+
+            If T_T7_1_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "1")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_1_DEGF.ToString(), "1")
+            End If
+            If T_T7_2_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "2")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_2_DEGF.ToString(), "2")
+            End If
+            If T_T7_3_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "3")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_3_DEGF.ToString(), "3")
+            End If
+            If T_T7_4_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "4")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_4_DEGF.ToString(), "4")
+            End If
+            If T_T7_5_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "5")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_5_DEGF.ToString(), "5")
+            End If
+            If T_T7_6_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "6")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_6_DEGF.ToString(), "6")
+            End If
+            If T_T7_7_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "7")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_7_DEGF.ToString(), "7")
+            End If
+            If T_T7_8_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "8")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_8_DEGF.ToString(), "8")
+            End If
+            If T_T7_9_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "9")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_9_DEGF.ToString(), "9")
+            End If
+            If T_T7_10_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "10")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_10_DEGF.ToString(), "10")
+            End If
+            If T_T7_11_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "11")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_11_DEGF.ToString(), "11")
+            End If
+            If T_T7_12_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "12")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_12_DEGF.ToString(), "12")
+            End If
+            If T_T7_13_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "13")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_13_DEGF.ToString(), "13")
+            End If
+            If T_T7_14_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "14")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_14_DEGF.ToString(), "14")
+            End If
+            If T_T7_15_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "15")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_15_DEGF.ToString(), "15")
+            End If
+            If T_T7_16_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "16")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_16_DEGF.ToString(), "16")
+            End If
+            If T_T7_17_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "17")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_17_DEGF.ToString(), "17")
+            End If
+            If T_T7_18_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "18")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_18_DEGF.ToString(), "18")
+            End If
+            If T_T7_19_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "19")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_19_DEGF.ToString(), "19")
+            End If
+            If T_T7_20_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "20")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_20_DEGF.ToString(), "20")
+            End If
+            If T_T7_21_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "21")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_21_DEGF.ToString(), "21")
+            End If
+            If T_T7_22_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "22")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_22_DEGF.ToString(), "22")
+            End If
+            If T_T7_23_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "23")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_23_DEGF.ToString(), "23")
+            End If
+            If T_T7_24_DELETE_BTN.Value.ToString() = "True" Then
+                pwc83025.PutValue("T7", "-10001.000", "24")
+            Else
+                pwc83025.PutValue("T7", Var_T_T7_24_DEGF.ToString(), "24")
+            End If
+
+        End Sub
+
+        Private Sub OnBTN_50PC_TORQUE_TRIM(sender As IChannel, newVal As Value)
+            Try
+                If (newVal Is Values.True) Then
+                    Dyno_Tq_50PC = CSng(DYNO_TORQUE_LBSFT_MEAN.Value.ToDouble())
+                    EEC_Tq_50PC = CSng(TORQUE_ARINC_PCT_MEAN.Value.ToDouble())
+                End If
+            Catch Ex As Exception
+                MessageBox.Show("PWC83020_Sequence : OnBTN_50PC_TORQUE_TRIM()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnBTN_CLEAR_TORQUE_TRIM(sender As IChannel, newVal As Value)
+            Try
+                If (newVal Is Values.True) Then
+                    PERF_50PC_TORQUE_TRIM_BTN.Value = Values.False
+                    PERF_TO_TORQUE_TRIM_BTN.Value = Values.False
+                    PERF_CLEAR_TORQUE_TRIM_BTN.Value = Values.False
+                End If
+            Catch Ex As Exception
+                MessageBox.Show("PWC83020_Sequence : OnBTN_CLEAR_TORQUE_TRIM()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Public Function UpdateCustomHeaderLogFile(ByVal AppendOption As Boolean, ByVal IsPerfEntry As Boolean, ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+            Dim Log_Condition As Integer
+
+            If AppendOption = False Then
+                Log_Condition = 1
+            Else
+                'Log_Condition = (ExcelWorksheet.Cells(RowIndex + 1, 1).End(Excel.XlDirection.xlToRight).Column - 1)
+                'TODO: Ici changement du au nouveau Microsoft.Office.Interop.Excel	                        'Log_Condition = (ExcelWorksheet.Cells(RowIndex + 1, 1).End(XlDirection.xlToRight).Column - 1)  'cette ligne en office 2010 retourne toujours 16384 -1 donc 16383 et le reste du code plante
+                Log_Condition = ExcelWorksheet.Cells(RowIndex + 1, ExcelWorksheet.Columns.Count).End(Excel.XlDirection.xlToLeft).Column - 1
+                Log_Condition = Log_Condition + 1
+
+            End If
+
+            If ((Log_Condition > 1) And ((Log_Condition Mod 5) = 1)) Then
+
+                'Repeat The Test Spec For this new sets of condition
+
+                With ExcelWorksheet
+                    .Range(.Cells(2, 2), .Cells(RowIndex - 2, 6)).Copy(.Cells(2, Log_Condition + 1))
+                End With
+            End If
+
+            ColumnIndex = 1 + Log_Condition
+
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Format(Now, "yyyy/MM/dd HH:mm:ss")
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 1
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Log_Condition.ToString()
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 1
+            If IsPerfEntry = False Then
+                Dim CommentText As String = ""
+                Dim InputObject As New InputCommentForm
+                InputObject.ShowDialog("Log Report", "Comment:", "", CommentText)
+
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = CommentText
+            Else
+                '						ExcelWorkSheet.Cells(RowIndex, ColumnIndex).Value				= "STEP: " & TEST_STEP_NB.Value.ToString() & " " & Now.ToString()
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "STEP: " & TestStep_List.SelectedItem & " " & Now.ToString()
+            End If
+
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 2
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Values"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter
+        End Function
+
+        Private Sub OnBTN_PERFORMANCE_RUN(sender As IChannel, newVal As Value)
+            Try
+                If (newVal Is Values.True) Then
+
+                    'Update the Log/Perf channel set
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    SampleValues()
+
+                    CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, False, CELProject.EngineModel, True)
+
+                    ProcessCondition()
+
+                    PERF_PERFORMANCE_RUN_BTN.Value = Values.False
+                End If
+            Catch Ex As Exception
+                MessageBox.Show("PWC83040_Sequence : OnBTN_PERFORMANCE_RUN()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnHUMIDITY_METHOD(sender As IChannel, newVal As Value)
+            Try
+                If (sender.Name = "DEW_POINT_METHOD_CHKBOX") Then
+                    If CELProject.IsTrue(newVal) Then
+                        RELATIVE_HUMIDITY_METHOD_CHKBOX.Value = Values.False
+                    Else
+                        RELATIVE_HUMIDITY_METHOD_CHKBOX.Value = Values.True
+                    End If
+                End If
+
+                If (sender.Name = "RELATIVE_HUMIDITY_METHOD_CHKBOX") Then
+                    If CELProject.IsTrue(newVal) Then
+                        DEW_POINT_METHOD_CHKBOX.Value = Values.False
+                    Else
+                        DEW_POINT_METHOD_CHKBOX.Value = Values.True
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("PWC83040_Sequence : OnHUMIDITY_METHOD()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnBTN_TO_TORQUE_TRIM(sender As IChannel, newVal As Value)
+            Try
+                If (newVal Is Values.True) Then
+                    Dyno_Tq_TO = CSng(DYNO_TORQUE_LBSFT_MEAN.Value.ToDouble())
+                    EEC_Tq_TO = CSng(TORQUE_ARINC_PCT_MEAN.Value.ToDouble())
+                End If
+            Catch ex As Exception
+                MessageBox.Show("PWC83040_Sequence : OnBTN_TO_TORQUE_TRIM()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnBTN_TORQUE_TRIM(sender As IChannel, newVal As Value)
+            Dim FileName As String
+            Dim ier As Integer
+            Dim iOutput As Integer = 1
+            Dim iTMTolDouble As Integer
+            Dim PerfFileName As String
+            Dim rBiasCl As Single = 0
+            Dim rGainCl As Single = 0
+            Dim rResBias As Single = 0
+            Dim rResGain As Single = 0
+
+
+            Try
+                If (newVal Is Values.True) Then
+
+                    'Get values EEC R3 and EEC R4
+                    rResBias = CSng(PERF_EEC_R3.Value.ToDouble())
+                    rResGain = CSng(PERF_EEC_R4.Value.ToDouble())
+
+                    If (PERF_TRIM_TOLERANCE_BTN.Value.ToString() = "False") Then
+                        iTMTolDouble = 1
+                    Else
+                        iTMTolDouble = 2
+                    End If
+
+                    Dim Temp As Boolean = Initialize_Perf()
+
+                    pwc83025.SetBuild(1)
+                    pwc83025.SetCondition(1)
+
+                    pwc83025.ProcessTorqueTrim(iOutput, iTMTolDouble, Dyno_Tq_TO, Dyno_Tq_50PC, EEC_Tq_TO, EEC_Tq_50PC, rResGain, rResBias, ier)
+                    If (ier = 0) Then
+                        FileName = GetOutputFilename()
+
+                        PerfFileName = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + UserInputs.EngineSerialNumber + "\" + UserInputs.WorkOrder + "\Perf\" + "Torque Trim_" + Format(Now, "yyyy-MM-dd HH'h'mm'm'ss's'") + ".txt"
+
+                        If (System.IO.File.Exists(PerfFileName)) Then
+                            System.IO.File.Delete(PerfFileName)
+                        End If
+
+                        System.IO.File.Copy(FileName, PerfFileName)
+                        ShowOutputFile(FileName)
+
+                    Else
+                        MessageBox.Show("UNEXPECTED ERROR:" + vbCrLf + "==== ERROR PROCESSING TORQUE TRIM  ====" + vbCrLf)
+                        ShowOutputFile("TEMP.OUT")
+                    End If
+
+                    PERF_COMPUTE_TORQUE_TRIM_BTN.Value = Values.False
+                End If
+            Catch Ex As Exception
+                MessageBox.Show("PWC83040_Sequence : OnBTN_TORQUE_TRIM()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionInitialized(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionInitialized(newStatus)
+
+                If CELProject.HierarchyType = CELDAS.eHierarchyType.Slave Then
+
+                    Select Case CELProject.EngineFamily
+
+                        Case "PW210"
+
+                            'Client Initialization
+                            Dim endpointAddress As New EndpointAddress(Configuration.CreateServerUriString())
+                            Dim binding As System.ServiceModel.Channels.Binding = Configuration.CreateBinding()
+                            Dim factory As New ChannelFactory(Of IPwc83040)(binding, endpointAddress)
+                            pwc83040 = factory.CreateChannel()
+
+                            UserInputs.MapUserInputsParameters(CELProject)
+                            Init_Engine_Channels()
+
+                            ' Work in progress (en commentaire pour éviter des bugs)
+                            'If Initialize_Perf() = False Then
+                            '    Perf_Status_Close = True
+                            '    CELProject.Test_Mgr_Cmd.Value = New KineticaRT.Values.Text(CELDAS.eTest_Mgr_Cmd.Close)
+                            'Else
+                            '    Perf_Status_Close = False
+                            'End If
+
+                            'CreateLogFile() Ajouter Creation du Log generique
+                            Initialize()
+
+
+
+                    End Select
+                End If
+            Catch Ex As Exception
+                MessageBox.Show("PWC83040_Sequence : OnTestSessionInitialized()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionOpened(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionOpened(newStatus)
+
+            Catch ex As Exception
+
+                MessageBox.Show("PWC83040_Sequence.OnTestSessionOpened: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionRunning(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionRunning(newStatus)
+                If CELProject.HierarchyType = CELDAS.eHierarchyType.Slave Then
+
+                    Select Case CELProject.EngineFamily
+
+                        Case "PW210"
+
+                            If Perf_Status_Close Then
+                                CELProject.Test_Mgr_Cmd.Value = New KineticaRT.Values.Text(CELDAS.eTest_Mgr_Cmd.Close)
+                            End If
+                            CreateHandler()
+
+                    End Select
+                End If
+            Catch Ex As Exception
+                MessageBox.Show("PWC83040_Sequence : OnTestSessionRunning()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+       Protected Overrides Sub OnTestSessionClosing(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionClosing(newStatus)
+                If CELProject.HierarchyType = CELDAS.eHierarchyType.Slave Then
+                    Select Case CELProject.EngineFamily
+
+                        Case "PW210"
+
+                            DeleteHandler()
+
+                    End Select
+                End If
+            Catch Ex As Exception
+                MessageBox.Show("PWC83040_Sequence : OnTestSessionClosing()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+
+        '*************
+        ' Client      
+        '*************
+        Private pwc83040 As IPwc83040
+        Private pwc83025 As IPwc83025 ' TODO Delete after pwc83040 implementation
+
+        '*************
+        '* Channels  *
+        '*************
+        Private DEW_POINT_METHOD_CHKBOX As IBooleanChannel
+        Private DYNO_TORQUE_LBSFT_MEAN As INumericChannel
+        Private LOG_PERF_DYNO_TORQUE_LBSFT As INumericChannel
+        Private LOG_PERF_P_BARO_PSIA As INumericChannel
+        Private LOG_PERF_P_PDPT_PSIA As INumericChannel
+        Private LOG_PERF_P_P1_1_PSID As INumericChannel
+        Private LOG_PERF_P_P1_2_PSID As INumericChannel
+        Private LOG_PERF_P_P3_PSIG As INumericChannel
+        Private LOG_PERF_P_P8_PSID As INumericChannel
+        Private LOG_PERF_P_RGB_PSIG As INumericChannel
+        Private LOG_PERF_T_FUEL_AVG_DEGF As INumericChannel
+        Private LOG_PERF_T_MOT_DEGF As INumericChannel
+        Private LOG_PERF_T_T1_1_DEGF As INumericChannel
+        Private LOG_PERF_T_T1_2_DEGF As INumericChannel
+        Private LOG_PERF_T_T1_3_DEGF As INumericChannel
+        Private LOG_PERF_T_T1_4_DEGF As INumericChannel
+        Private LOG_PERF_T_T1_5_DEGF As INumericChannel
+        Private LOG_PERF_T_T1_6_DEGF As INumericChannel
+        Private LOG_PERF_T_T1_7_DEGF As INumericChannel
+        Private LOG_PERF_T_T1_8_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_1_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_2_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_3_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_4_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_5_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_6_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_7_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_8_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_9_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_10_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_11_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_12_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_13_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_14_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_15_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_16_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_17_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_18_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_19_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_20_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_21_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_22_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_23_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_24_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_25_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_26_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_27_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_28_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_29_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_30_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_31_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_32_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_33_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_34_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_35_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_36_DEGF As INumericChannel
+        Private LOG_PERF_TORQUE_ARINC_PCT As INumericChannel
+        Private LOG_PERF_WF_PPH As INumericChannel
+        Private PERF_RELATIVE_HUMIDITY_PCT As INumericChannel
+        Private PERF_50PC_TORQUE_TRIM_BTN As IBooleanChannel
+        Private PERF_CLEAR_TORQUE_TRIM_BTN As IBooleanChannel
+        Private PERF_PERFORMANCE_RUN_BTN As IBooleanChannel
+        Private PERF_TO_TORQUE_TRIM_BTN As IBooleanChannel
+        Private PERF_COMPUTE_TORQUE_TRIM_BTN As IBooleanChannel
+        Private PERF_TRIM_TOLERANCE_BTN As IBooleanChannel
+        Private PERF_CONDITION_NUMBER As INumericChannel
+        Private PERF_EEC_R3 As INumericChannel
+        Private PERF_EEC_R4 As INumericChannel
+        Private PERF_ITT_TRIM_DEGF As INumericChannel
+        Private PERF_REMARK_TEXT As ITextChannel
+        Private PERF_T_DEW_PT_DEGF As INumericChannel
+        Private PERF_T_REF_TEMP_DEGF As INumericChannel
+        Private RELATIVE_HUMIDITY_METHOD_CHKBOX As IBooleanChannel
+        Private T_T1_1_DELETE_BTN As IBooleanChannel
+        Private T_T1_2_DELETE_BTN As IBooleanChannel
+        Private T_T1_3_DELETE_BTN As IBooleanChannel
+        Private T_T1_4_DELETE_BTN As IBooleanChannel
+        Private T_T1_5_DELETE_BTN As IBooleanChannel
+        Private T_T1_6_DELETE_BTN As IBooleanChannel
+        Private T_T1_7_DELETE_BTN As IBooleanChannel
+        Private T_T1_8_DELETE_BTN As IBooleanChannel
+        Private T_T7_1_DELETE_BTN As IBooleanChannel
+        Private T_T7_2_DELETE_BTN As IBooleanChannel
+        Private T_T7_3_DELETE_BTN As IBooleanChannel
+        Private T_T7_4_DELETE_BTN As IBooleanChannel
+        Private T_T7_5_DELETE_BTN As IBooleanChannel
+        Private T_T7_6_DELETE_BTN As IBooleanChannel
+        Private T_T7_7_DELETE_BTN As IBooleanChannel
+        Private T_T7_8_DELETE_BTN As IBooleanChannel
+        Private T_T7_9_DELETE_BTN As IBooleanChannel
+        Private T_T7_10_DELETE_BTN As IBooleanChannel
+        Private T_T7_11_DELETE_BTN As IBooleanChannel
+        Private T_T7_12_DELETE_BTN As IBooleanChannel
+        Private T_T7_13_DELETE_BTN As IBooleanChannel
+        Private T_T7_14_DELETE_BTN As IBooleanChannel
+        Private T_T7_15_DELETE_BTN As IBooleanChannel
+        Private T_T7_16_DELETE_BTN As IBooleanChannel
+        Private T_T7_17_DELETE_BTN As IBooleanChannel
+        Private T_T7_18_DELETE_BTN As IBooleanChannel
+        Private T_T7_19_DELETE_BTN As IBooleanChannel
+        Private T_T7_20_DELETE_BTN As IBooleanChannel
+        Private T_T7_21_DELETE_BTN As IBooleanChannel
+        Private T_T7_22_DELETE_BTN As IBooleanChannel
+        Private T_T7_23_DELETE_BTN As IBooleanChannel
+        Private T_T7_24_DELETE_BTN As IBooleanChannel
+        Private T_T7_25_DELETE_BTN As IBooleanChannel
+        Private T_T7_26_DELETE_BTN As IBooleanChannel
+        Private T_T7_27_DELETE_BTN As IBooleanChannel
+        Private T_T7_28_DELETE_BTN As IBooleanChannel
+        Private T_T7_29_DELETE_BTN As IBooleanChannel
+        Private T_T7_30_DELETE_BTN As IBooleanChannel
+        Private T_T7_31_DELETE_BTN As IBooleanChannel
+        Private T_T7_32_DELETE_BTN As IBooleanChannel
+        Private T_T7_33_DELETE_BTN As IBooleanChannel
+        Private T_T7_34_DELETE_BTN As IBooleanChannel
+        Private T_T7_35_DELETE_BTN As IBooleanChannel
+        Private T_T7_36_DELETE_BTN As IBooleanChannel
+        Private TORQUE_ARINC_PCT_MEAN As INumericChannel
+
+        '***************************
+        '* Perf/Log Sampled Values *
+        '***************************
+        Private Dyno_Tq_50PC As Single
+        Private Dyno_Tq_TO As Single
+        Private EEC_Tq_50PC As Single
+        Private EEC_Tq_TO As Single
+        Private Var_DYNO_TORQUE_LBSFT As Double
+        Private Var_ITT_DEGF As Double
+        Private Var_ITT_TRIM_DEGF As Double
+        Private Var_LPBOV_PCT As Double
+        Private Var_NH_RPM As Double
+        Private Var_NL_RPM As Double
+        Private Var_NPT_RPM As Double
+        Private Var_P_BARO_PSIA As Double
+        Private Var_P_P1_1_PSIG As Double
+        Private Var_P_P1_2_PSIG As Double
+        Private Var_P_P3_PSIG As Double
+        Private Var_P_PDPT_PSIA As Double
+        Private Var_P_P8_PSIG As Double
+        Private Var_P_RGB_PSIA As Double
+        Private Var_P_RGBOIL_PSIA As Double
+        Private Var_Q_LBSFT As Double
+        Private Var_SAMPLE_SG_FUEL As Double
+        Private Var_SAMPLE_T_FUEL As Double
+        Private Var_T_FUEL_DEGF As Double
+        Private Var_T_MOT_DEGF As Double
+        Private Var_T_T1_1_DEGF As Double
+        Private Var_T_T1_2_DEGF As Double
+        Private Var_T_T1_3_DEGF As Double
+        Private Var_T_T1_4_DEGF As Double
+        Private Var_T_T1_5_DEGF As Double
+        Private Var_T_T1_6_DEGF As Double
+        Private Var_T_T1_7_DEGF As Double
+        Private Var_T_T1_8_DEGF As Double
+        Private Var_T_T7_1_DEGF As Double
+        Private Var_T_T7_2_DEGF As Double
+        Private Var_T_T7_3_DEGF As Double
+        Private Var_T_T7_4_DEGF As Double
+        Private Var_T_T7_5_DEGF As Double
+        Private Var_T_T7_6_DEGF As Double
+        Private Var_T_T7_7_DEGF As Double
+        Private Var_T_T7_8_DEGF As Double
+        Private Var_T_T7_9_DEGF As Double
+        Private Var_T_T7_10_DEGF As Double
+        Private Var_T_T7_11_DEGF As Double
+        Private Var_T_T7_12_DEGF As Double
+        Private Var_T_T7_13_DEGF As Double
+        Private Var_T_T7_14_DEGF As Double
+        Private Var_T_T7_15_DEGF As Double
+        Private Var_T_T7_16_DEGF As Double
+        Private Var_T_T7_17_DEGF As Double
+        Private Var_T_T7_18_DEGF As Double
+        Private Var_T_T7_19_DEGF As Double
+        Private Var_T_T7_20_DEGF As Double
+        Private Var_T_T7_21_DEGF As Double
+        Private Var_T_T7_22_DEGF As Double
+        Private Var_T_T7_23_DEGF As Double
+        Private Var_T_T7_24_DEGF As Double
+        Private Var_T_T7_25_DEGF As Double
+        Private Var_T_T7_26_DEGF As Double
+        Private Var_T_T7_27_DEGF As Double
+        Private Var_T_T7_28_DEGF As Double
+        Private Var_T_T7_29_DEGF As Double
+        Private Var_T_T7_30_DEGF As Double
+        Private Var_T_T7_31_DEGF As Double
+        Private Var_T_T7_32_DEGF As Double
+        Private Var_T_T7_33_DEGF As Double
+        Private Var_T_T7_34_DEGF As Double
+        Private Var_T_T7_35_DEGF As Double
+        Private Var_T_T7_36_DEGF As Double
+        Private Var_SG_BASE As Double
+        Private Var_WF1_PPH As Double
+        Private Var_WF2_PPH As Double
+
+        '********
+        '* Misc *
+        '********
+
+        Private EngineModel_List As System.Windows.Forms.ComboBox
+        Private Log_Condition As Integer
+        Private Perf_Status_Close As Boolean = False
+        Private PerfFileName As String
+        Private RowIndex_Start_Log As Integer
+        Private TestStep_List As System.Windows.Forms.ComboBox
+        Private TTrim_Dyno_Torque(11) As Double
+        Private TTrim_Engine_Torque(11) As Double
+        Private UnitValues(,) As String = { _
+            {"TSG", "F"}, {"TF", "F"}, {"T1", "F"}, {"T22", "F"}, {"T25", "F"}, {"T27", "F"}, _
+            {"T7", "F"}, {"ITT", "F"}, {"EGT", "F"}, {"T3", "F"}, {"MOT", "F"}, {"TREFTEMP", "F"}, _
+            {"TDWPT", "F"}, {"ITT_TRIM", "F"}, {"LHV", "BTU/LB"}, {"WF1", "LB/H"}, {"DYNO", "LBF-FT"}, _
+            {"TMEEC", "LBF-FT"}, {"PCELL", "PSIA"}, {"P1T", "PSIA"}, {"P25", "PSIA"}, {"P27", "PSIA"}, _
+            {"P3S", "PSIA"}, {"P7S", "PSIA"}, {"PDPT", "PSIA"}, {"PAGB", "PSIG"}, {"PRGB", "PSIA"}, _
+            {"BARO", "PSIA"} _
+        }
+
+        '***************
+        '* Controllers *
+        '***************
+
+        Private UserInputs As New UserInput11894()
+
+        Public Class UserInput11894
+
+            Public EngineSerialNumber As String = ""
+            Public WorkOrder As String = ""
+            Public PartNumber As String = ""
+            Public LHV As String = ""
+            Public OilType As String = ""
+            Public FuelType As String = ""
+            Public CustomerName As String = ""
+            Public ManualRevDate As String = ""
+
+            Public TestType As String = ""
+            Public BuildSpec As String = ""
+            Public ServiceBulletins As String = ""
+            Public OperatorName As String = ""
+            Public ObserverName As String = ""
+            Public SupervisorName As String = ""
+
+            ' Allow friend access to the empty constructor.
+            Friend Sub New()
+
+            End Sub
+            Public Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+                EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+                PartNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+                LHV = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+                OilType = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+                FuelType = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+                CustomerName = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+                ManualRevDate = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+
+                TestType = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+                BuildSpec = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+                ServiceBulletins = CELProject.Test_Mgr_UUT_Choice(2).Value.ToString()
+                OperatorName = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+                ObserverName = CELProject.Test_Mgr_UUT_Choice(5).Value.ToString()
+                SupervisorName = CELProject.Test_Mgr_UUT_Choice(6).Value.ToString()
+
+            End Sub
+
+        End Class
+
+    End Class
+End Namespace

@@ -1,0 +1,13 @@
+An error occurred please contact the adminstrator with the following information:
+
+Object is currently in use elsewhere.
+
+Stack Trace:
+   at System.Drawing.Region.MakeEmpty()
+   at KineticaRT.Controls.Control.UpdateProc() in C:\My Projects\17865 S7\CELDAS 200\Kineticart\Controls\Control.cs:line 1427
+   at KineticaRT.Controls.EventPool.UpdateEventHandler.Invoke()
+   at KineticaRT.Controls.EventPool.ThreadMethod() in C:\My Projects\17865 S7\CELDAS 200\Kineticart\Controls\EventPool.cs:line 28
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+   at System.Threading.ExecutionContext.Run(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+   at System.Threading.ExecutionContext.Run(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.ThreadHelper.ThreadStart()

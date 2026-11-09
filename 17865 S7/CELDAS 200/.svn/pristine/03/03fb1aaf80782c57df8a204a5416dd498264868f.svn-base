@@ -1,0 +1,2131 @@
+Imports System
+Imports System.Collections
+Imports System.Reflection
+Imports System.Text
+Imports System.Threading
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Windows.Forms
+Imports KineticaRT
+Imports KineticaRT.Channels
+Imports KineticaRT.Sequence
+Imports KineticaRT.Values
+Imports KineticaRT.Controls.Frame
+Imports Microsoft.Office.Interop 'Excel
+Imports System.Data
+Imports System.Data.OleDb
+Imports Microsoft.VisualBasic
+Imports CEL.Library
+Imports CEL.HMI
+Imports CEL.Data.BusinessObjects
+
+
+Namespace StudioDemonstration
+
+	Public Class PW901A_Sequence
+        Inherits ApuSequence
+
+        Private Const MaxNumberOfTt1Probe As Integer = 4
+		Private Const MaxNumberOfTt17Probe As Integer = 2
+		Private Const MaxNumberOfTt7Probe As Integer = 6
+
+		Private Enum eTestStepPW901A
+			NO_LOAD = 0
+			MAX_IGV = 1
+			MAX_ECS = 2
+			MES = 3
+			FINAL_DATA = 4
+		End Enum
+        Private Enum eTestLimitTypePW901A
+            EGT = 0
+            IGV = 1
+            N2 = 3
+            Pt17 = 4
+            W17 = 5
+            Wf = 6
+        End Enum
+
+        Protected Overrides Sub Compute(ByVal CalulateForLogAndPerformanceReports As Boolean)
+
+            Try
+                If CalulateForLogAndPerformanceReports Then
+
+                    LOG_PERF_WB_CALC.Value = New KineticaRT.Values.Double(Compute_BleedAirFlow(LOG_PERF_T_ORIFICE_DEGF.Value.ToDouble(), _
+                                                                                               LOG_PERF_P_ORIFICE_PSIA.Value.ToDouble(), _
+                                                                                               LOG_PERF_P_ORIFICE_DELTA_PSID.Value.ToDouble))
+
+                    'IMPORTANT: Toutes les variables flottantes telles que WB_CALC, DELPB, LB_DEMAND dont la source et la destination sont vides doivent
+                    'manuellement être updaté pour être inscrite dans le LOG ou le PERF report.
+                Else
+
+                    WB_CALC.Value = New KineticaRT.Values.Double(Compute_BleedAirFlow(T_ORIFICE_DEGF.Value.ToDouble(), _
+                                                                                      P_ORIFICE_PSIA.Value.ToDouble(), _
+                                                                                      P_ORIFICE_DELTA_PSID.Value.ToDouble))
+                End If
+
+                'Timers Update
+                RundownTimerCtrl.Timer()
+
+                PW901A_Iteration(W7.Value.ToDouble(), CP7.Value.ToDouble(), T_T7_DEGR.Value.ToDouble(), W16.Value.ToDouble(), CP16.Value.ToDouble(), T_T17_DEGR.Value.ToDouble(), W6.Value.ToDouble(), WFCOR.Value.ToDouble(), W1.Value.ToDouble())
+
+            Catch ex As Exception
+                MessageBox.Show("Compute_PW901A" + ex.ToString(), "Error")
+            End Try
+
+        End Sub
+
+		Private Sub Compute_Time()
+
+			Try
+				If CELProject.IsTrue(OPERATING_TIMER_ON.Value) Then
+
+					If LastStart Then
+						OperatingTime = OperatingTime.Add(Now.Subtract(OperatingTime_Start))
+					End If
+
+					LastStart = True
+					OperatingTime_Start = Now
+				Else
+					LastStart = False
+				End If
+
+				OPERATING_TIME_HOURS.Value = New KineticaRT.Values.Double(OperatingTime.Hours + (OperatingTime.Minutes / 60) + (OperatingTime.Seconds / 3600))
+				OPERATING_TIME_MINUTES.Value = New KineticaRT.Values.Double((OperatingTime.Hours * 60) + OperatingTime.Minutes + (OperatingTime.Seconds / 60))
+
+				If APU_ACCELERATING Then
+					ts_accelerating_time = ts_accelerating_time.Add(Now.Subtract(AcceleratingTime_Start))
+					AcceleratingTime_Start = Now
+					ACCELERATING_TIME_SEC.Value = New KineticaRT.Values.Double(ts_accelerating_time.Hours * 3600 + (ts_accelerating_time.Minutes * 60) + (ts_accelerating_time.Seconds))
+				End If
+
+			Catch Ex As Exception
+				MessageBox.Show("Compute_Time: " & Ex.ToString())
+			End Try
+
+		End Sub
+
+        Private Sub ValidateFMInitialValue()
+
+            Try
+
+                'Read the mass flow meter value, the value cannot be 0
+                If FM_INITIAL_VOLUME_LITERS.Value.ToDouble() = 0.0 Then
+                    FM_INITIAL_VOLUME_LITERS.Value = New KineticaRT.Values.Double(FM_TOTAL_VOLUME_LITERS.Value.ToDouble())
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("ValidateFMInitialValue: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+		Private Sub ConfigDeletableCtrls()
+
+			' Default value if not override by the project
+			Dim RealNumberOfTt1Probe As Integer = MaxNumberOfTt1Probe
+			Dim RealNumberOfTt17Probe As Integer = MaxNumberOfTt17Probe
+			Dim RealNumberOfTt7Probe As Integer = MaxNumberOfTt7Probe
+
+			Try
+				If CELProject.Project.Number = "12917" Then
+
+					RealNumberOfTt1Probe = 4
+					RealNumberOfTt17Probe = 2
+					RealNumberOfTt7Probe = 6
+
+				End If
+
+				DeletableTt1ChCtrl = New DeletableChannelController(Me, RealNumberOfTt1Probe, MaxNumberOfTt1Probe, MaxNumberOfTt1Probe, "T_TT1_", "_DEGF", "_DELETE_BTN", "T_TT1_AVG_DEGF", "T_TT1_MIN_DEGF", "T_TT1_MAX_DEGF", "T_TT1_SPREAD_DEGF")
+				DeletableTt17ChCtrl = New DeletableChannelController(Me, RealNumberOfTt17Probe, MaxNumberOfTt17Probe, MaxNumberOfTt17Probe, "T_TT17_", "_DEGF", "_DELETE_BTN", "T_TT17_AVG_DEGF", "T_TT17_MIN_DEGF", "T_TT17_MAX_DEGF", "T_TT17_SPREAD_DEGF")
+				DeletableTt7ChCtrl = New DeletableChannelController(Me, RealNumberOfTt7Probe, MaxNumberOfTt7Probe, MaxNumberOfTt7Probe, "T_TT7_", "_DEGF", "_DELETE_BTN", "T_TT7_AVG_DEGF", "T_TT7_MIN_DEGF", "T_TT7_MAX_DEGF", "T_TT7_SPREAD_DEGF")
+
+			Catch Ex As Exception
+				MessageBox.Show("ConfigDeletableCtrls: " & Ex.ToString())
+			End Try
+
+		End Sub
+
+        Private Sub ConfigDemandCtrls()
+
+            Try
+                'Configuring ECS Control
+                ECSCtrl = New ECSController(Me, 1, 9, 1, "ECS_BTN", "ECS_DEMAND", "ECS_UP_DEMAND_BTN", "ECS_DOWN_DEMAND_BTN", ECS_Display)
+                ECSCtrl.Memorize = False
+                ECSCtrl.Enable = False
+
+            Catch Ex As Exception
+                MessageBox.Show("ConfigDemandCtrls: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+        Private Sub ConfigMinMaxCtrls()
+
+            Try
+                StarterMaxCurrentRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_CURRENT_AMP", "STARTER_CURRENT_MAX_AMP", "START_BTN")
+                StarterMaxVoltageRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "STARTER_VOLTAGE_VDC", "STARTER_VOLTAGE_MAX_VDC", "START_BTN")
+
+                GGMaxVibrationRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "VIB_GG_CMS", "VIB_GG_MAX_CMS", "MAX_VIB_RECORD_BTN", "MAX_VIB_STOP_RECORD")
+                LGBMaxVibrationRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "VIB_LGB_MS2", "VIB_LGB_MAX_MS2", "MAX_VIB_RECORD_BTN", "MAX_VIB_STOP_RECORD")
+
+                N1MaxRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Maximum, "N1_RPM", "N1_MAX_RPM", "N1_MAX_ENB")
+                N1MinRecordCtrl = New MinMaxRecordController(Me, MinMaxRecordController.eRecordType.Minimum, "N1_RPM", "N1_MIN_RPM", "N1_MIN_ENB")
+
+            Catch Ex As Exception
+                MessageBox.Show("ConfigMinMaxCtrls: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+        Private Sub ConfigPersistentValues()
+
+            Try
+                'Engine Specific
+                Dim PersistentValuesChannels() As String = {"NUMBER_OF_STARTS", "FUEL_USED_INITIAL_LITERS", "FUEL_USED_TOTAL_LITERS", "OPERATING_TIME_SEC"}
+                Dim PersistentValuesFileName = "C:\" & CELProject.EngineModel & "\" & UserInputs.EngineSerialNumber & "\" & UserInputs.WorkOrder & "\Log\PersistentValues.xml"
+                PW901APersistentValuesCtrl = New PersistentValuesController(Me, PersistentValuesChannels, 1, PersistentValuesFileName)
+
+                FUEL_USED_INITIAL_LITERS.Value = New KineticaRT.Values.Double(FUEL_USED_TOTAL_LITERS.Value.ToDouble())
+
+            Catch Ex As Exception
+                MessageBox.Show("ConfigPersistentValuess: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+        Private Sub ConfigTimers()
+
+            Try
+
+                RundownTimerCtrl = New TimerController(Me, "RUNDOWN_TIME_START_CONDITION_LATCH", "RUNDOWN_TIME_STOP_CONDITION_LATCH", "RUNDOWN_TIME_CONDITION_RESET", "RUNDOWN_TIME_SEC", Nothing, 0, "NONE")
+
+            Catch Ex As Exception
+                MessageBox.Show("ConfigTimers: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+        Protected Overrides Sub Init_Engine_Channels_Value()
+            Try
+
+                OperatingTime = New System.TimeSpan(0, 0, 0, 0, 0) 'init operating time to 0 at open test only
+                ts_accelerating_time = New System.TimeSpan(0, 0, 0, 0, 0) 'init operating time to 0 at open test only
+
+                FM_INITIAL_VOLUME_LITERS.Value = New KineticaRT.Values.Double(FM_TOTAL_VOLUME_LITERS.Value.ToDouble())
+
+                APU_ACCELERATING = False
+                IGV_LIMIT_PCT.Value = Values.Zero
+                LHV.Value = New KineticaRT.Values.Double(UserInputs.LHV)
+                N1_MAX_RPM.Value = Values.Zero
+                N1_MIN_RPM.Value = Values.Zero
+                N2_LIMIT_RPM.Value = Values.Zero
+                N2_DATAPLATE_RPM.Value = Values.Zero
+                P_PT17_LIMIT_PSIA.Value = Values.Zero
+                PERF_TRIM_DEGC.Value = New KineticaRT.Values.Text("")
+                PERF_TRIM_INPUT_DEGC.Value = New KineticaRT.Values.Text("")
+                PERF_TRIM_CONTROL_DEGC.Value = New KineticaRT.Values.Text("")
+                Q17_CRACKING_PT_19DEG.Value = New KineticaRT.Values.Text("")
+                Q17_CRACKING_PT_77DEG.Value = New KineticaRT.Values.Text("")
+                T_EGT_DATAPLATE_DEGC.Value = Values.Zero
+                T_EGT_LIMIT_DEGC.Value = Values.Zero
+                VIB_GG_MAX_CMS.Value = Values.Zero
+                VIB_LGB_MAX_MS2.Value = Values.Zero
+                W17_LIMIT_LBMIN.Value = Values.Zero
+                WF_LIMIT_PPH.Value = Values.Zero
+
+                LOAD_AIR_VALVE_DEMAND.Value = New KineticaRT.Values.Double(45.0)
+
+                Dim limitTablesCollection As New UUTGenericInfoCollection()
+                limitTablesCollection.es.Connection.Name = CELProject.DefaultConnectionName
+                limitTablesCollection.Query.Where(limitTablesCollection.Query.EngineModel = CELProject.EngineModel)
+                limitTablesCollection.Query.OrderBy(limitTablesCollection.Query.TableName.Ascending)
+                limitTablesCollection.Query.OrderBy(limitTablesCollection.Query.XValue.Ascending)
+                limitTablesCollection.Query.Load()
+
+                For Each line As UUTGenericInfo In limitTablesCollection
+                    Select Case line.TableName
+                        Case "Delta EGT"
+                            If IsNothing(DeltaEGTLimitTable) Then
+                                ReDim Preserve DeltaEGTLimitTable(1, 0)
+                            Else
+                                ReDim Preserve DeltaEGTLimitTable(1, DeltaEGTLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            DeltaEGTLimitTable(0, DeltaEGTLimitTable.GetUpperBound(1)) = line.XValue
+                            DeltaEGTLimitTable(1, DeltaEGTLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "Delta N2"
+                            If IsNothing(DeltaN2LimitTable) Then
+                                ReDim Preserve DeltaN2LimitTable(1, 0)
+                            Else
+                                ReDim Preserve DeltaN2LimitTable(1, DeltaN2LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            DeltaN2LimitTable(0, DeltaN2LimitTable.GetUpperBound(1)) = line.XValue
+                            DeltaN2LimitTable(1, DeltaN2LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "Delta Pt17"
+                            If IsNothing(DeltaPt17LimitTable) Then
+                                ReDim Preserve DeltaPt17LimitTable(1, 0)
+                            Else
+                                ReDim Preserve DeltaPt17LimitTable(1, DeltaPt17LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            DeltaPt17LimitTable(0, DeltaPt17LimitTable.GetUpperBound(1)) = line.XValue
+                            DeltaPt17LimitTable(1, DeltaPt17LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "Delta W17"
+                            If IsNothing(DeltaW17LimitTable) Then
+                                ReDim Preserve DeltaW17LimitTable(1, 0)
+                            Else
+                                ReDim Preserve DeltaW17LimitTable(1, DeltaW17LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            DeltaW17LimitTable(0, DeltaW17LimitTable.GetUpperBound(1)) = line.XValue
+                            DeltaW17LimitTable(1, DeltaW17LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "Delta Wf"
+                            If IsNothing(DeltaWfLimitTable) Then
+                                ReDim Preserve DeltaWfLimitTable(1, 0)
+                            Else
+                                ReDim Preserve DeltaWfLimitTable(1, DeltaWfLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            DeltaWfLimitTable(0, DeltaWfLimitTable.GetUpperBound(1)) = line.XValue
+                            DeltaWfLimitTable(1, DeltaWfLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "EGT MES"
+                            If IsNothing(EGTMESLimitTable) Then
+                                ReDim Preserve EGTMESLimitTable(1, 0)
+                            Else
+                                ReDim Preserve EGTMESLimitTable(1, EGTMESLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            EGTMESLimitTable(0, EGTMESLimitTable.GetUpperBound(1)) = line.XValue
+                            EGTMESLimitTable(1, EGTMESLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "EGT MAX IGV"
+                            If IsNothing(EGTMaxIGVLimitTable) Then
+                                ReDim Preserve EGTMaxIGVLimitTable(1, 0)
+                            Else
+                                ReDim Preserve EGTMaxIGVLimitTable(1, EGTMaxIGVLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            EGTMaxIGVLimitTable(0, EGTMaxIGVLimitTable.GetUpperBound(1)) = line.XValue
+                            EGTMaxIGVLimitTable(1, EGTMaxIGVLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "IGV Max ECS"
+                            If IsNothing(IGVMaxECSLimitTable) Then
+                                ReDim Preserve IGVMaxECSLimitTable(1, 0)
+                            Else
+                                ReDim Preserve IGVMaxECSLimitTable(1, IGVMaxECSLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            IGVMaxECSLimitTable(0, IGVMaxECSLimitTable.GetUpperBound(1)) = line.XValue
+                            IGVMaxECSLimitTable(1, IGVMaxECSLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "IGV Max IGV"
+                            If IsNothing(IGVMaxIGVLimitTable) Then
+                                ReDim Preserve IGVMaxIGVLimitTable(1, 0)
+                            Else
+                                ReDim Preserve IGVMaxIGVLimitTable(1, IGVMaxIGVLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            IGVMaxIGVLimitTable(0, IGVMaxIGVLimitTable.GetUpperBound(1)) = line.XValue
+                            IGVMaxIGVLimitTable(1, IGVMaxIGVLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "IGV MES"
+                            If IsNothing(IGVMESLimitTable) Then
+                                ReDim Preserve IGVMESLimitTable(1, 0)
+                            Else
+                                ReDim Preserve IGVMESLimitTable(1, IGVMESLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            IGVMESLimitTable(0, IGVMESLimitTable.GetUpperBound(1)) = line.XValue
+                            IGVMESLimitTable(1, IGVMESLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "N2 MES"
+                            If IsNothing(N2MESLimitTable) Then
+                                ReDim Preserve N2MESLimitTable(1, 0)
+                            Else
+                                ReDim Preserve N2MESLimitTable(1, N2MESLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            N2MESLimitTable(0, N2MESLimitTable.GetUpperBound(1)) = line.XValue
+                            N2MESLimitTable(1, N2MESLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "N2 MAX IGV"
+                            If IsNothing(N2MaxIGVLimitTable) Then
+                                ReDim Preserve N2MaxIGVLimitTable(1, 0)
+                            Else
+                                ReDim Preserve N2MaxIGVLimitTable(1, N2MaxIGVLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            N2MaxIGVLimitTable(0, N2MaxIGVLimitTable.GetUpperBound(1)) = line.XValue
+                            N2MaxIGVLimitTable(1, N2MaxIGVLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "P17@P1=14.2 Max IGV"
+                            If IsNothing(Pt17MaxIGV142LimitTable) Then
+                                ReDim Preserve Pt17MaxIGV142LimitTable(1, 0)
+                            Else
+                                ReDim Preserve Pt17MaxIGV142LimitTable(1, Pt17MaxIGV142LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            Pt17MaxIGV142LimitTable(0, Pt17MaxIGV142LimitTable.GetUpperBound(1)) = line.XValue
+                            Pt17MaxIGV142LimitTable(1, Pt17MaxIGV142LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "P17@P1=14.7 Max IGV"
+                            If IsNothing(Pt17MaxIGV147LimitTable) Then
+                                ReDim Preserve Pt17MaxIGV147LimitTable(1, 0)
+                            Else
+                                ReDim Preserve Pt17MaxIGV147LimitTable(1, Pt17MaxIGV147LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            Pt17MaxIGV147LimitTable(0, Pt17MaxIGV147LimitTable.GetUpperBound(1)) = line.XValue
+                            Pt17MaxIGV147LimitTable(1, Pt17MaxIGV147LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "P17@P1=14.95 Max IGV"
+                            If IsNothing(Pt17MaxIGV1495LimitTable) Then
+                                ReDim Preserve Pt17MaxIGV1495LimitTable(1, 0)
+                            Else
+                                ReDim Preserve Pt17MaxIGV1495LimitTable(1, Pt17MaxIGV1495LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            Pt17MaxIGV1495LimitTable(0, Pt17MaxIGV1495LimitTable.GetUpperBound(1)) = line.XValue
+                            Pt17MaxIGV1495LimitTable(1, Pt17MaxIGV1495LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "P17@P1=14.2 MES"
+                            If IsNothing(Pt17MES142LimitTable) Then
+                                ReDim Preserve Pt17MES142LimitTable(1, 0)
+                            Else
+                                ReDim Preserve Pt17MES142LimitTable(1, Pt17MES142LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            Pt17MES142LimitTable(0, Pt17MES142LimitTable.GetUpperBound(1)) = line.XValue
+                            Pt17MES142LimitTable(1, Pt17MES142LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "P17@P1=14.7 MES"
+                            If IsNothing(Pt17MES147LimitTable) Then
+                                ReDim Preserve Pt17MES147LimitTable(1, 0)
+                            Else
+                                ReDim Preserve Pt17MES147LimitTable(1, Pt17MES147LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            Pt17MES147LimitTable(0, Pt17MES147LimitTable.GetUpperBound(1)) = line.XValue
+                            Pt17MES147LimitTable(1, Pt17MES147LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "P17@P1=14.95 MES"
+                            If IsNothing(Pt17MES1495LimitTable) Then
+                                ReDim Preserve Pt17MES1495LimitTable(1, 0)
+                            Else
+                                ReDim Preserve Pt17MES1495LimitTable(1, Pt17MES1495LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            Pt17MES1495LimitTable(0, Pt17MES1495LimitTable.GetUpperBound(1)) = line.XValue
+                            Pt17MES1495LimitTable(1, Pt17MES1495LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "W17@P1=14.2 Max ECS"
+                            If IsNothing(W17MaxECS142LimitTable) Then
+                                ReDim Preserve W17MaxECS142LimitTable(1, 0)
+                            Else
+                                ReDim Preserve W17MaxECS142LimitTable(1, W17MaxECS142LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            W17MaxECS142LimitTable(0, W17MaxECS142LimitTable.GetUpperBound(1)) = line.XValue
+                            W17MaxECS142LimitTable(1, W17MaxECS142LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "W17@P1=14.7 Max ECS"
+                            If IsNothing(W17MaxECS147LimitTable) Then
+                                ReDim Preserve W17MaxECS147LimitTable(1, 0)
+                            Else
+                                ReDim Preserve W17MaxECS147LimitTable(1, W17MaxECS147LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            W17MaxECS147LimitTable(0, W17MaxECS147LimitTable.GetUpperBound(1)) = line.XValue
+                            W17MaxECS147LimitTable(1, W17MaxECS147LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "W17@P1=14.95 Max ECS"
+                            If IsNothing(W17MaxECS1495LimitTable) Then
+                                ReDim Preserve W17MaxECS1495LimitTable(1, 0)
+                            Else
+                                ReDim Preserve W17MaxECS1495LimitTable(1, W17MaxECS1495LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            W17MaxECS1495LimitTable(0, W17MaxECS1495LimitTable.GetUpperBound(1)) = line.XValue
+                            W17MaxECS1495LimitTable(1, W17MaxECS1495LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "W17@P1=14.2 Max IGV"
+                            If IsNothing(W17MaxIGV142LimitTable) Then
+                                ReDim Preserve W17MaxIGV142LimitTable(1, 0)
+                            Else
+                                ReDim Preserve W17MaxIGV142LimitTable(1, W17MaxIGV142LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            W17MaxIGV142LimitTable(0, W17MaxIGV142LimitTable.GetUpperBound(1)) = line.XValue
+                            W17MaxIGV142LimitTable(1, W17MaxIGV142LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "W17@P1=14.7 Max IGV"
+                            If IsNothing(W17MaxIGV147LimitTable) Then
+                                ReDim Preserve W17MaxIGV147LimitTable(1, 0)
+                            Else
+                                ReDim Preserve W17MaxIGV147LimitTable(1, W17MaxIGV147LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            W17MaxIGV147LimitTable(0, W17MaxIGV147LimitTable.GetUpperBound(1)) = line.XValue
+                            W17MaxIGV147LimitTable(1, W17MaxIGV147LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "W17@P1=14.95 Max IGV"
+                            If IsNothing(W17MaxIGV1495LimitTable) Then
+                                ReDim Preserve W17MaxIGV1495LimitTable(1, 0)
+                            Else
+                                ReDim Preserve W17MaxIGV1495LimitTable(1, W17MaxIGV1495LimitTable.GetUpperBound(1) + 1)
+                            End If
+                            W17MaxIGV1495LimitTable(0, W17MaxIGV1495LimitTable.GetUpperBound(1)) = line.XValue
+                            W17MaxIGV1495LimitTable(1, W17MaxIGV1495LimitTable.GetUpperBound(1)) = line.YValue
+                        Case "Wf@P1=14.2 Max ECS"
+                            If IsNothing(Wf142MaxECSLimitTable) Then
+                                ReDim Preserve Wf142MaxECSLimitTable(1, 0)
+                            Else
+                                ReDim Preserve Wf142MaxECSLimitTable(1, Wf142MaxECSLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            Wf142MaxECSLimitTable(0, Wf142MaxECSLimitTable.GetUpperBound(1)) = line.XValue
+                            Wf142MaxECSLimitTable(1, Wf142MaxECSLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "Wf@P1=14.7 Max ECS"
+                            If IsNothing(Wf147MaxECSLimitTable) Then
+                                ReDim Preserve Wf147MaxECSLimitTable(1, 0)
+                            Else
+                                ReDim Preserve Wf147MaxECSLimitTable(1, Wf147MaxECSLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            Wf147MaxECSLimitTable(0, Wf147MaxECSLimitTable.GetUpperBound(1)) = line.XValue
+                            Wf147MaxECSLimitTable(1, Wf147MaxECSLimitTable.GetUpperBound(1)) = line.YValue
+                        Case "Wf@P1=14.95 Max ECS"
+                            If IsNothing(Wf1495MaxECSLimitTable) Then
+                                ReDim Preserve Wf1495MaxECSLimitTable(1, 0)
+                            Else
+                                ReDim Preserve Wf1495MaxECSLimitTable(1, Wf1495MaxECSLimitTable.GetUpperBound(1) + 1)
+                            End If
+                            Wf1495MaxECSLimitTable(0, Wf1495MaxECSLimitTable.GetUpperBound(1)) = line.XValue
+                            Wf1495MaxECSLimitTable(1, Wf1495MaxECSLimitTable.GetUpperBound(1)) = line.YValue
+                    End Select
+                Next
+
+                If Not (CELProject.PERF_TEST_STEP_NB Is Nothing) Then
+                    CELProject.PERF_TEST_STEP_NB.Value = Values.Zero
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("Init_Engine_Channels_Value: " & Ex.ToString())
+            End Try
+
+        End Sub
+
+        Protected Overrides Sub Init_Engine_Controls()
+
+            Try
+                TestStep_List.SelectedIndex = 0
+
+                'This is a workaround to correctly initialize the display of the speed buttons
+                Speed_Control_Frame = Engine_Control_Frame.FindObject("fraSpeedControl")
+                btnN1_RAISE_BTN = Speed_Control_Frame.FindObject("btnN1Raise")
+                btnN2_RAISE_BTN = Speed_Control_Frame.FindObject("btnN2Raise")
+                btnN1_LOWER_BTN = Speed_Control_Frame.FindObject("btnN1Lower")
+                btnN2_LOWER_BTN = Speed_Control_Frame.FindObject("btnN2Lower")
+
+                btnN1_RAISE_BTN.PictureEnabled = False
+                btnN1_RAISE_BTN.PictureEnabled = True
+                btnN2_RAISE_BTN.PictureEnabled = False
+                btnN2_RAISE_BTN.PictureEnabled = True
+                btnN1_LOWER_BTN.PictureEnabled = False
+                btnN1_LOWER_BTN.PictureEnabled = True
+                btnN2_LOWER_BTN.PictureEnabled = False
+                btnN2_LOWER_BTN.PictureEnabled = True
+
+            Catch ex As Exception
+                MessageBox.Show("PW901A_Sequence.Init_Engine_Controls() + " + ex.ToString())
+            End Try
+
+        End Sub
+        Protected Overrides Sub SetTestStepList(value As Integer)
+
+        End Sub
+		Private Sub RevimaWriteRunningTime(ByVal excelSheets As Excel.Sheets)
+
+			Try
+				Dim excelWorksheet As Excel.Worksheet = excelSheets.Item("APU CONDITION TEST SHEET")
+
+				Dim FuelUsed As Double = PERF_PREVIOUS_TEST_FUEL_USED.Value.ToDouble() + LOG_PERF_FUEL_USED_LITERS.Value.ToDouble()
+				Dim OperatingTime As Double = PERF_PREVIOUS_TEST_MINUTES.Value.ToDouble() + LOG_PERF_OPERATING_TIME_MINUTES.Value.ToDouble()
+
+				'Running Time, cellule I8
+				excelWorksheet.Cells(8, 9).Value = OperatingTime.ToString(LOG_PERF_OPERATING_TIME_MINUTES.Format) + " " + LOG_PERF_OPERATING_TIME_MINUTES.Units.ToString()
+
+				'Fuel Used, cellule I11
+				excelWorksheet.Cells(11, 9).NumberFormat = "@"
+				excelWorksheet.Cells(11, 9).Value = FuelUsed.ToString(LOG_PERF_FUEL_USED_LITERS.Format) + " " + LOG_PERF_FUEL_USED_LITERS.Units.ToString()
+
+			Catch Ex As Exception
+				MessageBox.Show("RevimaWriteRunningTime: " & Ex.ToString())
+			End Try
+		End Sub
+
+        Protected Overrides Function CreateCustomHeaderLogFile(ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+
+            Try
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Date Time:"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+                RowIndex += 1
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Cond#:"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+
+                RowIndex += 1
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Comment:"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                ExcelWorksheet.Rows(RowIndex).RowHeight = 65.25
+                ExcelWorksheet.Rows(RowIndex).VerticalAlignment = Excel.XlVAlign.xlVAlignTop
+                ExcelWorksheet.Rows(RowIndex).WrapText = True
+
+                Return True
+
+            Catch ex As Exception
+                MessageBox.Show("CreateCustomHeaderLogFile: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Function
+
+		Private Function CreateStandardCELPerformanceFile(ByVal AppendOption As Boolean, ByVal TestStepNumber As Integer, ByVal ProtectPassword As String, ByVal UnProtectPassword As String, ByRef excelWorkbook As Excel.Workbook) As Boolean
+            'Declaration
+            Dim Column As Integer
+            Dim excelSheets As Excel.Sheets
+            Dim excelWorksheet As Excel.Worksheet
+
+            CreateStandardCELPerformanceFile = True
+
+            ' The following gets the Worksheets collection
+            excelSheets = excelWorkbook.Worksheets
+
+            Try
+                'Unlock Sheets
+                excelWorkbook.Worksheets(1).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(2).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(3).Unprotect(UnProtectPassword)
+
+                If AppendOption = False Then
+
+                    excelWorksheet = excelSheets.Item("SUMMARY")
+
+                    'HEADER
+
+                    'Serial Number
+                    excelWorksheet.Cells(5, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(5, 28).Value = UserInputs.EngineSerialNumber
+
+                    'Work Order
+                    excelWorksheet.Cells(6, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(6, 28).Value = UserInputs.WorkOrder
+
+                    'ECB Serial Number
+                    excelWorksheet.Cells(7, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(7, 28).Value = UserInputs.ECBSerialNumber
+
+                    'Exhaust Duct Serial Number
+                    excelWorksheet.Cells(8, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(8, 28).Value = UserInputs.ExhaustDuctSerialNumber
+
+                    'Bellmouth Serial Number
+                    excelWorksheet.Cells(9, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(9, 28).Value = UserInputs.BellmouthSerialNumber
+
+                    'Bleed Duct Serial Number
+                    excelWorksheet.Cells(10, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(10, 28).Value = UserInputs.BleedDuctSerialNumber
+
+                    'Starter Serial Number
+                    excelWorksheet.Cells(11, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(11, 28).Value = UserInputs.StarterSerialNumber
+
+                    'Dyno 1 Serial Number
+                    excelWorksheet.Cells(12, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(12, 28).Value = UserInputs.Dyno1SerialNumber
+
+                    'Dyno 2 Serial Number
+                    excelWorksheet.Cells(13, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(13, 28).Value = UserInputs.Dyno2SerialNumber
+
+                    'GG Vibration Pickup Serial Number
+                    excelWorksheet.Cells(5, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(5, 96).Value = UserInputs.GGVibPickupSerialNumber
+
+                    'LGB Vibration Pickup Serial Number
+                    excelWorksheet.Cells(6, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(6, 96).Value = UserInputs.LGBVibPickupSerialNumber
+
+                    'Oil Type
+                    excelWorksheet.Cells(7, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(7, 96).Value = UserInputs.OilType
+
+                    'TSN
+                    excelWorksheet.Cells(8, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(8, 96).Value = UserInputs.TimeSinceNewOrOverhaul
+
+                    'CSN
+                    excelWorksheet.Cells(9, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(9, 96).Value = UserInputs.CyclesSinceNew
+
+                    'Reason
+                    excelWorksheet.Cells(10, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(10, 96).Value = UserInputs.Reason
+
+                    'Test Type
+                    excelWorksheet.Cells(11, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(11, 96).Value = UserInputs.TestType
+
+                    'Load Cell 1 Serial Number
+                    excelWorksheet.Cells(12, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(12, 96).Value = UserInputs.LoadCell1SerialNumber
+
+                    'Load Cell 1 Serial Number
+                    excelWorksheet.Cells(13, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(13, 96).Value = UserInputs.LoadCell2SerialNumber
+
+                    'Date
+                    excelWorksheet.Cells(14, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(14, 96).Value = Format(Now, "d MMMM yyyy")
+
+                    excelWorksheet = excelSheets.Item("ACCEPTANCE")
+
+                    'Document Number
+                    excelWorksheet.Cells(42, 5).NumberFormat = "@"
+                    excelWorksheet.Cells(42, 5).Value = excelWorksheet.Cells(42, 5).Value.ToString() + Custom_Parameters("APUTestedAccordingTo").ToString()
+
+                End If
+
+				'Calculate Limits
+				Select Case TestStepNumber
+					Case eTestStepPW901A.MAX_IGV
+                        IGV_LIMIT_PCT.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+                                                                                           LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.IGV))
+                        N2_LIMIT_RPM.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+                                                                                          LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.N2))
+						P_PT17_LIMIT_PSIA.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+																							   LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.Pt17))
+                        W17_LIMIT_LBMIN.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+                                                                                             LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.W17))
+                        T_EGT_LIMIT_DEGC.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+                                                                                             LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.EGT))
+					Case eTestStepPW901A.MAX_ECS
+						IGV_LIMIT_PCT.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+																						   LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.IGV))
+						W17_LIMIT_LBMIN.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+																							 LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.W17))
+						WF_LIMIT_PPH.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+																						  LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.Wf))
+					Case eTestStepPW901A.MES
+						IGV_LIMIT_PCT.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+																						   LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.IGV))
+						N2_LIMIT_RPM.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+																						  LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.N2))
+						P_PT17_LIMIT_PSIA.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+																							   LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.Pt17))
+						T_EGT_LIMIT_DEGC.Value = New KineticaRT.Values.Double(CalculateLimits(UserInputs.TimeSinceNewOrOverhaul, LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), _
+																							  LOG_PERF_P_BARO_PSIA.Value.ToDouble(), TestStepNumber, eTestLimitTypePW901A.EGT))
+
+				End Select
+
+				'Summary
+				excelWorksheet = excelSheets.Item("SUMMARY")
+				Select Case TestStepNumber
+					Case eTestStepPW901A.MAX_IGV
+						Column = 81
+                        excelWorksheet.Cells(24, Column).Value = IGV_LIMIT_PCT.Value.ToString(IGV_LIMIT_PCT.Format, Nothing) + " % MINIMUM"
+                        excelWorksheet.Cells(27, Column).Value = N2_LIMIT_RPM.Value.ToString(N2_LIMIT_RPM.Format, Nothing) + " RPM MAXIMUM"
+                        excelWorksheet.Cells(28, Column).Value = T_EGT_LIMIT_DEGC.Value.ToString(T_EGT_LIMIT_DEGC.Format, Nothing) + " °C MAXIMUM"
+						excelWorksheet.Cells(30, Column).Value = P_PT17_LIMIT_PSIA.Value.ToString(P_PT17_LIMIT_PSIA.Format, Nothing) + " PSIA MINIMUM"
+						excelWorksheet.Cells(32, Column).Value = W17_LIMIT_LBMIN.Value.ToString(W17_LIMIT_LBMIN.Format, Nothing) + " LB/MIN MINIMUM"
+
+						Column = 95
+						excelWorksheet.Cells(22, Column).Value = LOG_PERF_P_LGB_PSIA.Value.ToString(LOG_PERF_P_LGB_PSIA.Format, Nothing)
+						excelWorksheet.Cells(23, Column).Value = LOG_PERF_T_TT1_AVG_DEGC.Value.ToString(LOG_PERF_T_TT1_AVG_DEGC.Format, Nothing)
+						excelWorksheet.Cells(24, Column).Value = LOG_PERF_IGV_POS_PCT.Value.ToString(LOG_PERF_IGV_POS_PCT.Format, Nothing)
+						excelWorksheet.Cells(25, Column).Value = LOG_PERF_Q17.Value.ToString(LOG_PERF_Q17.Format, Nothing)
+						excelWorksheet.Cells(26, Column).Value = LOG_PERF_LOAD_TOTAL_KVA.Value.ToString(LOG_PERF_LOAD_TOTAL_KVA.Format, Nothing)
+                        excelWorksheet.Cells(27, Column).Value = LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing)
+                        excelWorksheet.Cells(28, Column).Value = LOG_PERF_T_EGT_DEGC.Value.ToString(LOG_PERF_T_EGT_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(29, Column).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+                        excelWorksheet.Cells(30, Column).Value = LOG_PERF_P_PT17_PSIA.Value.ToString(LOG_PERF_P_PT17_PSIA.Format, Nothing)
+                        excelWorksheet.Cells(31, Column).Value = LOG_PERF_T_T17_DEGC.Value.ToString(LOG_PERF_T_T17_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(32, Column).Value = LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing)
+
+                        'We also proceed with step 12.H.(d) which corresponds to the calculation of N2 and EGT for the data plate
+                        '49-21-02 Page 534
+                        'N2 = 29100 - N2 (target corrresponding to actual inlet air temperature of Figure 104) + N2 (actual)
+                        'EGT = 514 - EGT ((target corrresponding to actual inlet air temperature of Figure 104)) + EGT (actual)
+
+                        N2_DATAPLATE_RPM.Value = New KineticaRT.Values.Double(29000 - CELProject.Interpolation_1D(LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), N2MaxIGVLimitTable, 1, True) + LOG_PERF_N2_RPM.Value.ToDouble)
+                        T_EGT_DATAPLATE_DEGC.Value = New KineticaRT.Values.Double(514 - CELProject.Interpolation_1D(LOG_PERF_T_TT1_AVG_DEGC.Value.ToDouble(), EGTMaxIGVLimitTable, 1, True) + LOG_PERF_T_EGT_DEGC.Value.ToDouble)
+
+					Case eTestStepPW901A.MAX_ECS
+						Column = 53
+						excelWorksheet.Cells(24, Column).Value = IGV_LIMIT_PCT.Value.ToString(IGV_LIMIT_PCT.Format, Nothing) + " % MINIMUM"
+						excelWorksheet.Cells(29, Column).Value = WF_LIMIT_PPH.Value.ToString(WF_LIMIT_PPH.Format, Nothing) + " LB/HR MAXIMUM"
+                        excelWorksheet.Cells(32, Column).Value = W17_LIMIT_LBMIN.Value.ToString(W17_LIMIT_LBMIN.Format, Nothing) + " LB/MIN MINIMUM"
+
+						Column = 67
+						excelWorksheet.Cells(22, Column).Value = LOG_PERF_P_LGB_PSIA.Value.ToString(LOG_PERF_P_LGB_PSIA.Format, Nothing)
+						excelWorksheet.Cells(23, Column).Value = LOG_PERF_T_TT1_AVG_DEGC.Value.ToString(LOG_PERF_T_TT1_AVG_DEGC.Format, Nothing)
+						excelWorksheet.Cells(24, Column).Value = LOG_PERF_IGV_POS_PCT.Value.ToString(LOG_PERF_IGV_POS_PCT.Format, Nothing)
+						excelWorksheet.Cells(25, Column).Value = LOG_PERF_Q17.Value.ToString(LOG_PERF_Q17.Format, Nothing)
+						excelWorksheet.Cells(26, Column).Value = LOG_PERF_LOAD_TOTAL_KVA.Value.ToString(LOG_PERF_LOAD_TOTAL_KVA.Format, Nothing)
+                        excelWorksheet.Cells(27, Column).Value = LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing)
+                        excelWorksheet.Cells(28, Column).Value = LOG_PERF_T_EGT_DEGC.Value.ToString(LOG_PERF_T_EGT_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(29, Column).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+                        excelWorksheet.Cells(30, Column).Value = LOG_PERF_P_PT17_PSIA.Value.ToString(LOG_PERF_P_PT17_PSIA.Format, Nothing)
+                        excelWorksheet.Cells(31, Column).Value = LOG_PERF_T_T17_DEGC.Value.ToString(LOG_PERF_T_T17_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(32, Column).Value = LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing)
+					Case eTestStepPW901A.MES
+						Column = 109
+						excelWorksheet.Cells(24, Column).Value = IGV_LIMIT_PCT.Value.ToString(IGV_LIMIT_PCT.Format, Nothing) + " % MINIMUM"
+						excelWorksheet.Cells(27, Column).Value = N2_LIMIT_RPM.Value.ToString(N2_LIMIT_RPM.Format, Nothing) + " RPM MAXIMUM"
+						excelWorksheet.Cells(28, Column).Value = T_EGT_LIMIT_DEGC.Value.ToString(T_EGT_LIMIT_DEGC.Format, Nothing) + " °C MAXIMUM"
+						excelWorksheet.Cells(30, Column).Value = P_PT17_LIMIT_PSIA.Value.ToString(P_PT17_LIMIT_PSIA.Format, Nothing) + " PSIA MINIMUM"
+
+						Column = 123
+						excelWorksheet.Cells(22, Column).Value = LOG_PERF_P_LGB_PSIA.Value.ToString(LOG_PERF_P_LGB_PSIA.Format, Nothing)
+						excelWorksheet.Cells(23, Column).Value = LOG_PERF_T_TT1_AVG_DEGC.Value.ToString(LOG_PERF_T_TT1_AVG_DEGC.Format, Nothing)
+						excelWorksheet.Cells(24, Column).Value = LOG_PERF_IGV_POS_PCT.Value.ToString(LOG_PERF_IGV_POS_PCT.Format, Nothing)
+						excelWorksheet.Cells(25, Column).Value = LOG_PERF_Q17.Value.ToString(LOG_PERF_Q17.Format, Nothing)
+						excelWorksheet.Cells(26, Column).Value = LOG_PERF_LOAD_TOTAL_KVA.Value.ToString(LOG_PERF_LOAD_TOTAL_KVA.Format, Nothing)
+                        excelWorksheet.Cells(27, Column).Value = LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing)
+                        excelWorksheet.Cells(28, Column).Value = LOG_PERF_T_EGT_DEGC.Value.ToString(LOG_PERF_T_EGT_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(29, Column).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+                        excelWorksheet.Cells(30, Column).Value = LOG_PERF_P_PT17_PSIA.Value.ToString(LOG_PERF_P_PT17_PSIA.Format, Nothing)
+                        excelWorksheet.Cells(31, Column).Value = LOG_PERF_T_T17_DEGC.Value.ToString(LOG_PERF_T_T17_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(32, Column).Value = LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing)
+				End Select
+
+                TestProgress_RecordPerfStep(TestStepNumber)
+
+				'Details Tab
+				Select Case TestStepNumber
+
+					Case eTestStepPW901A.NO_LOAD
+						Column = 65
+					Case eTestStepPW901A.MAX_IGV
+						Column = 83
+					Case eTestStepPW901A.MAX_ECS
+						Column = 101
+					Case eTestStepPW901A.MES
+						Column = 119
+				End Select
+
+				Select Case TestStepNumber
+
+					Case eTestStepPW901A.NO_LOAD, eTestStepPW901A.MAX_IGV, eTestStepPW901A.MAX_ECS, eTestStepPW901A.MES
+						excelWorksheet = excelSheets.Item("DETAILS")
+
+						excelWorksheet.Cells(18, Column).Value = Format(Now, "HH:mm")
+						excelWorksheet.Cells(19, Column).Value = LOG_PERF_P_BARO_PSIA.Value.ToString(LOG_PERF_P_BARO_PSIA.Format, Nothing)
+						excelWorksheet.Cells(20, Column).Value = LOG_PERF_N1_RPM.Value.ToString(LOG_PERF_N1_RPM.Format, Nothing)
+                        'excelWorksheet.Cells(21, Column).Value = LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing)
+						excelWorksheet.Cells(22, Column).Value = LOG_PERF_LOAD_TOTAL_KVA.Value.ToString(LOG_PERF_LOAD_TOTAL_KVA.Format, Nothing)
+						excelWorksheet.Cells(23, Column).Value = LOG_PERF_IGV_POS_PCT.Value.ToString(LOG_PERF_IGV_POS_PCT.Format, Nothing)
+						excelWorksheet.Cells(24, Column).Value = LOG_PERF_T_ORIFICE_DEGF.Value.ToString(LOG_PERF_T_ORIFICE_DEGF.Format, Nothing)
+						excelWorksheet.Cells(25, Column).Value = LOG_PERF_P_ORIFICE_PSIA.Value.ToString(LOG_PERF_P_ORIFICE_PSIA.Format, Nothing)
+						excelWorksheet.Cells(26, Column).Value = LOG_PERF_P_ORIFICE_DELTA_PSID.Value.ToString(LOG_PERF_P_ORIFICE_DELTA_PSID.Format, Nothing)
+                        'excelWorksheet.Cells(27, Column).Value = LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing)
+						excelWorksheet.Cells(28, Column).Value = LOG_PERF_Q17.Value.ToString(LOG_PERF_Q17.Format, Nothing)
+                        'excelWorksheet.Cells(29, Column).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+						excelWorksheet.Cells(30, Column).Value = LOG_PERF_P_FUEL_PSIG.Value.ToString(LOG_PERF_P_FUEL_PSIG.Format, Nothing)
+						excelWorksheet.Cells(31, Column).Value = LOG_PERF_T_FUEL_FM1_DEGF.Value.ToString(LOG_PERF_T_FUEL_FM1_DEGF.Format, Nothing)
+						excelWorksheet.Cells(32, Column).Value = LOG_PERF_T_TT1_1_DEGF.Value.ToString(LOG_PERF_T_TT1_1_DEGF.Format, Nothing)
+						excelWorksheet.Cells(33, Column).Value = LOG_PERF_T_TT1_2_DEGF.Value.ToString(LOG_PERF_T_TT1_2_DEGF.Format, Nothing)
+						excelWorksheet.Cells(34, Column).Value = LOG_PERF_T_TT1_3_DEGF.Value.ToString(LOG_PERF_T_TT1_3_DEGF.Format, Nothing)
+						excelWorksheet.Cells(35, Column).Value = LOG_PERF_T_TT1_4_DEGF.Value.ToString(LOG_PERF_T_TT1_4_DEGF.Format, Nothing)
+						excelWorksheet.Cells(36, Column).Value = LOG_PERF_T_TT1_AVG_DEGF.Value.ToString(LOG_PERF_T_TT1_AVG_DEGF.Format, Nothing)
+						excelWorksheet.Cells(37, Column).Value = LOG_PERF_T_TT7_1_DEGF.Value.ToString(LOG_PERF_T_TT7_1_DEGF.Format, Nothing)
+						excelWorksheet.Cells(38, Column).Value = LOG_PERF_T_TT7_2_DEGF.Value.ToString(LOG_PERF_T_TT7_2_DEGF.Format, Nothing)
+						excelWorksheet.Cells(39, Column).Value = LOG_PERF_T_TT7_3_DEGF.Value.ToString(LOG_PERF_T_TT7_3_DEGF.Format, Nothing)
+						excelWorksheet.Cells(40, Column).Value = LOG_PERF_T_TT7_4_DEGF.Value.ToString(LOG_PERF_T_TT7_4_DEGF.Format, Nothing)
+						excelWorksheet.Cells(41, Column).Value = LOG_PERF_T_TT7_5_DEGF.Value.ToString(LOG_PERF_T_TT7_5_DEGF.Format, Nothing)
+						excelWorksheet.Cells(42, Column).Value = LOG_PERF_T_TT7_6_DEGF.Value.ToString(LOG_PERF_T_TT7_6_DEGF.Format, Nothing)
+						excelWorksheet.Cells(43, Column).Value = LOG_PERF_T_TT7_AVG_DEGF.Value.ToString(LOG_PERF_T_TT7_AVG_DEGF.Format, Nothing)
+						excelWorksheet.Cells(44, Column).Value = LOG_PERF_T_EGT_DEGF.Value.ToString(LOG_PERF_T_EGT_DEGF.Format, Nothing)
+						excelWorksheet.Cells(45, Column).Value = LOG_PERF_T_EGT_ENGINE_DEGF.Value.ToString(LOG_PERF_T_EGT_ENGINE_DEGF.Format, Nothing)
+                        excelWorksheet.Cells(46, Column).Value = LOG_PERF_P1_MINUS_BARO_PSID.Value.ToString(LOG_PERF_P1_MINUS_BARO_PSID.Format, Nothing)
+						excelWorksheet.Cells(47, Column).Value = LOG_PERF_P_AGB_PSIG.Value.ToString(LOG_PERF_P_AGB_PSIG.Format, Nothing)
+						excelWorksheet.Cells(48, Column).Value = LOG_PERF_P_LGB_PSIG.Value.ToString(LOG_PERF_P_LGB_PSIG.Format, Nothing)
+						excelWorksheet.Cells(49, Column).Value = LOG_PERF_T_TT17_AVG_DEGF.Value.ToString(LOG_PERF_T_TT17_AVG_DEGF.Format, Nothing)
+                        'excelWorksheet.Cells(50, Column).Value = LOG_PERF_P_PT17_PSIA.Value.ToString(LOG_PERF_P_PT17_PSIA.Format, Nothing)
+						excelWorksheet.Cells(51, Column).Value = LOG_PERF_T_MOT_DEGF.Value.ToString(LOG_PERF_T_MOT_DEGF.Format, Nothing)
+						excelWorksheet.Cells(52, Column).Value = LOG_PERF_P_MOP_PSIG.Value.ToString(LOG_PERF_P_MOP_PSIG.Format, Nothing)
+						excelWorksheet.Cells(53, Column).Value = LOG_PERF_VIB_LGB_MS2.Value.ToString(LOG_PERF_VIB_LGB_MS2.Format, Nothing)
+						excelWorksheet.Cells(54, Column).Value = LOG_PERF_VIB_GG_CMS.Value.ToString(LOG_PERF_VIB_GG_CMS.Format, Nothing)
+						excelWorksheet.Cells(55, Column).Value = LOG_PERF_SHP.Value.ToString(LOG_PERF_SHP.Format, Nothing)
+						excelWorksheet.Cells(56, Column).Value = LOG_PERF_SHP_NORM.Value.ToString(LOG_PERF_SHP_NORM.Format, Nothing)
+						excelWorksheet.Cells(57, Column).Value = LOG_PERF_W1.Value.ToString(LOG_PERF_W1.Format, Nothing)
+						excelWorksheet.Cells(58, Column).Value = LOG_PERF_W1_NORM.Value.ToString(LOG_PERF_W1_NORM.Format, Nothing)
+                        excelWorksheet.Cells(59, Column).Value = LOG_PERF_T7_NORM_DEGF.Value.ToString(LOG_PERF_T7_NORM_DEGF.Format, Nothing)
+						excelWorksheet.Cells(60, Column).Value = LOG_PERF_N1_NORM.Value.ToString(LOG_PERF_N1_NORM.Format, Nothing)
+						excelWorksheet.Cells(61, Column).Value = LOG_PERF_T6C.Value.ToString(LOG_PERF_T6C.Format, Nothing)
+                        excelWorksheet.Cells(62, Column).Value = LOG_PERF_T6C_NORM_DEGF.Value.ToString(LOG_PERF_T6C_NORM_DEGF.Format, Nothing)
+
+					Case eTestStepPW901A.FINAL_DATA
+
+						excelWorksheet = excelSheets.Item("SUMMARY")
+
+						'PERFORMED TEST DETAILS
+						excelWorksheet.Cells(35, 109).Value = LOG_PERF_RUNDOWN_TIME_SEC.Value.ToString(LOG_PERF_RUNDOWN_TIME_SEC.Format, Nothing)
+						excelWorksheet.Cells(36, 109).Value = LOG_PERF_Q17_CRACKING_PT_19DEG.Value.ToString(LOG_PERF_Q17_CRACKING_PT_19DEG.Format, Nothing)
+						excelWorksheet.Cells(37, 109).Value = LOG_PERF_Q17_CRACKING_PT_77DEG.Value.ToString(LOG_PERF_Q17_CRACKING_PT_77DEG.Format, Nothing)
+						excelWorksheet.Cells(38, 109).Value = LOG_PERF_VIB_GG_MAX_CMS.Value.ToString(LOG_PERF_VIB_GG_MAX_CMS.Format, Nothing)
+						excelWorksheet.Cells(39, 109).Value = LOG_PERF_VIB_LGB_MAX_MS2.Value.ToString(LOG_PERF_VIB_LGB_MAX_MS2.Format, Nothing)
+                        excelWorksheet.Cells(40, 109).Value = LOG_PERF_PERF_TRIM_DEGC.Value.ToString(LOG_PERF_PERF_TRIM_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(41, 109).Value = LOG_PERF_PERF_TRIM_INPUT_DEGC.Value.ToString(LOG_PERF_PERF_TRIM_INPUT_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(42, 109).Value = LOG_PERF_PERF_TRIM_CONTROL_DEGC.Value.ToString(LOG_PERF_PERF_TRIM_CONTROL_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(43, 109).Value = N2_DATAPLATE_RPM.Value.ToString(N2_DATAPLATE_RPM.Format, Nothing)
+                        excelWorksheet.Cells(44, 109).Value = T_EGT_DATAPLATE_DEGC.Value.ToString(T_EGT_DATAPLATE_DEGC.Format, Nothing)
+
+						excelWorksheet = excelSheets.Item("ACCEPTANCE")
+
+						'Test Result
+						If CELProject.IsTrue(PERF_TEST_RESULT_ACCEPTED.Value) Then
+							excelWorksheet.OLEObjects("TestResultAccepted").object.value = True
+						Else
+							excelWorksheet.OLEObjects("TestResultAccepted").object.value = False
+						End If
+
+						If CELProject.IsTrue(PERF_TEST_RESULT_REJECTED.Value) Then
+							excelWorksheet.OLEObjects("TestResultRejected").object.value = True
+						Else
+							excelWorksheet.OLEObjects("TestResultRejected").object.value = False
+						End If
+				End Select
+
+            Catch ex As Exception
+                System.Diagnostics.Trace.WriteLine("CreateStandardCELPerformanceFile: " + ex.Message)
+                MessageBox.Show(ex.ToString)
+                CreateStandardCELPerformanceFile = False
+            Finally
+                'Lock Sheets
+                excelWorkbook.Worksheets(1).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(2).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(3).Protect(ProtectPassword)
+
+            End Try
+
+        End Function
+
+        Protected Overrides Function UpdateCustomHeaderLogFile(ByVal AppendOption As Boolean, ByVal IsPerfEntry As Boolean, ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+
+            Try
+                Dim Log_Condition As Integer
+
+                If AppendOption = False Then
+                    Log_Condition = 1
+                Else
+                    Log_Condition = ExcelWorksheet.Cells(RowIndex + 1, ExcelWorksheet.Columns.Count).End(Excel.XlDirection.xlToLeft).Column - 1
+                    Log_Condition = Log_Condition + 1
+
+                End If
+
+                If ((Log_Condition > 1) And ((Log_Condition Mod 5) = 1)) Then
+
+                    'Repeat The Test Spec For this new sets of condition
+
+                    With ExcelWorksheet
+                        .Range(.Cells(2, 2), .Cells(RowIndex - 2, 6)).Copy(.Cells(2, Log_Condition + 1))
+                    End With
+                End If
+
+                ColumnIndex = 1 + Log_Condition
+
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Format(Now, "yyyy/MM/dd HH:mm:ss")
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                RowIndex += 1
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Log_Condition.ToString()
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                RowIndex += 1
+                If IsPerfEntry = False Then
+                    Dim CommentText As String = ""
+                    Dim InputObject As New InputCommentForm
+                    InputObject.ShowDialog("Log Report", "Comment:", "", CommentText)
+
+                    ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = CommentText
+                Else
+                    ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "STEP: " & TestStep_List.SelectedItem
+                End If
+
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+                RowIndex += 2
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Values"
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+                ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter
+
+            Catch ex As Exception
+                MessageBox.Show("UpdateCustomHeaderLogFile: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Function
+
+		Private Function PW901A_CP_AirGas(ByVal T As Double, ByVal WFCOR As Double, ByVal W1 As Double)
+			'This function implements CP Air-Gas Subroutine in PWC program P10615F.BAS (Lines 5000 to 5060)
+			Dim C2 As Double
+			Dim C3 As Double
+			Dim C4 As Double
+			Dim FAR As Double
+
+			C3 = (((0.000000000000003258 * T - 0.00000000002651) * T + 0.00000007093) * T - 0.00004746) * T + 0.2484
+			C4 = ((0.000000000001212 * T - 0.00000001041) * T + 0.00003615) * T + 0.139
+			FAR = WFCOR / (3600 * W1)
+			C2 = C3 * (C4 * FAR / 0.0334 + 1)
+			Return C2
+
+		End Function
+
+        Private Sub PW901A_Iteration(ByVal W7 As Double, ByVal CP7 As Double, ByVal T7 As Double, ByVal W16 As Double, ByVal CP16 As Double, ByVal T16 As Double, ByVal W6 As Double, ByVal WFCOR As Double, ByVal W1 As Double)
+            'This sub implements iterative code in PWC program P10615F.BAS (Lines 1930 to 1970)
+            Dim CP6iter As Double = 0.27
+            Dim i As Integer
+            Dim T6C As Double
+
+            For i = 1 To 4
+                T6C = (W7 * CP7 * T7 - W16 * CP16 * T16) / (W6 * CP6iter)
+                CP6iter = PW901A_CP_AirGas(T6C, WFCOR, W1)
+            Next
+
+            If Not Double.IsNaN(T6C) Then
+                T6C_TEMP.Value = New KineticaRT.Values.Double(T6C)
+            Else
+                T6C_TEMP.Value = Values.TextNaN
+            End If
+            If Not Double.IsNaN(CP6iter) Then
+                CP6.Value = New KineticaRT.Values.Double(CP6iter)
+            Else
+                CP6.Value = Values.TextNaN
+            End If
+
+        End Sub
+
+        Protected Overrides Sub OnEngineWorkingThread()
+
+            Compute(False)
+
+            'Make sure FM_INITIAL_VOLUME_LITERS is different than 0
+            'ValidateFMInitialValue()
+
+            If Q17CrackingPointInProgress Then
+                CaptureDVTransit()
+            End If
+
+            'Persistent Values Save Check
+            PW901APersistentValuesCtrl.SavePersistentValues()
+
+        End Sub
+
+        Private Sub OnREADY_TO_LOAD(ByVal sender As IChannel, ByVal newVal As Value)
+            If (CELProject.IsTrue(newVal)) Then
+
+                Try
+                    NUMBER_OF_STARTS.Value = New KineticaRT.Values.Double(NUMBER_OF_STARTS.Value.ToDouble + 1)
+                Catch ex As System.Exception
+                    MessageBox.Show("OnREADY_TO_LOAD: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End Try
+
+            End If
+        End Sub
+
+        Private Sub OnQ17CrackingPoint(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                Dim IGVPos As Double = IGV_POS_PCT.Value.ToDouble()
+
+                If CELProject.IsTrue(newVal) Then
+
+                    If IGVPos >= 18.0 And IGVPos <= 20.0 Then
+                        TestCase = 1
+                        InitDVA = DIVERTER_VALVE_ANGLE_DEG.Value.ToDouble()
+                        Q17_CRACKING_PT_19DEG.Value = New KineticaRT.Values.Text("")
+                    ElseIf IGVPos >= 76.0 And IGVPos <= 78.0 Then
+                        TestCase = 2
+                        InitDVA = DIVERTER_VALVE_ANGLE_DEG.Value.ToDouble()
+                        Q17_CRACKING_PT_77DEG.Value = New KineticaRT.Values.Text("")
+                    Else
+                        TestCase = -1
+                        MessageBox.Show("Position de l'IGV invalide", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        PERF_Q17_CRACKING_PT_BTN.Value = Values.False
+                    End If
+                Else
+                    TestCase = -1
+                End If
+                Q17CrackingPointInProgress = TestCase > 0
+
+            Catch ex As Exception
+                MessageBox.Show("OnQ17CrackingPoint: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Function CalculateLimits(ByRef TSN As Double, ByRef TInlet As Double, PInlet As Double, TestStep As Integer, LimitType As Integer) As Double
+            Dim BaseLimit As Double
+            Dim DeltaLimit As Double
+            Dim Limit As Double
+            Dim TempLimit1 As Double
+            Dim TempLimit2 As Double
+            Dim TempLimit3 As Double
+            Dim TempTable(1, 2) As Double
+            TempTable(0, 0) = 14.2
+            TempTable(0, 1) = 14.7
+            TempTable(0, 2) = 14.95
+
+            Try
+                Select Case LimitType
+                    Case eTestLimitTypePW901A.EGT
+                        Select Case TestStep
+                            Case eTestStepPW901A.MAX_IGV
+                                BaseLimit = CELProject.Interpolation_1D(TInlet, EGTMaxIGVLimitTable, 1, True)
+                            Case eTestStepPW901A.MES
+                                BaseLimit = CELProject.Interpolation_1D(TInlet, EGTMESLimitTable, 1, True)
+                        End Select
+                        DeltaLimit = CELProject.Interpolation_1D(TSN, DeltaEGTLimitTable, 1, True)
+                        Limit = BaseLimit + DeltaLimit
+                    Case eTestLimitTypePW901A.IGV
+                        Select Case TestStep
+                            Case eTestStepPW901A.MAX_ECS
+                                Limit = CELProject.Interpolation_1D(TInlet, IGVMaxECSLimitTable, 1, True)
+                            Case eTestStepPW901A.MAX_IGV
+                                Limit = CELProject.Interpolation_1D(TInlet, IGVMaxIGVLimitTable, 1, True)
+                            Case eTestStepPW901A.MES
+                                Limit = CELProject.Interpolation_1D(TInlet, IGVMESLimitTable, 1, True)
+                        End Select
+                    Case eTestLimitTypePW901A.N2
+                        Select Case TestStep
+                            Case eTestStepPW901A.MAX_IGV
+                                BaseLimit = CELProject.Interpolation_1D(TInlet, N2MaxIGVLimitTable, 1, True)
+                            Case eTestStepPW901A.MES
+                                BaseLimit = CELProject.Interpolation_1D(TInlet, N2MESLimitTable, 1, True)
+                        End Select
+                        DeltaLimit = CELProject.Interpolation_1D(TSN, DeltaN2LimitTable, 1, True)
+                        Limit = BaseLimit + DeltaLimit
+                    Case eTestLimitTypePW901A.Pt17
+                        Select Case TestStep
+                            Case eTestStepPW901A.MAX_IGV
+                                TempLimit1 = CELProject.Interpolation_1D(TInlet, Pt17MaxIGV142LimitTable, 1, True)
+                                TempLimit2 = CELProject.Interpolation_1D(TInlet, Pt17MaxIGV147LimitTable, 1, True)
+                                TempLimit3 = CELProject.Interpolation_1D(TInlet, Pt17MaxIGV1495LimitTable, 1, True)
+                            Case eTestStepPW901A.MES
+                                TempLimit1 = CELProject.Interpolation_1D(TInlet, Pt17MES142LimitTable, 1, True)
+                                TempLimit3 = CELProject.Interpolation_1D(TInlet, Pt17MES1495LimitTable, 1, True)
+                                If TInlet < Pt17MES147LimitTable(0, 0) Then 'Pt17 curve for P1 = 14.7 is shorter than the two other curves. In the case where we are outside that curve, take curve P = 14.95 twice
+                                    TempLimit2 = TempLimit3
+                                    TempTable(0, 1) = TempTable(0, 2)
+                                Else
+                                    TempLimit2 = CELProject.Interpolation_1D(TInlet, Pt17MES147LimitTable, 1, True)
+                                End If
+                        End Select
+                        TempTable(1, 0) = TempLimit1
+                        TempTable(1, 1) = TempLimit2
+                        TempTable(1, 2) = TempLimit3
+                        BaseLimit = CELProject.Interpolation_1D(PInlet, TempTable, 1, True)
+                        DeltaLimit = CELProject.Interpolation_1D(TSN, DeltaPt17LimitTable, 1, True)
+                        Limit = BaseLimit + DeltaLimit
+                    Case eTestLimitTypePW901A.W17
+                        Select Case TestStep
+                            Case eTestStepPW901A.MAX_ECS
+                                TempLimit1 = CELProject.Interpolation_1D(TInlet, W17MaxECS142LimitTable, 1, True)
+                                TempLimit2 = CELProject.Interpolation_1D(TInlet, W17MaxECS147LimitTable, 1, True)
+                                TempLimit3 = CELProject.Interpolation_1D(TInlet, W17MaxECS1495LimitTable, 1, True)
+                            Case eTestStepPW901A.MAX_IGV
+                                TempLimit1 = CELProject.Interpolation_1D(TInlet, W17MaxIGV142LimitTable, 1, True)
+                                TempLimit2 = CELProject.Interpolation_1D(TInlet, W17MaxIGV147LimitTable, 1, True)
+                                TempLimit3 = CELProject.Interpolation_1D(TInlet, W17MaxIGV1495LimitTable, 1, True)
+                        End Select
+                        TempTable(1, 0) = TempLimit1
+                        TempTable(1, 1) = TempLimit2
+                        TempTable(1, 2) = TempLimit3
+                        BaseLimit = CELProject.Interpolation_1D(PInlet, TempTable, 1, True)
+                        DeltaLimit = CELProject.Interpolation_1D(TSN, DeltaW17LimitTable, 1, True)
+                        Limit = BaseLimit * (1 + DeltaLimit / 100.0)
+                    Case eTestLimitTypePW901A.Wf
+                        TempLimit1 = CELProject.Interpolation_1D(TInlet, Wf142MaxECSLimitTable, 1, True)
+                        TempLimit2 = CELProject.Interpolation_1D(TInlet, Wf147MaxECSLimitTable, 1, True)
+                        TempLimit3 = CELProject.Interpolation_1D(TInlet, Wf1495MaxECSLimitTable, 1, True)
+                        TempTable(1, 0) = TempLimit1
+                        TempTable(1, 1) = TempLimit2
+                        TempTable(1, 2) = TempLimit3
+                        BaseLimit = CELProject.Interpolation_1D(PInlet, TempTable, 1, True)
+                        DeltaLimit = CELProject.Interpolation_1D(TSN, DeltaWfLimitTable, 1, True)
+                        Limit = BaseLimit * (1 + DeltaLimit / 100.0)
+                End Select
+
+                Return Limit
+
+            Catch ex As Exception
+                MessageBox.Show("CalculateLimits" + ex.ToString(), "Error")
+            End Try
+        End Function
+
+        Private Sub CaptureDVTransit()
+            Try
+                Dim DVADeviation As Double
+
+                DVADeviation = Math.Abs(InitDVA - DIVERTER_VALVE_ANGLE_DEG.Value.ToDouble())
+
+                If (DVADeviation >= 0.5) Then 'If transition occurs
+                    'Capture the data and stop watching for transition
+                    If TestCase = 1 Then
+                        Q17_CRACKING_PT_19DEG.Value = New KineticaRT.Values.Double(Q17.Value.ToDouble())
+                    ElseIf TestCase = 2 Then
+                        Q17_CRACKING_PT_77DEG.Value = New KineticaRT.Values.Double(Q17.Value.ToDouble())
+                    End If
+
+                    Q17CrackingPointInProgress = False
+
+                    'Reset button
+                    PERF_Q17_CRACKING_PT_BTN.Value = Values.False
+                End If
+            Catch ex As Exception
+                MessageBox.Show("CaptureDVTransit" + ex.ToString(), "Error")
+            End Try
+        End Sub
+
+        Private Function Compute_BleedAirFlow(ByVal TOrifice_DEGF As Double, _
+                                              ByVal POrifice_PSIA As Double, _
+                                              ByVal POrificeDelta_PSID As Double) As Double
+            Try
+
+                If CELProject.IsTrue(BLEED_BTN.Value) Then
+
+                    Dim BleedAirFLow As Double = CELProject.GetBleedAirFlow( _
+                                                                            EngineConfiguration.DuctDiameter, _
+                                                                            EngineConfiguration.DuctDiameterUnit, _
+                                                                            EngineConfiguration.OrificeDiameter, _
+                                                                            EngineConfiguration.OrificeDiameterUnit, _
+                                                                            TOrifice_DEGF, _
+                                                                            CELDAS.eTemperature.Fahrenheit, _
+                                                                            POrifice_PSIA, _
+                                                                            CELDAS.ePressure.PSI, _
+                                                                            POrificeDelta_PSID, _
+                                                                            CELDAS.ePressure.PSI, _
+                                                                            EngineConfiguration.OrificeThinkness, _
+                                                                            EngineConfiguration.OrificeThinknessUnit, _
+                                                                            EngineConfiguration.TapArrangement, _
+                                                                            CELDAS.eFlowMass.LbByMin)
+
+                    Return BleedAirFLow
+
+                Else
+                    Return 0.0
+                End If
+
+            Catch Ex As Exception
+                'Log error
+                MessageBox.Show("Error in Engine_Sequence.Compute_BleedAirFlow: " & Ex.ToString)
+            End Try
+
+        End Function
+
+        Private Sub OnAcceleratingTime_Calc(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If (sender.Name = "START_BTN") Then
+                    If CELProject.IsTrue(newVal) Then
+                        ts_accelerating_time = New System.TimeSpan(0, 0, 0, 0, 0)
+                        AcceleratingTime_Start = Now
+                        APU_ACCELERATING = True
+                    End If
+                End If
+
+                If (sender.Name = "APU_READY_IND") Then
+                    If CELProject.IsTrue(newVal) Then
+                        APU_ACCELERATING = False
+                    End If
+                End If
+
+                If (sender.Name = "RUN_STOP_BTN") Then
+                    If CELProject.IsFalse(newVal) Then
+                        APU_ACCELERATING = False
+                    End If
+                End If
+
+                If (sender.Name = "STARTER_RECTIFIER_BTN") Then
+                    If CELProject.IsFalse(newVal) And N1_PCT.Value.ToDouble() < 5.0 Then
+                        APU_ACCELERATING = False
+                    End If
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnAcceleratingTime_Calc: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnCaptureEGTTrim(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    PERF_TRIM_DEGC.Value = New KineticaRT.Values.Double(TRIM_DEGC.Value.ToDouble())
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnCaptureEGTTrim: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub OnCaptureEGTTrimControl(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    PERF_TRIM_CONTROL_DEGC.Value = New KineticaRT.Values.Double(TRIM_DEGC.Value.ToDouble())
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnCaptureEGTTrim: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnCLOSE_TEST_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    MyBase.StopWorkingThread()
+
+                    'Persistent Values Force Save
+                    PW901APersistentValuesCtrl.SavePersistentValues(True)
+
+                    If Not (CELProject.CLOSE_TEST_BTN Is Nothing) Then
+                        RemoveHandler CELProject.CLOSE_TEST_BTN.ValueChanged, AddressOf OnCLOSE_TEST_BTN
+                    End If
+
+
+                    If Not (CELProject.LOG_TAKE_POINT_BTN Is Nothing) Then
+                        RemoveHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+                    End If
+
+                    If Not (CELProject.PERF_CLOSE_WINDOW_BTN Is Nothing) Then
+                        RemoveHandler CELProject.PERF_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnPERF_CLOSE_WINDOW_BTN
+                    End If
+
+                    If Not (CELProject.PERF_OPEN_WINDOW_BTN Is Nothing) Then
+                        RemoveHandler CELProject.PERF_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnPERF_OPEN_WINDOW_BTN
+                    End If
+
+                    If Not (CELProject.PERF_TAKE_POINT_BTN Is Nothing) Then
+                        RemoveHandler CELProject.PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnPERF_TAKE_POINT_BTN
+                    End If
+
+                    If Not (CAPTURE_EGT_TRIM_BTN Is Nothing) Then
+                        RemoveHandler CAPTURE_EGT_TRIM_BTN.ValueChanged, AddressOf OnCaptureEGTTrim
+                    End If
+
+                    If Not (CAPTURE_EGT_TRIM_CONTROL_BTN Is Nothing) Then
+                        RemoveHandler CAPTURE_EGT_TRIM_CONTROL_BTN.ValueChanged, AddressOf OnCaptureEGTTrimControl
+                    End If
+
+                    If Not (PERF_Q17_CRACKING_PT_BTN Is Nothing) Then
+                        RemoveHandler PERF_Q17_CRACKING_PT_BTN.ValueChanged, AddressOf OnQ17CrackingPoint
+                    End If
+
+                    If Not (OPERATING_TIMER_ON Is Nothing) Then
+                        RemoveHandler OPERATING_TIMER_ON.ValueChanged, AddressOf OnAcceleratingTime_Calc
+                        'RemoveHandler APU_READY_IND.ValueChanged, AddressOf OnAPUReady
+                    End If
+
+                    If Not (READY_TO_LOAD_IND Is Nothing) Then
+                        RemoveHandler READY_TO_LOAD_IND.ValueChanged, AddressOf OnREADY_TO_LOAD
+                    End If
+
+                    If Not (RUN_STOP_BTN Is Nothing) Then
+                        RemoveHandler RUN_STOP_BTN.ValueChanged, AddressOf OnAcceleratingTime_Calc
+                    End If
+
+                    If Not (START_BTN Is Nothing) Then
+                        RemoveHandler START_BTN.ValueChanged, AddressOf OnAcceleratingTime_Calc
+                    End If
+
+                    If Not (STARTER_RECTIFIER_BTN Is Nothing) Then
+                        RemoveHandler STARTER_RECTIFIER_BTN.ValueChanged, AddressOf OnAcceleratingTime_Calc
+                    End If
+
+                    If Not (TestStep_List Is Nothing) Then
+                        RemoveHandler TestStep_List.SelectedIndexChanged, AddressOf OnTestStep_List_SelectedIndexChanged
+                    End If
+
+                    If Not (DeletableTt1ChCtrl Is Nothing) Then
+                        DeletableTt1ChCtrl.Dispose()
+                    End If
+
+                    If Not (DeletableTt17ChCtrl Is Nothing) Then
+                        DeletableTt17ChCtrl.Dispose()
+                    End If
+
+                    If Not (DeletableTt7ChCtrl Is Nothing) Then
+                        DeletableTt7ChCtrl.Dispose()
+                    End If
+
+                    If Not (StarterMaxCurrentRecordCtrl Is Nothing) Then
+                        StarterMaxCurrentRecordCtrl.Dispose()
+                    End If
+
+                    If Not (StarterMaxVoltageRecordCtrl Is Nothing) Then
+                        StarterMaxVoltageRecordCtrl.Dispose()
+                    End If
+
+                    If Not (PW901APersistentValuesCtrl Is Nothing) Then
+                        PW901APersistentValuesCtrl.Dispose()
+                    End If
+
+                    'Diposing of Nothing for now...
+                    If Not (LoadAirCtrl Is Nothing) Then
+                        LoadAirCtrl.Dispose()
+                    End If
+
+                    If Not (FuelRegulatorCtrl Is Nothing) Then
+                        FuelRegulatorCtrl.Dispose()
+                    End If
+
+
+                End If
+
+                CELProject.CLOSE_TEST_BTN.Value = Values.False
+
+            Catch ex As Exception
+                MessageBox.Show("OnClose_Test: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnLOG_TAKE_POINT_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    'Update the Log/Perf channel set
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    'Synchronize data for Log and Performance
+                    Compute(True)
+
+                    CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, False, "PW901A", True)
+                    CELProject.LOG_TAKE_POINT_BTN.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnLOG_TAKE_POINT_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnPERF_CLOSE_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+                    CELProject.ActivateForm("PW901A_Performance_Screen", CELProject.EngineModel.Replace("-", "_") + "_Screen", False, False)
+                    CELProject.PERF_CLOSE_WINDOW_BTN.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERF_CLOSE_WINDOW_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnPERF_OPEN_WINDOW_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    CELProject.ActivateForm("PW901A_Performance_Screen", CELProject.EngineModel.Replace("-", "_") + "_Screen", True, False)
+                    CELProject.PERF_OPEN_WINDOW_BTN.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnPERF_OPEN_WINDOW_BTN: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnPERF_TAKE_POINT_BTN(ByVal sender As IChannel, ByVal newVal As Value)
+
+            Dim NewFileCreated As Boolean
+            Dim SearchPath As String
+            Dim excelWorkbook As Excel.Workbook = Nothing
+
+            Try
+                If CELProject.IsTrue(newVal) Then
+
+                    'Update the Log/Perf channel set
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    'Synchronize data for Log and Performance
+                    Compute(True)
+
+                    SearchPath = CELProject.EngineSession.PerfFolder
+                    Dim StandardCELTemplateReportFullFileName As String = EngineConfiguration.PerformanceReportTemplateFile
+
+                    NewFileCreated = CELProject.ProcessPerformanceReport(SearchPath, StandardCELTemplateReportFullFileName, AddressOf CreateStandardCELPerformanceFile)
+
+                    CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, True, "PW901A", NewFileCreated)
+
+                    CELProject.PERF_TAKE_POINT_BTN.Value = Values.False
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnPERF_TAKE_POINT_BTN: " & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Finally
+
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestStep_List_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs)
+            Try
+                CELProject.PERF_TEST_STEP_NB.Value = New KineticaRT.Values.Integer(TestStep_List.SelectedIndex)
+                TEST_STEP_MAX_ECS.Value = New KineticaRT.Values.Boolean(TestStep_List.SelectedIndex = eTestStepPW901A.MAX_ECS)
+                TEST_STEP_NO_LOAD.Value = New KineticaRT.Values.Boolean(TestStep_List.SelectedIndex = eTestStepPW901A.NO_LOAD)
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestStep_List_SelectedIndexChanged: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionClosing(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionClosing(newStatus)
+
+                If CELProject.EngineModel = "PW901A" Then
+
+
+                    If TestProgressMgr IsNot Nothing Then
+                        TestProgress_Save()
+                        TestProgressMgr.Dispose()
+                        TestProgressMgr = Nothing
+                    End If
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionClosing: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionInitialized(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionInitialized(newStatus)
+
+                If CELProject.EngineModel = "PW901A" Then
+
+                    UserInputs.MapUserInputsParameters(CELProject)
+
+                    CELProject.EngineSession.WorkingFolder = "C:\" + CELProject.EngineModel + "\" + UserInputs.EngineSerialNumber + "\" + UserInputs.WorkOrder
+                    CELProject.CreateLogFile(AddressOf CreateCustomHeaderLogFile, "PW901A", CELProject.EngineModel)
+
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionInitialized: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionOpened(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionOpened(newStatus)
+
+            Catch ex As Exception
+
+                MessageBox.Show("PW901A_Sequence.OnTestSessionOpened: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionRunning(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionRunning(newStatus)
+
+                If CELProject.EngineModel = "PW901A" Then
+
+                    Init_Engine_Channels()
+
+                    Init_Engine_Channels_Value()
+                    CELProject.LoadSave_Custom_Parameters(Custom_Parameters, False)
+
+                    CELProject.Perf_Nb_Sheet_To_Print = 3
+
+                    Init_Engine_Controllers()
+
+                    CELProject.EngineWindowCollection.Item(0).EngineWindow.BeginInvoke(New MethodInvoker(AddressOf Me.Init_Engine_Controls))
+
+                    Me.DuctDiameter_Inches = CELProject.Test_Mgr_UUT_Calib_Constant(0).Value.ToDouble()
+                    Me.OrificeDiameter_Inches = CELProject.Test_Mgr_UUT_Calib_Constant(1).Value.ToDouble()
+
+                    MyBase.StartWorkingThread()
+
+                    TestProgress_Initialize()
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionRunning: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+        Protected Overrides Sub AddHandlers()
+
+            AddHandler CELProject.CLOSE_TEST_BTN.ValueChanged, AddressOf OnCLOSE_TEST_BTN
+            AddHandler CELProject.LOG_TAKE_POINT_BTN.ValueChanged, AddressOf OnLOG_TAKE_POINT_BTN
+            AddHandler CELProject.PERF_CLOSE_WINDOW_BTN.ValueChanged, AddressOf OnPERF_CLOSE_WINDOW_BTN
+            AddHandler CELProject.PERF_OPEN_WINDOW_BTN.ValueChanged, AddressOf OnPERF_OPEN_WINDOW_BTN
+            AddHandler CELProject.PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnPERF_TAKE_POINT_BTN
+            AddHandler CAPTURE_EGT_TRIM_BTN.ValueChanged, AddressOf OnCaptureEGTTrim
+            AddHandler CAPTURE_EGT_TRIM_CONTROL_BTN.ValueChanged, AddressOf OnCaptureEGTTrimControl
+            AddHandler OPERATING_TIMER_ON.ValueChanged, AddressOf OnAcceleratingTime_Calc
+            AddHandler PERF_Q17_CRACKING_PT_BTN.ValueChanged, AddressOf OnQ17CrackingPoint
+            AddHandler READY_TO_LOAD_IND.ValueChanged, AddressOf OnREADY_TO_LOAD
+            AddHandler RUN_STOP_BTN.ValueChanged, AddressOf OnAcceleratingTime_Calc
+            AddHandler START_BTN.ValueChanged, AddressOf OnAcceleratingTime_Calc
+            AddHandler STARTER_RECTIFIER_BTN.ValueChanged, AddressOf OnAcceleratingTime_Calc
+            AddHandler TestStep_List.SelectedIndexChanged, AddressOf OnTestStep_List_SelectedIndexChanged
+
+        End Sub
+        Protected Overrides Sub RemoveHandlers()
+
+        End Sub
+        Protected Overrides Sub Init_Engine_Controllers()
+            ConfigDeletableCtrls()
+
+            ConfigMinMaxCtrls()
+
+            ConfigDemandCtrls()
+
+            ConfigPersistentValues()
+
+            ConfigTimers()
+        End Sub
+        Protected Overrides Sub Dispose_Engine_Controllers()
+
+        End Sub
+        Protected Overrides Sub OnNEW_TEST_BTN(sender As IChannel, newVal As Value)
+
+        End Sub
+        Protected Overrides Function Init_Engine_Channels() As Boolean
+
+            Dim Return_Value As New ArrayList()
+
+            Return_Value.Clear()
+
+            Try
+                'Initialise Common Engine Channels
+                Return_Value.Add(MyBase.InitializeChannel(BLEED_BTN, "BLEED_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_EGT_TRIM_BTN, "CAPTURE_EGT_TRIM_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CAPTURE_EGT_TRIM_CONTROL_BTN, "CAPTURE_EGT_TRIM_CONTROL_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(CP6, "CP6"))
+                Return_Value.Add(MyBase.InitializeChannel(CP7, "CP7"))
+                Return_Value.Add(MyBase.InitializeChannel(CP16, "CP16"))
+                Return_Value.Add(MyBase.InitializeChannel(DIVERTER_VALVE_ANGLE_DEG, "DIVERTER_VALVE_ANGLE_DEG"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_INITIAL_LITERS, "FUEL_USED_INITIAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_TOTAL_LITERS, "FUEL_USED_TOTAL_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(FM_INITIAL_VOLUME_LITERS, "FM_INITIAL_VOLUME_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(FM_TOTAL_VOLUME_LITERS, "FM_TOTAL_VOLUME_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(IGV_LIMIT_PCT, "IGV_LIMIT_PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(IGV_POS_PCT, "IGV_POS_PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOAD_AIR_VALVE_DEMAND, "LOAD_AIR_VALVE_DEMAND"))
+                Return_Value.Add(MyBase.InitializeChannel(LHV, "LHV"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_EGT_DEGC, "LOG_PERF_T_EGT_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_FUEL_USED_LITERS, "LOG_PERF_FUEL_USED_LITERS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_IGV_POS_PCT, "LOG_PERF_IGV_POS_PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_LOAD_TOTAL_KVA, "LOG_PERF_LOAD_TOTAL_KVA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_N1_NORM, "LOG_PERF_N1_NORM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_N1_RPM, "LOG_PERF_N1_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_N2_NORM, "LOG_PERF_N2_NORM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_N2_RPM, "LOG_PERF_N2_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_AGB_PSIG, "LOG_PERF_P_AGB_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BARO_PSIA, "LOG_PERF_P_BARO_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_FUEL_PSIG, "LOG_PERF_P_FUEL_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_LGB_PSIG, "LOG_PERF_P_LGB_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_LGB_PSIA, "LOG_PERF_P_LGB_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_MOP_PSIG, "LOG_PERF_P_MOP_PSIG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ORIFICE_PSIA, "LOG_PERF_P_ORIFICE_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_ORIFICE_DELTA_PSID, "LOG_PERF_P_ORIFICE_DELTA_PSID"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_PT17_PSIA, "LOG_PERF_P_PT17_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P1_MINUS_BARO_PSID, "LOG_PERF_P1_MINUS_BARO_PSID"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P17_NORM, "LOG_PERF_P17_NORM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PERF_TRIM_DEGC, "LOG_PERF_PERF_TRIM_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PERF_TRIM_INPUT_DEGC, "LOG_PERF_PERF_TRIM_INPUT_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PERF_TRIM_CONTROL_DEGC, "LOG_PERF_PERF_TRIM_CONTROL_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_Q17, "LOG_PERF_Q17"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_Q17_CRACKING_PT_19DEG, "LOG_PERF_Q17_CRACKING_PT_19DEG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_Q17_CRACKING_PT_77DEG, "LOG_PERF_Q17_CRACKING_PT_77DEG"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_RUNDOWN_TIME_SEC, "LOG_PERF_RUNDOWN_TIME_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_SHP, "LOG_PERF_SHP"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_SHP_NORM, "LOG_PERF_SHP_NORM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_EGT_DEGF, "LOG_PERF_T_EGT_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_EGT_ENGINE_DEGF, "LOG_PERF_T_EGT_ENGINE_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_FUEL_FM1_DEGF, "LOG_PERF_T_FUEL_FM1_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_MOT_DEGF, "LOG_PERF_T_MOT_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_ORIFICE_DEGF, "LOG_PERF_T_ORIFICE_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T6C, "LOG_PERF_T6C"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T6C_NORM_DEGF, "LOG_PERF_T6C_NORM_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T7_NORM_DEGF, "LOG_PERF_T7_NORM_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T17_DEGC, "LOG_PERF_T_T17_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT1_1_DEGF, "LOG_PERF_T_TT1_1_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT1_2_DEGF, "LOG_PERF_T_TT1_2_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT1_3_DEGF, "LOG_PERF_T_TT1_3_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT1_4_DEGF, "LOG_PERF_T_TT1_4_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT1_AVG_DEGC, "LOG_PERF_T_TT1_AVG_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT1_AVG_DEGF, "LOG_PERF_T_TT1_AVG_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT17_AVG_DEGF, "LOG_PERF_T_TT17_AVG_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT7_1_DEGF, "LOG_PERF_T_TT7_1_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT7_2_DEGF, "LOG_PERF_T_TT7_2_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT7_3_DEGF, "LOG_PERF_T_TT7_3_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT7_4_DEGF, "LOG_PERF_T_TT7_4_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT7_5_DEGF, "LOG_PERF_T_TT7_5_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT7_6_DEGF, "LOG_PERF_T_TT7_6_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_TT7_AVG_DEGF, "LOG_PERF_T_TT7_AVG_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_GG_CMS, "LOG_PERF_VIB_GG_CMS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_LGB_MS2, "LOG_PERF_VIB_LGB_MS2"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_GG_MAX_CMS, "LOG_PERF_VIB_GG_MAX_CMS"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_VIB_LGB_MAX_MS2, "LOG_PERF_VIB_LGB_MAX_MS2"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_W1, "LOG_PERF_W1"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_W1_NORM, "LOG_PERF_W1_NORM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_W17_LBMIN, "LOG_PERF_W17_LBMIN"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_W17_NORM, "LOG_PERF_W17_NORM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WB_CALC, "LOG_PERF_WB_CALC"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF_NORM, "LOG_PERF_WF_NORM"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF_PPH, "LOG_PERF_WF_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(N1_MAX_ENB, "N1_MAX_ENB"))
+                Return_Value.Add(MyBase.InitializeChannel(N1_MAX_RPM, "N1_MAX_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(N1_MIN_ENB, "N1_MIN_ENB"))
+                Return_Value.Add(MyBase.InitializeChannel(N1_MIN_RPM, "N1_MIN_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(N1_PCT, "N1_PCT"))
+                Return_Value.Add(MyBase.InitializeChannel(N1_RPM, "N1_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(N2_DATAPLATE_RPM, "N2_DATAPLATE_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(N2_LIMIT_RPM, "N2_LIMIT_RPM"))
+                Return_Value.Add(MyBase.InitializeChannel(NUMBER_OF_STARTS, "NUMBER_OF_STARTS"))
+                Return_Value.Add(MyBase.InitializeChannel(OPERATING_TIME_SEC, "OPERATING_TIME_SEC"))
+                Return_Value.Add(MyBase.InitializeChannel(OPERATING_TIMER_ON, "OPERATING_TIMER_ON"))
+                Return_Value.Add(MyBase.InitializeChannel(P_ORIFICE_PSIA, "P_ORIFICE_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(P_ORIFICE_DELTA_PSID, "P_ORIFICE_DELTA_PSID"))
+                Return_Value.Add(MyBase.InitializeChannel(P_PT17_LIMIT_PSIA, "P_PT17_LIMIT_PSIA"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_Q17_CRACKING_PT_BTN, "PERF_Q17_CRACKING_PT_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_TEST_RESULT_ACCEPTED, "PERF_TEST_RESULT_ACCEPTED"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_TEST_RESULT_REJECTED, "PERF_TEST_RESULT_REJECTED"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_TRIM_DEGC, "PERF_TRIM_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_TRIM_INPUT_DEGC, "PERF_TRIM_INPUT_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_TRIM_CONTROL_DEGC, "PERF_TRIM_CONTROL_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(POWER_BTN, "POWER_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(Q17, "Q17"))
+                Return_Value.Add(MyBase.InitializeChannel(Q17_CRACKING_PT_19DEG, "Q17_CRACKING_PT_19DEG"))
+                Return_Value.Add(MyBase.InitializeChannel(Q17_CRACKING_PT_77DEG, "Q17_CRACKING_PT_77DEG"))
+                Return_Value.Add(MyBase.InitializeChannel(READY_TO_LOAD_IND, "READY_TO_LOAD_IND"))
+                Return_Value.Add(MyBase.InitializeChannel(RUN_STOP_BTN, "RUN_STOP_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(START_BTN, "START_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(STARTER_CURRENT_AMP, "STARTER_CURRENT_AMP"))
+                Return_Value.Add(MyBase.InitializeChannel(STARTER_CURRENT_MAX_AMP, "STARTER_CURRENT_MAX_AMP"))
+                Return_Value.Add(MyBase.InitializeChannel(STARTER_RECTIFIER_BTN, "STARTER_RECTIFIER_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(STARTER_VOLTAGE_MAX_VDC, "STARTER_VOLTAGE_MAX_VDC"))
+                Return_Value.Add(MyBase.InitializeChannel(STARTER_VOLTAGE_VDC, "STARTER_VOLTAGE_VDC"))
+                Return_Value.Add(MyBase.InitializeChannel(T_ORIFICE_DEGF, "T_ORIFICE_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(T_EGT_DATAPLATE_DEGC, "T_EGT_DATAPLATE_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(T_EGT_LIMIT_DEGC, "T_EGT_LIMIT_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(T_T7_DEGR, "T_T7_DEGR"))
+                Return_Value.Add(MyBase.InitializeChannel(T_T17_DEGR, "T_T17_DEGR"))
+                Return_Value.Add(MyBase.InitializeChannel(T6C_TEMP, "T6C_TEMP"))
+                Return_Value.Add(MyBase.InitializeChannel(TEST_STEP_MAX_ECS, "TEST_STEP_MAX_ECS"))
+                Return_Value.Add(MyBase.InitializeChannel(TEST_STEP_NO_LOAD, "TEST_STEP_NO_LOAD"))
+                Return_Value.Add(MyBase.InitializeChannel(TRIM_DEGC, "TRIM_DEGC"))
+                Return_Value.Add(MyBase.InitializeChannel(VIB_GG_MAX_CMS, "VIB_GG_MAX_CMS"))
+                Return_Value.Add(MyBase.InitializeChannel(VIB_LGB_MAX_MS2, "VIB_LGB_MAX_MS2"))
+                Return_Value.Add(MyBase.InitializeChannel(W1, "W1"))
+                Return_Value.Add(MyBase.InitializeChannel(W6, "W6"))
+                Return_Value.Add(MyBase.InitializeChannel(W7, "W7"))
+                Return_Value.Add(MyBase.InitializeChannel(W16, "W16"))
+                Return_Value.Add(MyBase.InitializeChannel(W17_LIMIT_LBMIN, "W17_LIMIT_LBMIN"))
+                Return_Value.Add(MyBase.InitializeChannel(WB_CALC, "WB_CALC"))
+                Return_Value.Add(MyBase.InitializeChannel(WF_LIMIT_PPH, "WF_LIMIT_PPH"))
+                Return_Value.Add(MyBase.InitializeChannel(WFCOR, "WFCOR"))
+
+
+                Return_Value.Add(MyBase.InitializeObject(Main_Panel_Frame, CELProject.EngineModel.Replace("-", "_") + "_Screen.fraMasterPanel"))
+                Return_Value.Add(MyBase.InitializeObject(Performance_Control_Frame, CELProject.EngineModel.Replace("-", "_") + "_Screen.fraPerformanceControl"))
+
+                Engine_Control_Frame = Main_Panel_Frame.FindObject("fraEngineControls")
+                ECS_Frame = Engine_Control_Frame.FindObject("fraECS")
+                ECS_Display = ECS_Frame.FindObject("dspECS_DEMAND")
+
+                If ECS_Display Is Nothing Then
+                    MessageBox.Show("MyBase.InitializeObject - dspECS Is Nothing")
+                    Return_Value.Add(False)
+                Else
+                    Return_Value.Add(True)
+                End If
+
+                TestStep_List = Performance_Control_Frame.FindObject("TestStep_List")
+
+                If TestStep_List Is Nothing Then
+                    MessageBox.Show("MyBase.InitializeObject - TestStep_List Is Nothing")
+                    Return_Value.Add(False)
+                Else
+                    Return_Value.Add(True)
+                End If
+
+                Return_Value.Add(MyBase.InitializeChannel(OPERATING_TIME_CURRENT_SEC, "OPERATING_TIME_CURRENT_SEC"))
+
+            Catch ex As Exception
+                MessageBox.Show("Init_Engine_Channels: " & ex.ToString())
+                Return_Value.Add(False)
+            End Try
+
+            If Return_Value.Contains(False) Then
+                Init_Engine_Channels = False
+            Else
+                Init_Engine_Channels = True
+            End If
+        End Function
+
+        Private Sub TestProgress_Initialize()
+            Dim dataInfo As CEL.TestProgress.TestProgressMgr.TestProgress_DataInfo
+
+            dataInfo.EngineStartEventChannelName = "RUN_STOP_BTN"
+            dataInfo.EngineStartEventChannelValue = True
+            dataInfo.EngineStartEventDescription = "Mise en route"
+            dataInfo.EngineStartEventRecordTime = True
+            dataInfo.EngineStopEventChannelName = "RUN_STOP_BTN"
+            dataInfo.EngineStopEventChannelValue = False
+            dataInfo.EngineStopEventDescription = "Arrêt moteur - Temps d'arrêt (s): "
+            dataInfo.EngineStopEventRecordTime = True
+            dataInfo.TestProgressFrameName = CELProject.EngineModel.Replace("-", "_") + "_Screen.fraTestProgressHorizontal"
+            dataInfo.TestProgressSheetFileName = CELProject.EngineSession.LogFolder + "/TestProgress.xml"
+            dataInfo.UUTModel = CELProject.EngineModel
+            dataInfo.UUTSerialNumber = Me.UserInputs.EngineSerialNumber
+            dataInfo.UUTWorkOrder = Me.UserInputs.WorkOrder
+            Me.TestProgressMgr = New CEL.TestProgress.TestProgressMgr(dataInfo)
+        End Sub
+
+        Private Sub TestProgress_RecordPerfStep(testStep As eTestStepPW901A)
+            If Me.TestProgressMgr IsNot Nothing Then
+                Dim sheetEntry As CEL.TestProgress.TestProgressSheetEntry = Nothing
+
+                Dim checkItemPsL As String = "PsL - Read: " + LOG_PERF_P_LGB_PSIA.Value.ToString(LOG_PERF_P_LGB_PSIA.Format, Nothing) + " psia"
+                Dim checkItemTt1 As String = "Tt1 - Read: " + LOG_PERF_T_TT1_AVG_DEGC.Value.ToString(LOG_PERF_T_TT1_AVG_DEGC.Format, Nothing) + " °C"
+                Dim checkItemIGV As String = "IGV - Min: " + IGV_LIMIT_PCT.Value.ToString(IGV_LIMIT_PCT.Format, Nothing) + " Read: " + _
+                    LOG_PERF_IGV_POS_PCT.Value.ToString(LOG_PERF_IGV_POS_PCT.Format, Nothing) + " %"
+                Dim checkItemQ17 As String = "Q17 - Read: " + LOG_PERF_Q17.Value.ToString(LOG_PERF_Q17.Format, Nothing)
+                Dim checkItemGENERATOR As String = "Generator - Read: " + LOG_PERF_LOAD_TOTAL_KVA.Value.ToString(LOG_PERF_LOAD_TOTAL_KVA.Format, Nothing) + " kVA"
+                Dim checkItemN2 As String = "N2 - "
+                Dim checkItemEGT As String = "EGT - "
+                Dim checkItemWF As String = "Fuel Flow - "
+                Dim checkItemPt17 As String = "Pt17 - "
+                Dim checkItemTt17 As String = "Tt17 - Read: " + LOG_PERF_T_T17_DEGC.Value.ToString(LOG_PERF_T_T17_DEGC.Format, Nothing) + " °C"
+                Dim checkItemW17 As String = "W17 - "
+
+                Select Case testStep
+                    Case eTestStepPW901A.MAX_ECS
+
+                        checkItemN2 += "Read: " + LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing) + " RPM"
+                        checkItemEGT += "Read: " + LOG_PERF_T_EGT_DEGC.Value.ToString(LOG_PERF_T_EGT_DEGC.Format, Nothing) + " °C"
+                        checkItemWF += "Max: " + WF_LIMIT_PPH.Value.ToString(WF_LIMIT_PPH.Format, Nothing) + " Read: " + _
+                            LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing) + "lb/h"
+                        checkItemPt17 += "Read: " + LOG_PERF_P_PT17_PSIA.Value.ToString(LOG_PERF_P_PT17_PSIA.Format, Nothing) + " psia"
+                        checkItemW17 += "Min: " + W17_LIMIT_LBMIN.Value.ToString(W17_LIMIT_LBMIN.Format, Nothing) + " Read: " + _
+                            LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing) + " lb/min"
+
+                        sheetEntry = New CEL.TestProgress.TestProgressSheetEntry(String.Empty, "Max ECS, 180 kVA", {checkItemPsL, checkItemTt1, _
+                                                                                                       checkItemIGV, checkItemQ17, checkItemGENERATOR, _
+                                                                                                       checkItemN2, checkItemEGT, checkItemWF, checkItemPt17, _
+                                                                                                       checkItemTt17, checkItemW17})
+                    Case eTestStepPW901A.MAX_IGV
+
+                        checkItemN2 += "Read: " + LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing) + " RPM"
+                        checkItemEGT += "Read: " + LOG_PERF_T_EGT_DEGC.Value.ToString(LOG_PERF_T_EGT_DEGC.Format, Nothing) + " °C"
+                        checkItemWF += "Read: " + LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing) + "lb/h"
+                        checkItemPt17 += "Min: " + P_PT17_LIMIT_PSIA.Value.ToString(P_PT17_LIMIT_PSIA.Format, Nothing) + " Read: " + _
+                            LOG_PERF_P_PT17_PSIA.Value.ToString(LOG_PERF_P_PT17_PSIA.Format, Nothing) + " psia"
+                        checkItemW17 += "Min: " + W17_LIMIT_LBMIN.Value.ToString(W17_LIMIT_LBMIN.Format, Nothing) + " Read: " + _
+                            LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing) + " lb/min"
+
+                        sheetEntry = New CEL.TestProgress.TestProgressSheetEntry(String.Empty, "Max IGV, 0 kVA", {checkItemPsL, checkItemTt1, _
+                                                                                                       checkItemIGV, checkItemQ17, checkItemGENERATOR, _
+                                                                                                       checkItemN2, checkItemEGT, checkItemWF, checkItemPt17, _
+                                                                                                       checkItemTt17, checkItemW17})
+
+                    Case eTestStepPW901A.MES
+
+                        checkItemN2 += "Max: " + N2_LIMIT_RPM.Value.ToString(N2_LIMIT_RPM.Format, Nothing) + " Read: " + _
+                            LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing) + " RPM"
+                        checkItemEGT += "Max: " + T_EGT_LIMIT_DEGC.Value.ToString(T_EGT_LIMIT_DEGC.Format, Nothing) + " Read: " + _
+                            LOG_PERF_T_EGT_DEGC.Value.ToString(LOG_PERF_T_EGT_DEGC.Format, Nothing) + " °C"
+                        checkItemWF += "Read: " + LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing) + "lb/h"
+                        checkItemPt17 += "Min: " + P_PT17_LIMIT_PSIA.Value.ToString(P_PT17_LIMIT_PSIA.Format, Nothing) + " Read: " + _
+                            LOG_PERF_P_PT17_PSIA.Value.ToString(LOG_PERF_P_PT17_PSIA.Format, Nothing) + " psia"
+                        checkItemW17 += "Read: " + LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing) + " lb/min"
+
+                        sheetEntry = New CEL.TestProgress.TestProgressSheetEntry(String.Empty, "MES, 180 kVA", {checkItemPsL, checkItemTt1, _
+                                                                                                       checkItemIGV, checkItemQ17, checkItemGENERATOR, _
+                                                                                                       checkItemN2, checkItemEGT, checkItemWF, checkItemPt17, _
+                                                                                                       checkItemTt17, checkItemW17})
+                End Select
+
+                If sheetEntry IsNot Nothing Then
+                    Me.TestProgressMgr.AddTestProgressEntry(sheetEntry)
+                End If
+            End If
+        End Sub
+
+        Private Sub TestProgress_Save()
+            If Not Me.TestProgressMgr Is Nothing Then
+                TestProgress_UpdateProgressSheetHeader(Me.TestProgressMgr.TestProgressSheet)
+                Dim fileName As String = CELProject.EngineSession.LogFolder + "/TestProgress.xml"
+                Dim settings As Xml.XmlWriterSettings = New Xml.XmlWriterSettings()
+                settings.Indent = True
+
+                Using writer As Xml.XmlWriter = Xml.XmlWriter.Create(fileName, settings)
+                    Dim xslPath As String = "type=""text/xsl"" href=""" + Application.StartupPath + "/TestProgressSheet.xsl"""
+                    writer.WriteProcessingInstruction("xml-stylesheet", xslPath)
+                    Dim ser As New Xml.Serialization.XmlSerializer(GetType(CEL.TestProgress.TestProgressSheet))
+                    ser.Serialize(writer, Me.TestProgressMgr.TestProgressSheet)
+                End Using
+            End If
+        End Sub
+
+        Private Sub TestProgress_UpdateProgressSheetHeader(progressSheet As CEL.TestProgress.TestProgressSheet)
+            progressSheet.Header("No capteur de vibration GG") = Me.UserInputs.GGVibPickupSerialNumber
+            progressSheet.Header("No capteur de vibration LGB") = Me.UserInputs.LGBVibPickupSerialNumber
+            progressSheet.Header("Type d'huile") = Me.UserInputs.OilType
+            progressSheet.Header("Quantité totale Jet A1") = Me.FUEL_USED_TOTAL_LITERS.Value.ToString()
+            Dim runningTime As System.TimeSpan = System.TimeSpan.FromSeconds(Me.OPERATING_TIME_CURRENT_SEC.Value.ToDouble())
+            progressSheet.Header("Temps de fonctionnement") = Math.Floor(runningTime.TotalHours).ToString() + _
+                " h " + runningTime.Minutes.ToString("00")
+        End Sub
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+
+        '************
+        '* Channels *
+        '************
+
+        Private ACCELERATING_TIME_SEC As INumericChannel
+        Private BLEED_BTN As IBooleanChannel
+        Private CAPTURE_EGT_TRIM_BTN As IBooleanChannel
+        Private CAPTURE_EGT_TRIM_CONTROL_BTN As IBooleanChannel
+        Private CP6 As INumericChannel
+        Private CP7 As INumericChannel
+        Private CP16 As INumericChannel
+        Private DIVERTER_VALVE_ANGLE_DEG As INumericChannel
+        Private FM_INITIAL_VOLUME_LITERS As INumericChannel
+        Private FM_TOTAL_VOLUME_LITERS As INumericChannel
+        Private FUEL_USED_INITIAL_LITERS As INumericChannel
+        Private FUEL_USED_TOTAL_LITERS As INumericChannel
+        Private IGV_LIMIT_PCT As INumericChannel
+        Private IGV_POS_PCT As INumericChannel
+        Private LOAD_AIR_VALVE_DEMAND As INumericChannel
+        Private LHV As INumericChannel
+        Private LOG_PERF_T_EGT_DEGC As INumericChannel
+        Private LOG_PERF_FUEL_USED_LITERS As INumericChannel
+        Private LOG_PERF_IGV_POS_PCT As INumericChannel
+        Private LOG_PERF_LOAD_TOTAL_KVA As INumericChannel
+        Private LOG_PERF_N1_NORM As INumericChannel
+        Private LOG_PERF_N2_NORM As INumericChannel
+        Private LOG_PERF_N1_RPM As INumericChannel
+        Private LOG_PERF_N2_RPM As INumericChannel
+        Private LOG_PERF_P_AGB_PSIG As INumericChannel
+        Private LOG_PERF_P_BARO_PSIA As INumericChannel
+        Private LOG_PERF_P_FUEL_PSIG As INumericChannel
+        Private LOG_PERF_P_LGB_PSIA As INumericChannel
+        Private LOG_PERF_P_LGB_PSIG As INumericChannel
+        Private LOG_PERF_P_MOP_PSIG As INumericChannel
+        Private LOG_PERF_P_ORIFICE_PSIA As INumericChannel
+        Private LOG_PERF_P_ORIFICE_DELTA_PSID As INumericChannel
+        Private LOG_PERF_P_PT17_PSIA As INumericChannel
+        Private LOG_PERF_P1_MINUS_BARO_PSID As INumericChannel
+        Private LOG_PERF_P17_NORM As INumericChannel
+        Private LOG_PERF_PERF_TRIM_DEGC As INumericChannel
+        Private LOG_PERF_PERF_TRIM_INPUT_DEGC As INumericChannel
+        Private LOG_PERF_PERF_TRIM_CONTROL_DEGC As INumericChannel
+        Private LOG_PERF_Q17 As INumericChannel
+        Private LOG_PERF_Q17_CRACKING_PT_19DEG As INumericChannel
+        Private LOG_PERF_Q17_CRACKING_PT_77DEG As INumericChannel
+        Private LOG_PERF_RUNDOWN_TIME_SEC As INumericChannel
+        Private LOG_PERF_SHP As INumericChannel
+        Private LOG_PERF_SHP_NORM As INumericChannel
+        Private LOG_PERF_OPERATING_TIME_MINUTES As INumericChannel
+        Private LOG_PERF_T_EGT_DEGF As INumericChannel
+        Private LOG_PERF_T_EGT_ENGINE_DEGF As INumericChannel
+        Private LOG_PERF_T_FUEL_FM1_DEGF As INumericChannel
+        Private LOG_PERF_T_MOT_DEGF As INumericChannel
+        Private LOG_PERF_T_ORIFICE_DEGF As INumericChannel
+        Private LOG_PERF_T6C As INumericChannel
+        Private LOG_PERF_T6C_NORM_DEGF As INumericChannel
+        Private LOG_PERF_T7_NORM_DEGF As INumericChannel
+        Private LOG_PERF_T_T17_DEGC As INumericChannel
+        Private LOG_PERF_T_TT1_1_DEGF As INumericChannel
+        Private LOG_PERF_T_TT1_2_DEGF As INumericChannel
+        Private LOG_PERF_T_TT1_3_DEGF As INumericChannel
+        Private LOG_PERF_T_TT1_4_DEGF As INumericChannel
+        Private LOG_PERF_T_TT1_AVG_DEGC As INumericChannel
+        Private LOG_PERF_T_TT1_AVG_DEGF As INumericChannel
+        Private LOG_PERF_T_TT17_AVG_DEGF As INumericChannel
+        Private LOG_PERF_T_TT7_1_DEGF As INumericChannel
+        Private LOG_PERF_T_TT7_2_DEGF As INumericChannel
+        Private LOG_PERF_T_TT7_3_DEGF As INumericChannel
+        Private LOG_PERF_T_TT7_4_DEGF As INumericChannel
+        Private LOG_PERF_T_TT7_5_DEGF As INumericChannel
+        Private LOG_PERF_T_TT7_6_DEGF As INumericChannel
+        Private LOG_PERF_T_TT7_AVG_DEGF As INumericChannel
+        Private LOG_PERF_VIB_GG_CMS As INumericChannel
+        Private LOG_PERF_VIB_LGB_MS2 As INumericChannel
+        Private LOG_PERF_VIB_GG_MAX_CMS As INumericChannel
+        Private LOG_PERF_VIB_LGB_MAX_MS2 As INumericChannel
+        Private LOG_PERF_W1 As INumericChannel
+        Private LOG_PERF_W1_NORM As INumericChannel
+        Private LOG_PERF_W17_LBMIN As INumericChannel
+        Private LOG_PERF_W17_NORM As INumericChannel
+        Private LOG_PERF_WB_CALC As INumericChannel
+        Private LOG_PERF_WF_NORM As INumericChannel
+        Private LOG_PERF_WF_PPH As INumericChannel
+        Private N1_MAX_ENB As IBooleanChannel
+        Private N1_MAX_RPM As INumericChannel
+        Private N1_MIN_ENB As IBooleanChannel
+        Private N1_MIN_RPM As INumericChannel
+        Private N1_PCT As INumericChannel
+        Private N1_RPM As INumericChannel
+        Private N2_DATAPLATE_RPM As INumericChannel
+        Private N2_LIMIT_RPM As INumericChannel
+        Private NUMBER_OF_STARTS As INumericChannel
+        Private OPERATING_TIME_SEC As INumericChannel
+        Private OPERATING_TIME_HOURS As INumericChannel
+        Private OPERATING_TIME_MINUTES As INumericChannel
+        Private OPERATING_TIMER_ON As IBooleanChannel
+        Private PERF_PREVIOUS_TEST_FUEL_USED As INumericChannel
+        Private PERF_PREVIOUS_TEST_MINUTES As INumericChannel
+        Private PERF_TRIM_DEGC As INumericChannel
+        Private PERF_TRIM_INPUT_DEGC As INumericChannel
+        Private PERF_TRIM_CONTROL_DEGC As INumericChannel
+        Private P_ORIFICE_PSIA As INumericChannel
+        Private P_ORIFICE_DELTA_PSID As INumericChannel
+        Private P_PT17_LIMIT_PSIA As INumericChannel
+        Private PERF_Q17_CRACKING_PT_BTN As IBooleanChannel
+        Private PERF_TEST_RESULT_ACCEPTED As IBooleanChannel
+        Private PERF_TEST_RESULT_REJECTED As IBooleanChannel
+        Private POWER_BTN As IBooleanChannel
+        Private Q17 As INumericChannel
+        Private Q17_CRACKING_PT_19DEG As INumericChannel
+        Private Q17_CRACKING_PT_77DEG As INumericChannel
+        Private READY_TO_LOAD_IND As IBooleanChannel
+        Private RUN_STOP_BTN As IBooleanChannel
+        Private START_BTN As IBooleanChannel
+        Private STARTER_CURRENT_AMP As INumericChannel
+        Private STARTER_CURRENT_MAX_AMP As INumericChannel
+        Private STARTER_RECTIFIER_BTN As IBooleanChannel
+        Private STARTER_VOLTAGE_VDC As INumericChannel
+        Private STARTER_VOLTAGE_MAX_VDC As INumericChannel
+        Private T_ORIFICE_DEGF As INumericChannel
+        Private T_EGT_DATAPLATE_DEGC As INumericChannel
+        Private T_EGT_LIMIT_DEGC As INumericChannel
+        Private T_T7_DEGR As INumericChannel
+        Private T_T17_DEGR As INumericChannel
+        Private T6C_TEMP As INumericChannel
+        Private TEST_STEP_MAX_ECS As IBooleanChannel
+        Private TEST_STEP_NO_LOAD As IBooleanChannel
+        Private TRIM_DEGC As INumericChannel
+        Private VIB_GG_MAX_CMS As INumericChannel
+        Private VIB_LGB_MAX_MS2 As INumericChannel
+        Private W1 As INumericChannel
+        Private W6 As INumericChannel
+        Private W7 As INumericChannel
+        Private W16 As INumericChannel
+        Private W17_LIMIT_LBMIN As INumericChannel
+        Private WB_CALC As INumericChannel
+        Private WF_LIMIT_PPH As INumericChannel
+        Private WFCOR As INumericChannel
+        Private OPERATING_TIME_CURRENT_SEC As IChannel
+
+		'*********************
+		'* Forms and Control *
+		'*********************
+		'Frame
+		Private ECS_Frame As KineticaRT.Controls.Control
+		Private Engine_Control_Frame As KineticaRT.Controls.Control
+		Private Main_Panel_Frame As KineticaRT.Controls.Control
+		Private Performance_Control_Frame As KineticaRT.Controls.Control
+        Private Speed_Control_Frame As KineticaRT.Controls.Control
+        Private TestStep_List As System.Windows.Forms.ComboBox
+
+		'Display
+        Private ECS_Display As KineticaRT.Studio.Controls.Display
+        Private btnN1_RAISE_BTN As KineticaRT.Controls.PictureButton
+        Private btnN2_RAISE_BTN As KineticaRT.Controls.PictureButton
+        Private btnN1_LOWER_BTN As KineticaRT.Controls.PictureButton
+        Private btnN2_LOWER_BTN As KineticaRT.Controls.PictureButton
+
+		'************************************
+		'* Q17 Cracking Point determination *
+		'************************************
+		Private InitDVA As Double = 0.0
+		Private Q17CrackingPointInProgress As Boolean = False
+		Private TestCase As Integer = 0
+
+		'**********************
+		'* Performance Limits *
+		'**********************
+		Private DeltaEGTLimitTable(,) As Double
+		Private DeltaN2LimitTable(,) As Double
+		Private DeltaPt17LimitTable(,) As Double
+		Private DeltaW17LimitTable(,) As Double
+		Private DeltaWfLimitTable(,) As Double
+        Private EGTMESLimitTable(,) As Double
+        Private EGTMaxIGVLimitTable(,) As Double
+		Private IGVMaxECSLimitTable(,) As Double
+		Private IGVMaxIGVLimitTable(,) As Double
+		Private IGVMESLimitTable(,) As Double
+        Private N2MESLimitTable(,) As Double
+        Private N2MaxIGVLimitTable(,) As Double
+		Private Pt17MaxIGV142LimitTable(,) As Double
+		Private Pt17MaxIGV147LimitTable(,) As Double
+		Private Pt17MaxIGV1495LimitTable(,) As Double
+		Private Pt17MES142LimitTable(,) As Double
+		Private Pt17MES147LimitTable(,) As Double
+		Private Pt17MES1495LimitTable(,) As Double
+		Private W17MaxECS142LimitTable(,) As Double
+		Private W17MaxECS147LimitTable(,) As Double
+		Private W17MaxECS1495LimitTable(,) As Double
+		Private W17MaxIGV142LimitTable(,) As Double
+		Private W17MaxIGV147LimitTable(,) As Double
+		Private W17MaxIGV1495LimitTable(,) As Double
+        Private Wf142MaxECSLimitTable(,) As Double
+        Private Wf147MaxECSLimitTable(,) As Double
+        Private Wf1495MaxECSLimitTable(,) As Double
+
+		'********
+		'* Misc *
+		'********
+
+        Private Custom_Parameters As New System.Collections.Specialized.OrderedDictionary()
+
+		Private LastStart As Boolean = False
+		Private OperatingTime_Start As System.DateTime
+		Private OperatingTime As System.TimeSpan 'Used to calculate operating time
+
+		Private APU_ACCELERATING As Boolean = False
+		Private AcceleratingTime_Start As System.DateTime
+		Private ts_accelerating_time As System.TimeSpan	'Used to calculate the acceleration time
+
+		Private GGMaxVibrationRecordCtrl As MinMaxRecordController = Nothing
+		Private LGBMaxVibrationRecordCtrl As MinMaxRecordController = Nothing
+		Private N1MaxRecordCtrl As MinMaxRecordController = Nothing
+		Private N1MinRecordCtrl As MinMaxRecordController = Nothing
+		Private StarterMaxCurrentRecordCtrl As MinMaxRecordController = Nothing
+		Private StarterMaxVoltageRecordCtrl As MinMaxRecordController = Nothing
+
+		Private DeletableTt1ChCtrl As DeletableChannelController = Nothing
+		Private DeletableTt17ChCtrl As DeletableChannelController = Nothing
+		Private DeletableTt7ChCtrl As DeletableChannelController = Nothing
+
+		Private DynoInletCtrl As UpDownDemandController = Nothing
+		Private DynoOutletCtrl As UpDownDemandController = Nothing
+		Private ECSCtrl As ECSController = Nothing
+		Private FuelRegulatorCtrl As UpDownDemandController = Nothing
+		Private LoadAirCtrl As UpDownDemandController = Nothing
+		Private PW901APersistentValuesCtrl As PersistentValuesController = Nothing
+		Private RundownTimerCtrl As TimerController = Nothing
+
+		Private UserInputs As New UserInputRevimaPW901A()
+
+		Private DuctDiameter_Inches As Double
+		Private OrificeDiameter_Inches As Double
+        Private TestProgressMgr As CEL.TestProgress.TestProgressMgr = Nothing
+
+	End Class
+
+	Public Class UserInputRevimaPW901A
+
+		Public EngineSerialNumber As String = ""
+		Public WorkOrder As String = ""
+		Public ECBSerialNumber As String = ""
+		Public ExhaustDuctSerialNumber As String = ""
+		Public BellmouthSerialNumber As String = ""
+		Public BleedDuctSerialNumber As String = ""
+		Public StarterSerialNumber As String = ""
+		Public Dyno1SerialNumber As String = ""
+		Public Dyno2SerialNumber As String = ""
+		Public GGVibPickupSerialNumber As String = ""
+		Public LGBVibPickupSerialNumber As String = ""
+		Public OilType As String = ""
+		Public LHV As String = ""
+		Public TimeSinceNewOrOverhaul As String = "" 'TSN/TSO
+		Public CyclesSinceNew As String = "" 'CSN
+
+		Public Reason As String = ""
+		Public TestType As String = ""
+		Public LoadCell1SerialNumber As String = ""
+		Public LoadCell2SerialNumber As String = ""
+
+		' Allow friend access to the empty constructor.
+		Friend Sub New()
+
+		End Sub
+		Public Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+			EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+			WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+			ECBSerialNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+			ExhaustDuctSerialNumber = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+			BellmouthSerialNumber = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+			BleedDuctSerialNumber = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+			StarterSerialNumber = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+			Dyno1SerialNumber = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+			Dyno2SerialNumber = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+			GGVibPickupSerialNumber = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+			LGBVibPickupSerialNumber = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+			OilType = CELProject.Test_Mgr_UUT_Answer(12).Value.ToString()
+			LHV = CELProject.Test_Mgr_UUT_Answer(13).Value.ToString()
+			TimeSinceNewOrOverhaul = CELProject.Test_Mgr_UUT_Answer(15).Value.ToString()
+			CyclesSinceNew = CELProject.Test_Mgr_UUT_Answer(16).Value.ToString()
+			Reason = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+			TestType = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+			LoadCell1SerialNumber = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+			LoadCell2SerialNumber = CELProject.Test_Mgr_UUT_Choice(5).Value.ToString()
+
+		End Sub
+	End Class
+End Namespace

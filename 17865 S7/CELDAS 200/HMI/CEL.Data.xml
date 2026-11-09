@@ -1,0 +1,1288 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+CEL.Data
+</name>
+</assembly>
+<members>
+<member name="T:CEL.Data.My.Resources.Resources">
+<summary>
+  A strongly-typed resource class, for looking up localized strings, etc.
+</summary>
+</member>
+<member name="P:CEL.Data.My.Resources.Resources.ResourceManager">
+<summary>
+  Returns the cached ResourceManager instance used by this class.
+</summary>
+</member>
+<member name="P:CEL.Data.My.Resources.Resources.Culture">
+<summary>
+  Overrides the current thread's CurrentUICulture property for all
+  resource lookups using this strongly typed resource class.
+</summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.AxisType.GraphAxisCollectionByAxisTypeID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - AxisTypeGraphAxis
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.AxisType.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.AxisType.Apply(EntitySpaces.Core.esEntityCollectionBase,System.String,System.Object)">
+ <summary>
+ Called by ApplyPostSaveKeys 
+ </summary>
+ <param name="coll">The collection to enumerate over</param>
+ <param name="key">"The column name</param>
+ <param name="value">The column value</param>
+</member>
+<member name="M:CEL.Data.BusinessObjects.AxisType.ApplyPostSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PostSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.BooleanState.HMIBooleanChannelsCollectionByInitialValue">
+ <summary>
+ Zero to Many
+ Foreign Key Name - BooleanStateHMI_Boolean_Channels
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.BooleanState.HMIBooleanChannelsCollectionByFinalValue">
+ <summary>
+ Zero to Many
+ Foreign Key Name - BooleanStateHMI_Boolean_Channels1
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.BooleanState.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.CustomParameters.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTCustom_Parameters
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxMessage.Dacn1AfdxSignalCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - DACN1_AFDX_MESSAGEDACN1_AFDX_DISCRETE
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxMessage.UpToDacn1AfdxPortByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - DACN1_AFDX_PORTDACN1_AFDX_MESSAGE
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Dacn1AfdxMessage.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxPort.Dacn1AfdxMessageCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - DACN1_AFDX_PORTDACN1_AFDX_MESSAGE
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxPort.UpToDacn1AfdxVirtualLinkByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - {5D9741FF-5531-46BE-9E93-DB7B87963973}
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Dacn1AfdxPort.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxSignal.Dacn1AfdxSignalEnumerationCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - DACN1_AFDX_SIGNALDACN1_AFDX_SIGNAL_ENUMERATION
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxSignal.UpToDacn1AfdxMessageByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - DACN1_AFDX_MESSAGEDACN1_AFDX_DISCRETE
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxSignal.UpToEngineeringUnitByEngUnitID">
+ <summary>
+ Many to One
+ Foreign Key Name - EngineeringUnitDACN1_AFDX_SIGNAL
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Dacn1AfdxSignal.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxSignalEnumeration.UpToDacn1AfdxSignalByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - DACN1_AFDX_SIGNALDACN1_AFDX_SIGNAL_ENUMERATION
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxVirtualLink.Dacn1AfdxPortCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - {5D9741FF-5531-46BE-9E93-DB7B87963973}
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1AfdxVirtualLink.UpToDynamicCollectionByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - {ED97B366-C831-4170-A8BC-9CFAEBE1EC61}
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Dacn1AfdxVirtualLink.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Dacn1Arinc429FaultCode.UpToDynamicCollectionByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - Dynamic_CollectionDACN1_ARINC429_FAULT_CODE
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DACN1OmniBusBoxIOMGR.DACN1OmniBusBoxIOMGRUartCollectionByEngineModel">
+ <summary>
+ Zero to Many
+ Foreign Key Name - DACN1_OmniBusBox_IOMGRDACN1_OmniBusBox_IOMGR_Uart
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DACN1OmniBusBoxIOMGR.UpToEngineInfoByEngineModel">
+ <summary>
+ Many to One
+ Foreign Key Name - Engine_InfoDACN1_OmniBusBox_IOMGR
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.DACN1OmniBusBoxIOMGR.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DACN1OmniBusBoxIOMGRUart.UpToDACN1OmniBusBoxIOMGRByEngineModel">
+ <summary>
+ Many to One
+ Foreign Key Name - DACN1_OmniBusBox_IOMGRDACN1_OmniBusBox_IOMGR_Uart
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DACN1PowerDNAIOMGRReal1.UpToEngineeringUnitByEngUnitID">
+ <summary>
+ Many to One
+ Foreign Key Name - EngineeringUnitDACN1_PowerDNA_IOMGR_Real_1
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DACN1PowerDNAIOMGRReal1.UpToProjectInfoByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - Project_InfoDACN1_PowerDNA_IOMGR_Real_1
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DacnTemplateReal.UpToEngineeringUnitByEngUnitID">
+ <summary>
+ Many to One
+ Foreign Key Name - EngineeringUnitDacnTemplateReal
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DacnTemplateReal.UpToProjectInfoByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - Project_InfoDacnTemplateReal
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DynamicCollection.HMIBooleanChannelsCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Dynamic_CollectionHMI_Boolean_Channels
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DynamicCollection.HMINumericChannelsCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Dynamic_CollectionHMI_Numeric_Channels
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DynamicCollection.HMITextChannelsCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Dynamic_CollectionHMI_Text_Channels
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DynamicCollection.UUTStaticChannelCollectionCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Dynamic_CollectionUUT_Static_Channel_Collection
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DynamicCollection.Dacn1AfdxVirtualLinkCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUT_Dynamic_CollectionDACN1_AFDX_VIRTUAL_LINK
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.DynamicCollection.UUTDynamicChannelCollectionCollectionByCollectionName">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUT_Dynamic_CollectionUUT_Dynamic_Channel_Collection
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.DynamicCollection.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineeringUnit.HMINumericChannelsCollectionByEngUnitID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - EngineeringUnitHMI_Numeric_Channels
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineeringUnit.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineGraphPreset.GraphAxisCollectionByGid">
+ <summary>
+ Zero to Many
+ Foreign Key Name - EngineGraphPresetGraphAxis
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineGraphPreset.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineGraphPreset.Apply(EntitySpaces.Core.esEntityCollectionBase,System.String,System.Object)">
+ <summary>
+ Called by ApplyPostSaveKeys 
+ </summary>
+ <param name="coll">The collection to enumerate over</param>
+ <param name="key">"The column name</param>
+ <param name="value">The column value</param>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineGraphPreset.ApplyPostSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PostSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.DACN1OmniBusBoxIOMGRCollectionByEngineModel">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Engine_InfoDACN1_OmniBusBox_IOMGR
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.EnginePwBuildSpecificationCollectionByEngineModel">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Engine_InfoEngine_PwBuildSpecification
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.EnginePwServiceBulletinCollectionByEngineModel">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Engine_InfoEngine_PwServiceBulletin
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.UpToGTCP8598RepairTypeCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - Engine_InfoGTCP85_98
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineInfo.AssociateGTCP8598RepairTypeCollection(CEL.Data.BusinessObjects.GTCP8598RepairType)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - Engine_InfoGTCP85_98
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineInfo.DissociateGTCP8598RepairTypeCollection(CEL.Data.BusinessObjects.GTCP8598RepairType)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - Engine_InfoGTCP85_98
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.Gtcp8598CollectionByEngineModel">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Engine_InfoGTCP85_98
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.UpToHMIPageMappingCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - Engine_InfoUUT
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineInfo.AssociateHMIPageMappingCollection(CEL.Data.BusinessObjects.HMIPageMapping)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - Engine_InfoUUT
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineInfo.DissociateHMIPageMappingCollection(CEL.Data.BusinessObjects.HMIPageMapping)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - Engine_InfoUUT
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.UutCollectionByEngineModel">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Engine_InfoUUT
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.UpToEngineSeriesCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - Engine_InfoUUT_Engine_Series
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineInfo.AssociateEngineSeriesCollection(CEL.Data.BusinessObjects.EngineSeries)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - Engine_InfoUUT_Engine_Series
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineInfo.DissociateEngineSeriesCollection(CEL.Data.BusinessObjects.EngineSeries)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - Engine_InfoUUT_Engine_Series
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.UUTEngineSeriesCollectionByEngineModel">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Engine_InfoUUT_Engine_Series
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineInfo.UpToEngineManufacturerByManufacturerID">
+ <summary>
+ Many to One
+ Foreign Key Name - Engine_ManufacturerEngine_Info
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineInfo.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineManufacturer.EngineInfoCollectionByManufacturerID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Engine_ManufacturerEngine_Info
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineManufacturer.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EnginePwBuildSpecification.UpToEngineInfoByEngineModel">
+ <summary>
+ Many to One
+ Foreign Key Name - Engine_InfoEngine_PwBuildSpecification
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EnginePwServiceBulletin.UpToEngineInfoByEngineModel">
+ <summary>
+ Many to One
+ Foreign Key Name - Engine_InfoEngine_ServiceBulletin
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineSeries.UpToGTCP85129RepairTypeCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - Engine_SeriesGTCP85_129
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineSeries.AssociateGTCP85129RepairTypeCollection(CEL.Data.BusinessObjects.GTCP85129RepairType)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - Engine_SeriesGTCP85_129
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineSeries.DissociateGTCP85129RepairTypeCollection(CEL.Data.BusinessObjects.GTCP85129RepairType)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - Engine_SeriesGTCP85_129
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineSeries.Gtcp85129CollectionByEngineSeries">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Engine_SeriesGTCP85_129
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineSeries.UpToEngineInfoCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - Engine_SeriesUUT_Engine_Series
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineSeries.AssociateEngineInfoCollection(CEL.Data.BusinessObjects.EngineInfo)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - Engine_SeriesUUT_Engine_Series
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineSeries.DissociateEngineInfoCollection(CEL.Data.BusinessObjects.EngineInfo)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - Engine_SeriesUUT_Engine_Series
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.EngineSeries.UUTEngineSeriesCollectionByEngineSeries">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Engine_SeriesUUT_Engine_Series
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.EngineSeries.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Flowmeter.UpToFlowmeterMapByFlowmeterMapID">
+ <summary>
+ Many to One
+ Foreign Key Name - Flowmeter_MapFlowmeter
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Flowmeter.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTFlowmeter
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowmeterDetail.UpToFlowmeterMasterByFlowmeterID">
+ <summary>
+ Many to One
+ Foreign Key Name - Flowmeter_MasterFlowmeter_Detail
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowMeterInputUnit.FlowmeterMasterCollectionByTableInputUnit">
+ <summary>
+ Zero to Many
+ Foreign Key Name - FlowMeter_InputUnitFlowmeter_Master
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.FlowMeterInputUnit.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowmeterMap.UpToUutCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - Flowmeter_MapFlowmeter
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.FlowmeterMap.AssociateUutCollection(CEL.Data.BusinessObjects.Uut)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - Flowmeter_MapFlowmeter
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.FlowmeterMap.DissociateUutCollection(CEL.Data.BusinessObjects.Uut)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - Flowmeter_MapFlowmeter
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowmeterMap.FlowmeterCollectionByFlowmeterMapID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Flowmeter_MapFlowmeter
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowmeterMap.UpToFlowmeterMasterByFlowmeterID">
+ <summary>
+ Many to One
+ Foreign Key Name - Flowmeter_MasterFlowmeter_Map
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.FlowmeterMap.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowmeterMaster.FlowmeterDetailCollectionByFlowmeterID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Flowmeter_MasterFlowmeter_Detail
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowmeterMaster.FlowmeterMapCollectionByFlowmeterID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Flowmeter_MasterFlowmeter_Map
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowmeterMaster.UpToFlowMeterInputUnitByTableInputUnit">
+ <summary>
+ Many to One
+ Foreign Key Name - FlowMeter_InputUnitFlowmeter_Master
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowmeterMaster.UpToFlowMeterOutputUnitByTableOutputUnit">
+ <summary>
+ Many to One
+ Foreign Key Name - FlowMeter_OutputUnitFlowmeter_Master
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.FlowmeterMaster.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.FlowMeterOutputUnit.FlowmeterMasterCollectionByTableOutputUnit">
+ <summary>
+ Zero to Many
+ Foreign Key Name - FlowMeter_OutputUnitFlowmeter_Master
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.FlowMeterOutputUnit.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.GraphAxis.GraphParameterCollectionByAxisID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - GraphAxisGraphParameter
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.GraphAxis.UpToAxisTypeByAxisTypeID">
+ <summary>
+ Many to One
+ Foreign Key Name - AxisTypeGraphAxis
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.GraphAxis.UpToEngineGraphPresetByGid">
+ <summary>
+ Many to One
+ Foreign Key Name - EngineGraphPresetGraphAxis
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GraphAxis.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GraphAxis.ApplyPreSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PreSave.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GraphAxis.Apply(EntitySpaces.Core.esEntityCollectionBase,System.String,System.Object)">
+ <summary>
+ Called by ApplyPostSaveKeys 
+ </summary>
+ <param name="coll">The collection to enumerate over</param>
+ <param name="key">"The column name</param>
+ <param name="value">The column value</param>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GraphAxis.ApplyPostSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PostSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.GraphParameter.UpToGraphAxisByAxisID">
+ <summary>
+ Many to One
+ Foreign Key Name - GraphAxisGraphParameter
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GraphParameter.ApplyPreSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PreSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Gtcp85129.UpToEngineSeriesByEngineSeries">
+ <summary>
+ Many to One
+ Foreign Key Name - Engine_SeriesGTCP85_129
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Gtcp85129.UpToGTCP85129RepairTypeByRepairTypeID">
+ <summary>
+ Many to One
+ Foreign Key Name - GTCP85_129_RepairTypeGTCP85_129
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.GTCP85129RepairType.UpToEngineSeriesCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - GTCP85_129_RepairTypeGTCP85_129
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GTCP85129RepairType.AssociateEngineSeriesCollection(CEL.Data.BusinessObjects.EngineSeries)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - GTCP85_129_RepairTypeGTCP85_129
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GTCP85129RepairType.DissociateEngineSeriesCollection(CEL.Data.BusinessObjects.EngineSeries)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - GTCP85_129_RepairTypeGTCP85_129
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.GTCP85129RepairType.Gtcp85129CollectionByRepairTypeID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - GTCP85_129_RepairTypeGTCP85_129
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GTCP85129RepairType.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Gtcp8598.UpToEngineInfoByEngineModel">
+ <summary>
+ Many to One
+ Foreign Key Name - Engine_InfoGTCP85_98
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Gtcp8598.UpToGTCP8598RepairTypeByRepairTypeID">
+ <summary>
+ Many to One
+ Foreign Key Name - GTCP85_98_RepairTypeGTCP85_98
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.GTCP8598RepairType.UpToEngineInfoCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - GTCP85_98_RepairTypeGTCP85_98
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GTCP8598RepairType.AssociateEngineInfoCollection(CEL.Data.BusinessObjects.EngineInfo)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - GTCP85_98_RepairTypeGTCP85_98
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GTCP8598RepairType.DissociateEngineInfoCollection(CEL.Data.BusinessObjects.EngineInfo)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - GTCP85_98_RepairTypeGTCP85_98
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.GTCP8598RepairType.Gtcp8598CollectionByRepairTypeID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - GTCP85_98_RepairTypeGTCP85_98
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.GTCP8598RepairType.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.HMIBooleanChannels.UpToBooleanStateByInitialValue">
+ <summary>
+ Many to One
+ Foreign Key Name - BooleanStateHMI_Boolean_Channels
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.HMIBooleanChannels.UpToBooleanStateByFinalValue">
+ <summary>
+ Many to One
+ Foreign Key Name - BooleanStateHMI_Boolean_Channels1
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.HMIBooleanChannels.UpToDynamicCollectionByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - Dynamic_CollectionHMI_Boolean_Channels
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.HMIChannelsMapping.UpToDynamicCollectionByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - Dynamic_CollectionHMI_Channels_Mapping
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.HMIChannelsMapping.UpToProjectInfoByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - Project_InfoHMI_Channels_Mapping
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.HMINumericChannels.UpToDynamicCollectionByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - Dynamic_CollectionHMI_Numeric_Channels
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.HMINumericChannels.UpToEngineeringUnitByEngUnitID">
+ <summary>
+ Many to One
+ Foreign Key Name - EngineeringUnitHMI_Numeric_Channels
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.HMIPageMapping.UutCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - HMI_Page_MappingUUT
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.HMIPageMapping.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.HMITextChannels.UpToDynamicCollectionByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - Dynamic_CollectionHMI_Text_Channels
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.LogReportDetail.LogReportCategoriesCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Log_Report_DetailLog_Report_Categories
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.LogReportDetail.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTLog_Report_Detail
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.LogReportDetail.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.ProjectInfo.UpToDynamicCollectionCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - Project_InfoHMI_Channels_Mapping
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.ProjectInfo.AssociateDynamicCollectionCollection(CEL.Data.BusinessObjects.DynamicCollection)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - Project_InfoHMI_Channels_Mapping
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.ProjectInfo.DissociateDynamicCollectionCollection(CEL.Data.BusinessObjects.DynamicCollection)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - Project_InfoHMI_Channels_Mapping
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.ProjectInfo.HMIChannelsMappingCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Project_InfoHMI_Channels_Mapping
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.ProjectInfo.UsersCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Project_InfoUsers
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.ProjectInfo.UpToEngineInfoCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - Project_InfoUUT
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.ProjectInfo.AssociateEngineInfoCollection(CEL.Data.BusinessObjects.EngineInfo)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - Project_InfoUUT
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.ProjectInfo.DissociateEngineInfoCollection(CEL.Data.BusinessObjects.EngineInfo)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - Project_InfoUUT
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.ProjectInfo.UutCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Project_InfoUUT
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.ProjectInfo.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.SecurityLevel.UsersCollectionBySecurityLevelID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - Security LevelUsers
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.SecurityLevel.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.SecurityLevel.Apply(EntitySpaces.Core.esEntityCollectionBase,System.String,System.Object)">
+ <summary>
+ Called by ApplyPostSaveKeys 
+ </summary>
+ <param name="coll">The collection to enumerate over</param>
+ <param name="key">"The column name</param>
+ <param name="value">The column value</param>
+</member>
+<member name="M:CEL.Data.BusinessObjects.SecurityLevel.ApplyPostSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PostSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.TestProgressCheckListItem.UpToTestProgressCheckTypeByCheckTypeID">
+ <summary>
+ Many to One
+ Foreign Key Name - TestProgressCheckTypeTestProgressCheckListItem
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.TestProgressCheckListItem.UpToTestProgressTestStepByTestStepID">
+ <summary>
+ Many to One
+ Foreign Key Name - TestProgressTestStepTestProgressCheckListItem
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressCheckListItem.ApplyPreSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PreSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.TestProgressCheckType.TestProgressCheckListItemCollectionByCheckTypeID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - TestProgressCheckTypeTestProgressCheckListItem
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressCheckType.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressCheckType.Apply(EntitySpaces.Core.esEntityCollectionBase,System.String,System.Object)">
+ <summary>
+ Called by ApplyPostSaveKeys 
+ </summary>
+ <param name="coll">The collection to enumerate over</param>
+ <param name="key">"The column name</param>
+ <param name="value">The column value</param>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressCheckType.ApplyPostSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PostSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.TestProgressStepType.TestProgressTestStepCollectionByStepTypeID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - TestProgressStepTypeTestProgressTestStep
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressStepType.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressStepType.Apply(EntitySpaces.Core.esEntityCollectionBase,System.String,System.Object)">
+ <summary>
+ Called by ApplyPostSaveKeys 
+ </summary>
+ <param name="coll">The collection to enumerate over</param>
+ <param name="key">"The column name</param>
+ <param name="value">The column value</param>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressStepType.ApplyPostSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PostSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.TestProgressTestStep.TestProgressCheckListItemCollectionByTestStepID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - TestProgressTestStepTestProgressCheckListItem
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.TestProgressTestStep.UpToTestProgressStepTypeByStepTypeID">
+ <summary>
+ Many to One
+ Foreign Key Name - TestProgressStepTypeTestProgressTestStep
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressTestStep.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressTestStep.ApplyPreSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PreSave.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressTestStep.Apply(EntitySpaces.Core.esEntityCollectionBase,System.String,System.Object)">
+ <summary>
+ Called by ApplyPostSaveKeys 
+ </summary>
+ <param name="coll">The collection to enumerate over</param>
+ <param name="key">"The column name</param>
+ <param name="value">The column value</param>
+</member>
+<member name="M:CEL.Data.BusinessObjects.TestProgressTestStep.ApplyPostSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PostSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Users.UpToProjectInfoByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - Project_InfoUsers
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Users.UpToSecurityLevelBySecurityLevelID">
+ <summary>
+ Many to One
+ Foreign Key Name - Security LevelUsers
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Users.ApplyPreSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PreSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.CustomParametersCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTCustom_Parameters
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UpToFlowmeterMapCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - UUTFlowmeter
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Uut.AssociateFlowmeterMapCollection(CEL.Data.BusinessObjects.FlowmeterMap)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - UUTFlowmeter
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Uut.DissociateFlowmeterMapCollection(CEL.Data.BusinessObjects.FlowmeterMap)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - UUTFlowmeter
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.FlowmeterCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTFlowmeter
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.LogReportDetailCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTLog_Report_Detail
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UUTChoiceCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTUUT_Choice
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UpToDynamicCollectionCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - UUTUUT_Dynamic_Channel_Collection
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Uut.AssociateDynamicCollectionCollection(CEL.Data.BusinessObjects.DynamicCollection)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - UUTUUT_Dynamic_Channel_Collection
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Uut.DissociateDynamicCollectionCollection(CEL.Data.BusinessObjects.DynamicCollection)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - UUTUUT_Dynamic_Channel_Collection
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UUTDynamicChannelCollectionCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTUUT_Dynamic_Channel_Collection
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UUTHMIWindowCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTUUT_HMI_Window
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UUTLimitCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTUUT_Limit
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UUTOptionCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTUUT_Option
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UUTQuestionCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTUUT_Question
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UpToUUTTripTypeCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - UUTUUT_Trip
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Uut.AssociateUUTTripTypeCollection(CEL.Data.BusinessObjects.UUTTripType)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - UUTUUT_Trip
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Uut.DissociateUUTTripTypeCollection(CEL.Data.BusinessObjects.UUTTripType)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - UUTUUT_Trip
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UUTTripCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUTUUT_Trip
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UpToEngineInfoByEngineModel">
+ <summary>
+ Many to One
+ Foreign Key Name - Engine_InfoUUT
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UpToHMIPageMappingByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - HMI_Page_MappingUUT
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UpToProjectInfoByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - Project_InfoUUT
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.Uut.UpToSecurityLevelBySecurityLevelID">
+ <summary>
+ Many to One
+ Foreign Key Name - Security LevelUUT
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Uut.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.Uut.ApplyPreSaveKeys">
+ <summary>
+ Used internally for retrieving AutoIncrementing keys
+ during hierarchical PreSave.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTChoice.UUTChoiceItemsCollectionByProjectID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUT_ChoiceUUT_Choice_Items
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTChoice.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTUUT_Choice
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.UUTChoice.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTChoiceItems.UpToUUTChoiceByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUT_ChoiceUUT_Choice_Items
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTDynamicChannelCollection.UpToDynamicCollectionByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - UUT_Dynamic_CollectionUUT_Dynamic_Channel_Collection
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTDynamicChannelCollection.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTUUT_Dynamic_Channel_Collection
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTEngineSeries.UpToEngineInfoByEngineModel">
+ <summary>
+ Many to One
+ Foreign Key Name - Engine_InfoUUT_Engine_Series
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTEngineSeries.UpToEngineSeriesByEngineSeries">
+ <summary>
+ Many to One
+ Foreign Key Name - Engine_SeriesUUT_Engine_Series
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTHMIWindow.UpToMeasurementUnitByMeasurementUnitId">
+ <summary>
+ Many to One
+ Foreign Key Name - MeasurementUnitUUT_HMI_Window
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTHMIWindow.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTUUT_HMI_Window
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTLimit.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTUUT_Limit
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTOption.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTUUT_Option
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTQuestion.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTUUT_Question
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTStaticChannelCollection.UpToDynamicCollectionByCollectionName">
+ <summary>
+ Many to One
+ Foreign Key Name - Dynamic_CollectionUUT_Static_Channel_Collection
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTTrip.UpToUUTTripTypeByTripTypeID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUT_Trip_TypeUUT_Trip
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTTrip.UpToUutByProjectID">
+ <summary>
+ Many to One
+ Foreign Key Name - UUTUUT_Trip
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTTripType.UpToUutCollection">
+ <summary>
+ Many to Many
+ Foreign Key Name - UUT_Trip_TypeUUT_Trip
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.UUTTripType.AssociateUutCollection(CEL.Data.BusinessObjects.Uut)">
+ <summary>
+ Many to Many Associate
+ Foreign Key Name - UUT_Trip_TypeUUT_Trip
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.UUTTripType.DissociateUutCollection(CEL.Data.BusinessObjects.Uut)">
+ <summary>
+ Many to Many Dissociate
+ Foreign Key Name - UUT_Trip_TypeUUT_Trip
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.UUTTripType.UUTTripCollectionByTripTypeID">
+ <summary>
+ Zero to Many
+ Foreign Key Name - UUT_Trip_TypeUUT_Trip
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.UUTTripType.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="P:CEL.Data.BusinessObjects.MeasurementUnit.UUTHMIWindowCollectionByMeasurementUnitId">
+ <summary>
+ Zero to Many
+ Foreign Key Name - MeasurementUnitUUT_HMI_Window
+ </summary>
+</member>
+<member name="M:CEL.Data.BusinessObjects.MeasurementUnit.GetHierarchicalProperties">
+ <summary>
+ Used internally by the entity's hierarchical properties.
+ </summary>
+</member>
+<member name="M:CEL.Data.Pivot.PivotData(System.String,System.String,CEL.Data.Pivot.AggregateFunction,System.String[])">
+ <summary>
+ Pivots the DataTable based on provided RowField, DataField, Aggregate Function and ColumnFields.//
+ </summary>
+ <param name="RowField">The column name of the Source Table which you want to spread into rows</param>
+ <param name="DataField">The column name of the Source Table which you want to spread into Data Part</param>
+ <param name="Aggregate">The Aggregate function which you want to apply in case matching data found more than once</param>
+ <param name="ColumnFields">The List of column names which you want to spread as columns</param>
+ <returns>A DataTable containing the Pivoted Data</returns>
+</member>
+<member name="M:CEL.Data.Pivot.GetData(System.String,System.String,CEL.Data.Pivot.AggregateFunction)">
+ <summary>
+ Retrives the data for matching RowField value and ColumnFields values with Aggregate function applied on them.
+ </summary>
+ <param name="Filter">DataTable Filter condition as a string</param>
+ <param name="DataField">The column name which needs to spread out in Data Part of the Pivoted table</param>
+ <param name="Aggregate">Enumeration to determine which function to apply to aggregate the data</param>
+ <returns></returns>
+</member>
+</members>
+</doc>

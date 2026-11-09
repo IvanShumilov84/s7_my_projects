@@ -1,0 +1,3 @@
+<Window BackColor="Black" Font="Trebuchet MS, 9.75pt, style=Bold" ForeColor="White" RightToLeft="0" AllowDrop="true" TabIndex="0" BorderColor="LightSteelBlue" BorderStyle="1" BorderWidth="0.1" Name="tab" Shape="0" ToolTipText="" UpdateSpeed="1" HorizontalGrid.Size="8" HorizontalGrid.Spacing="2" VerticalGrid.Size="8" VerticalGrid.Spacing="2" TitleEnabled="false" Title="TFE731 Critical" WindowState="2" Left="1" Top="1" Width="2562" Height="995" CurrentPanelIndex="0">
+  <Panel File="PW308C_ANC\PW308C_Screen.dll" Text="PW308C" />
+</Window>

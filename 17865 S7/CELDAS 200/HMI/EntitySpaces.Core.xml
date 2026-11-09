@@ -1,0 +1,3557 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>EntitySpaces.Core</name>
+    </assembly>
+    <members>
+        <member name="T:EntitySpaces.Core.esEntity">
+            <summary>
+            The base class for a single entity.
+            </summary>
+            <remarks>
+            In EntitySpaces, Business Objects such as Employees (derived from <see cref="T:EntitySpaces.Core.esEntity"/>)
+            or EmployeesCollection (derived from <see cref="!:esEntityCollection"/>) map to a table or a view in a database.
+            Views based objects are read-only though in some cases can be made to be updateable.
+            Tables must have primary keys in order to be used with EntitySpaces. An EntitySpaces solution can use 
+            stored procedures or dynamic sql for CRUD operations (create, retrieve, update, delete). 
+            </remarks>
+            <example>
+            An entity can exist alone.
+            <code>
+            Employees entity = new Employees();
+            if(entity.LoadByPrimaryKey(10))
+            {
+                entity.Salary = entity.Salary.Value * 1.05m;
+                entity.Save();
+            }
+            </code>
+            Or it can exist as part of a collection.
+            <code>
+            EmployeesCollection collection = new EmployeesCollection();
+            entity.LastName = "Jones";
+            entity.FirstName = "Alice";
+            collection.Save();
+            </code>
+            The esEntity's Query mechanism can be used to load the data, however the query must return only 1 row. 
+            The boolean return of Query.Load() is set to true if only 1 row is retrieved, false if no rows are retrieved, 
+            and an exception will be thrown if more than 1 row is returned. A generated entity also has a LoadByPrimaryKey
+            method.
+            <code>
+            Employees entity = new Employees();
+            entity.Query.es.Top = 1;
+            entity.Query.OrderBy(entity.Query.Salary.Descending);
+            if(entity.Query.Load())
+            {
+            	// record was loaded, I wish I made his salary !
+            }
+            </code>
+            </example>
+        </member>
+        <member name="F:EntitySpaces.Core.esEntity.ConvertEmptyStringToNull">
+            <summary>
+            Whenever a column that is of the string type has it's setter called this
+            property is evaluated, if true, then an string of lenght zero is set to NULL in the database
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.OnQueryLoaded(EntitySpaces.Interfaces.esDynamicQuery,System.Data.DataTable)">
+            <summary>
+            Invoked when a DynamicQuery has successfully executed on a single
+            Entity. Throws an exception if more than one row is returned.
+            </summary>
+            <remarks>
+            If you overload this you need to call down to this method in order
+            to populate your entity.
+            </remarks>
+            <param name="query">The Query that was just loaded</param>
+            <param name="table">The DataTable which contains what will become the Entity's data</param>
+            <returns>True if a record was found</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ProcessEntityForPrefetch(EntitySpaces.Core.esEntity,EntitySpaces.Interfaces.esPrefetchMap,System.Collections.Generic.Dictionary{System.Object,EntitySpaces.Core.esEntityCollectionBase})">
+            <summary>
+            Used Internally by EntitySpaces to avoid duplicating some code
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.PackageParameters(System.Object[])">
+            <summary>
+            Creates parameters for sql passed in with the {0} {1} {2} syntax
+            </summary>
+            <param name="parameters">A variable length array of object values to be turned into parameters</param>
+            <returns>An esParameters Collection</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.CreateRequest">
+            <summary>
+            Called internally anytime the esEntity class is about to make a call to
+            one of the EntitySpaces' DataProviders. This method wraps up most of the common logic
+            required to make the actual call. 
+            </summary>
+            <returns>esDataRequest</returns>
+            <seealso cref="T:EntitySpaces.Interfaces.esDataRequest"/><seealso cref="T:EntitySpaces.Interfaces.esDataProvider"/><seealso cref="T:EntitySpaces.Interfaces.IDataProvider"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetProviderMetadata">
+            <summary>
+            Returns the esProviderSpecificMetadata for this Entity based on the 
+            providerMetadataKey from the connections configuration values
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.Clone``1">
+            <summary>
+            Performs a shallow clone of the Entity, only values are cloned, no
+            hierarchical properties or collections are cloned
+            </summary>
+            <typeparam name="T">The Entity Type</typeparam>
+            <returns>The newly cloned object</returns>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.Debug">
+            <summary>
+            Used a a nice way to quickly see the values of an Entity, this exists only for
+            debugging purposes and is called when you inspect an entity in the debugger.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.Meta">
+            <summary>
+            Read-only metadata for the entity.
+            </summary>
+            <remarks>
+            The sample below loops through the <see cref="T:EntitySpaces.Interfaces.esColumnMetadataCollection"/> provided
+            by the <see cref="T:EntitySpaces.Interfaces.IMetadata"/> interface. There is a lot of useful information here, in fact,
+            there is enough information for EntitySpaces to build all of the dynamic sql required during
+            operations that use dynamic sql.
+            <code>
+            public partial class Employees : esEmployees
+            {
+            	public void CustomMethod()
+            	{
+            		foreach(esColumnMetadata col in this.Meta.Columns)
+            		{
+            			if(col.IsInPrimaryKey)
+            			{
+            				// do something ...
+            			}
+            		}
+            	}
+            }
+            </code>
+            </remarks>
+            <seealso cref="T:EntitySpaces.Interfaces.esColumnMetadata"/>
+            <seealso cref="T:EntitySpaces.Interfaces.esColumnMetadataCollection"/>
+            <seealso cref="T:EntitySpaces.Interfaces.esProviderSpecificMetadata"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.CreateInstance">
+            <summary>
+            Called to create an instance of this type of object, rarely called
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetLocalBindingProperties">
+            <summary>
+            Used internally for binding.
+            </summary>
+            <returns>A listed of extended properties</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetHierarchicalProperties">
+            <summary>
+            Used internally for binding.
+            </summary>
+            <returns>A listed of hierarchical properties or collections</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetConnectionName">
+            <summary>
+            Called whenever the Entity needs a connection. This can be used to override the default connection 
+            per object manually, or automatically by filling in the "Connection Name" on the "Generated Master"
+            template. 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetProperties(System.Collections.IDictionary)">
+            <summary>
+            Overridden in the generated classes.
+            </summary>
+            <param name="values"></param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetProperty(System.String,System.Object)">
+            <summary>
+            Overridden in the generated classes.
+            </summary>
+            <param name="name"></param>
+            <param name="value"></param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.CreateCollectionForPrefetch(System.String)">
+            <summary>
+            Overridden by the Generated classes to support the DynamicQuery Prefetch logic
+            </summary>
+            <param name="collectionName">The string name of the collection, example, "OrdersCollectionByEmployeeID"</param>
+            <returns>The collection of the right type, ie, "OrdersCollection"</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ApplyDefaults">
+            <summary>
+            Called when the first property is accessed or set when an entity has the
+            RowState of Added. Use this method to initialize any properties of a newly
+            created entity.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetExtraColumns">
+            <summary>
+            Called by the EntitySpaces Proxies to determine of they are any
+            extra column in the entity that need to be serialized
+            </summary>
+            <remarks>
+            Extra columns are any columns that do not represent table columns,
+            they could be brought back via a join or via adding extended
+            properties directly to the entities.
+            </remarks>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetExtraColumnsSerialized">
+            <summary>
+            Serializes the Dictionary return from GetExtraColumns() with the esDataContractSerializer
+            </summary>
+            <returns>The serialized dictionary or null if there are no extra columns</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetExtraColumns(System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            Called by the proxies
+            </summary>
+            <param name="extraColumns"></param>
+        </member>
+        <member name="E:EntitySpaces.Core.esEntity.PropertyChanged">
+            <summary>
+            The PropertyChanged Event Handler
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.OnPropertyChanged(System.String)">
+            <summary>
+            When a property is changed and INotifyPropertyChanged is supported this
+            method is called
+            </summary>
+            <param name="propertyName"></param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetCollection">
+            <summary>
+            Return the Collection for this entity (if it is contained in a collection)
+            </summary>
+            <returns>The collection, or null if not in a collection</returns>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.Collection">
+            <summary>
+            This entities collection, will be null if this entity is not in a collection.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.RowState">
+            <summary>
+            Indicates whether the entity is added, deleted, or modified
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.es">
+            <summary>
+            This is used to keep certain EntitySpaces defined properties from conflicting with the
+            generated properties
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.OnSort(EntitySpaces.Core.esEntity,EntitySpaces.Interfaces.esColumnMetadata,System.String)">
+            <summary>
+            This contains the default implementation for sorting, can be overloaded to provide sorting
+            for individual or all properties
+            </summary>
+            <param name="other">The Entity to compare against</param>
+            <param name="esColumn">The esColumn - will be null for extra properties</param>
+            <param name="propertyName">The column name, will always be valid</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.Compare(System.Object,System.Object)">
+            <summary>
+            Called by the OnSort Method to compare to objects of a given type, this metho
+            doesn't really compare values, but rather handles null values only
+            </summary>
+            <param name="oThis"></param>
+            <param name="oThat"></param>
+            <returns>2 if either oThis and oThat aren't null, othewise 0, 1, or -1</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ContainsColumn(System.String)">
+            <summary>
+            Returns true if this entity contains the column passed in
+            </summary>
+            <param name="columnName">The desired column name</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetOriginalColumnValue(System.String)">
+            <summary>
+            This can be used to get the original value of a column before it was changed. This can also
+            be used to get values of original columns after they have been deleted.
+            </summary>
+            <param name="columnName">The column name (not the property name)</param>
+            <returns>The original value of the column</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetOriginalColumnValue(System.String,System.Object)">
+            <summary>
+            This call should never be used
+            </summary>
+            <param name="columnName">The column name (not the property name)</param>
+            <param name="value">The value to set it to</param>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.SpecialBinder">
+            <summary>
+            This can be used for data binding to fields not in your strongly typed esEntity class.
+            </summary>
+            <remarks>
+            This is especially useful when binding to comboboxes or listboxes. The technique shown
+            below uses the &lt; &gt; syntax. Anything sent to the Query within the &lt; &gt; is 
+            passed directly from the EntitySpaces data provider to the ADO.NET data provider unaltered.
+            Also, anytime you use the &lt; &gt; you are writing provider specific code and losing out
+            on portability, however, we realise not everyone is worried about supporting multi-database
+            code. This &lt; &gt; syntax is not necessary to use the SpecialBinder property.
+            </remarks>
+            <example>
+            <code>
+            InvoicesCollection invColl = new InvoicesCollection(); 
+            invColl.Query.Select(invColl.Query.CustomerID, "&lt;[City] + ', ' + [Country] as SpecialBinder&gt;"); 
+            invColl.Query.Load(); 
+            
+            this.comboBox1.DataSource = invColl; 
+            this.comboBox1.DisplayMember = "SpecialBinder"; 
+            this.comboBox1.ValueMember = InvoicesMetadata.ColumnNames.CustomerID;
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetColumn(System.String,System.Object)">
+            <summary>
+            This is the typeless version. This method should only be used for columns
+            that do not have strongly typed properties. This is useful whenever you bring
+            back extra columns by custom loading your entity.
+            </summary>
+            <param name="columnName">The name of the column such as "MyColumn".</param>
+            <param name="Value">The desired value of the column.</param>
+            <seealso cref="M:EntitySpaces.Core.esEntity.GetColumn(System.String)"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetColumn(System.String,System.Object,System.Boolean)">
+            <summary>
+            This is the typeless version. This method should only be used for columns
+            that do not have strongly typed properties. This is useful whenever you bring
+            back extra columns by custom loading your entity.
+            </summary>
+            <param name="columnName">The name of the column such as "MyColumn".</param>
+            <param name="Value">The desired value of the column.</param>
+            <param name="isVirtualColumn">Set this to True if this is a virtual column.</param> 
+            <seealso cref="M:EntitySpaces.Core.esEntity.GetColumn(System.String)"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetColumn(System.String)">
+            <summary>
+            This is the typeless accessor into the underlying DataTable. This method should only be
+            used for columns that do not have strongly typed properties. This is useful whenever you bring
+            back extra columns by custom loading your entity.
+            </summary>
+            <param name="columnName">The name of the column such as "MyColumn".</param>
+            <returns>The value, you will have to typecast it to the proper type.</returns>
+            <seealso cref="M:EntitySpaces.Core.esEntity.SetColumn(System.String,System.Object)"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetColumn(System.String,System.Object)">
+            <summary>
+            This is the typeless accessor into the underlying DataTable. This method should only be
+            used for columns that do not have strongly typed properties. This is useful whenever you bring
+            back extra columns by custom loading your entity.
+            </summary>
+            <param name="columnName">The name of the column such as "MyColumn".</param>
+            <param name="defaultIfNull">The value to return if the column is null</param>
+            <returns>The column value, or the value of defaultIfNull if the column is null</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemObject(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemObject(System.String,System.Object)">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemInt16(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemInt16Required(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemInt16(System.String,System.Nullable{System.Int16})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemInt32(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemInt32Required(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemInt32(System.String,System.Nullable{System.Int32})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemInt64(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemInt64Required(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemInt64(System.String,System.Nullable{System.Int64})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemUInt16(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemUInt16Required(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemUInt16(System.String,System.Nullable{System.UInt16})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemUInt32(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemUInt32Required(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemUInt32(System.String,System.Nullable{System.UInt32})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemUInt64(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemUInt64Required(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemUInt64(System.String,System.Nullable{System.UInt64})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemBoolean(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemBooleanRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemBoolean(System.String,System.Nullable{System.Boolean})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemChar(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemCharRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemChar(System.String,System.Nullable{System.Char})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemString(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemStringRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemString(System.String,System.String)">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemString2(System.String,System.String)">
+            <summary>
+            Temporary Fix for ES2009. Converts String.Empty to a NULL 
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemDecimal(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemDecimalRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemDecimal(System.String,System.Nullable{System.Decimal})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemDouble(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemDoubleRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemDouble(System.String,System.Nullable{System.Double})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemDateTime(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemDateTimeRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemDateTime(System.String,System.Nullable{System.DateTime})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemDateTimeOffset(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemDateTimeOffsetRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemDateTimeOffset(System.String,System.Nullable{System.DateTimeOffset})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemTimeSpan(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemTimeSpanRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemTimeSpan(System.String,System.Nullable{System.TimeSpan})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemByte(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemByteRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemByte(System.String,System.Nullable{System.Byte})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemSByte(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemSByteRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemSByte(System.String,System.Nullable{System.SByte})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemGuid(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemGuidRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemGuid(System.String,System.Nullable{System.Guid})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemSingle(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemSingleRequired(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemSingle(System.String,System.Nullable{System.Single})">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="data">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetValueChar(System.String,System.Object)">
+            <summary>
+            Called by all "char" setters
+            </summary>
+            <param name="columnName">The name of the column to set</param>
+            <param name="data">the value to set it to</param>
+            <returns>True if the value has truly changed</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetValue(System.String,System.Object)">
+            <summary>
+            Called by all of the property setters
+            </summary>
+            <param name="columnName">The name of the column to set</param>
+            <param name="data">the value to set it to</param>
+            <returns>True if the value has truly changed</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetSystemByteArray(System.String)">
+            <summary>
+            This is used internally to get type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetSystemByteArray(System.String,System.Byte[])">
+            <summary>
+            This is used internally to set type specific column values for a row.
+            </summary>
+            <param name="columnName">The name of the column</param>
+            <param name="byteArray">The value to set the column in the row</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.MarkFieldAsModified(System.String)">
+            <summary>
+            Marks a column as dirty
+            </summary>
+            <param name="columnName">The column name to mark dirty</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.MarkFieldAsUnchanged(System.String)">
+            <summary>
+            Removes a columns dirty status
+            </summary>
+            <param name="columnName">The column name who status you wish to clear</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.MarkAllColumnsAsDirty(EntitySpaces.Interfaces.esDataRowState)">
+            <summary>
+            Marks all columns in the DataRow for the entity as dirty.
+            </summary>
+            <remarks>
+            Below is a nifty way to use MarkAllColumnsAsDirty to read data from one database and
+            and write it to another using the same esEntity object.
+            <code>
+            Customer c = new Customer(); 
+            c.LoadByPrimaryKey(5);   // Read from Microsoft SQL via default connection
+            c.MarkAllColumnsAsDirty(DataRowState.Added); 
+            c.es.Connection.Name = "Oracle"; 
+            c.Save();                // Save the same data to Oracle
+            </code>
+            Only DataRowSate.Added and DataRowState.Modifed are supported.
+            Do not call this with DataRowState.Deleted. Use entity.MarkAsDeleted() instead.
+            </remarks>
+            <param name="state">The DataRowState enumeration to which the DataRow of the entity is set.</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.MarkAsDeleted">
+            <summary>
+            Marks this entity as deleted, if saved, the entity will be deleted from the database.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.AcceptChanges">
+            <summary>
+            Called to accept all proposed changes and mark the dirty as Unchanged. See <see cref="M:EntitySpaces.Core.esEntity.RejectChanges"/> as well.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.RejectChanges">
+            <summary>
+            RejectChanges does just the opposite of <see cref="M:EntitySpaces.Core.esEntity.AcceptChanges"/>. That is, RejectChanges moves the
+            original values back into the current values, it's as if nothing was ever changed.
+            </summary>
+            <seealso cref="M:EntitySpaces.Core.esEntity.AcceptChanges"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.Save">
+            <summary>
+            Saves the entity.
+            </summary>
+            <remarks>
+            Save is always wrapped in a transaction. 
+            You do not need to use transactions unless you need to Save
+            two unrelated objects; e.g. Employees and Products.
+            </remarks>
+            <example>
+            <code>
+            Employees entity = new Employees();
+            entity.LoadByPrimaryKey(32);
+            entity.MarkAsDeleted();
+            entity.Save();
+            </code>
+            </example>
+            <seealso cref="M:EntitySpaces.Core.esEntity.MarkAsDeleted"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.Save(EntitySpaces.Interfaces.esSqlAccessType)">
+            <summary>
+            Saves the entity using the specified SqlAccessType. This method is only used when you need
+            to override the value set in your config file which would be rare.
+            </summary>
+            <remarks>
+            Save is always wrapped in a transaction. 
+            You do not need to use transactions unless you need to Save
+            two unrelated objects; e.g. Employees and Products.
+            </remarks>
+            <example>
+            <code>
+            Employees entity = new Employees();
+            entity.FirstName = this.txtFirstName.Text;
+            entity.LastName = this.txtLastName.Text;
+            entity.Save(esSqlAccessType.StoredProcedure);
+            </code>
+            </example>
+            <param name="sqlAccessType">See <see cref="T:EntitySpaces.Interfaces.esSqlAccessType"/>.</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ApplyPreSaveKeys">
+            <summary>
+            Overridden in the generated class and used during the hierarchical save logic.
+            </summary>
+            <seealso cref="M:EntitySpaces.Core.esEntity.ApplyPostSaveKeys"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ApplyPostSaveKeys">
+            <summary>
+            Overridden in the generated class and used during the hierarchical save logic.
+            </summary>
+            <seealso cref="M:EntitySpaces.Core.esEntity.ApplyPreSaveKeys"/> 
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ApplyPostOneSaveKeys">
+            <summary>
+            Overridden in the generated class and used during the hierarchical save logic.
+            </summary>
+            <seealso cref="M:EntitySpaces.Core.esEntity.ApplyPreSaveKeys"/> 
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SaveToProvider(EntitySpaces.Interfaces.esSqlAccessType)">
+            <summary>
+            This method calls esSaveDataTable on the EntitySpaces DataProvider to physically save the data.
+            </summary>
+            <param name="sqlAccessType"></param>
+            <seealso cref="M:EntitySpaces.Core.esEntity.Save"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.Load(System.Data.Linq.DataContext,System.Linq.IQueryable)">
+             <summary>
+             Allows you to use LinqToSql to load your Entity
+             </summary>
+             <param name="context">The System.Data.Linq.DataContext</param>
+             <param name="query">The LINQ query itself</param>
+             <returns>True if the record was loaded</returns>
+             <remarks>
+             This sample loads an EntitySpaces entity via a LINQ query.
+             <code>
+             DataContext context = new DataContext("User ID=sa;Initial Catalog=Northwind;Data Source=localhost;"); 
+            
+             var linqQuery = context.GetTable&lt;Employees&gt;().Where(s => s.LastName == "Griffin");
+             
+             Employee emp = new Employee();
+             if(emp.Load(context, linqQuery))
+             {
+                 // The record was found
+             }
+             </code>
+             </remarks>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.Load(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            This can be called to custom load your esEntity class. The <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/> provides
+            a lot of flexibiliy allowing you load your esEntity in any way desired. 
+            </summary>
+            <remarks>
+            This sample demonstrates how to load an esEntity via raw sql, however, this is not a
+            recommended approach. It would be better to use a view or a stored procedure.
+            </remarks>
+            <example>
+            <code>
+            public partial class Employees : esEmployees
+            {
+                public bool CustomLoad(string whereClause)
+                {
+            		string sqlText = String.Empty;
+            
+                    sqlText = "SELECT [LastName], [DepartmentID], [HireDate] ";
+                    sqlText += "FROM [Employees] ";
+                    sqlText += whereClause;
+            
+                    return this.Load(esQueryType.Text, sqlText);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <returns>True if a record was loaded.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.Load(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            This can be called to custom load your esEntity class. The <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/> provides
+            a lot of flexibiliy allowing you load your esEntity in any way desired. 
+            </summary>
+            <remarks>
+            This sample demonstrates how to load an esEntity via a stored procedure.
+            </remarks>
+            <example>
+            <code>
+            public partial class Employees : esEmployees
+            {
+                public bool CustomLoad()
+                {
+                    // The stored procedures expects three parameters
+                    return this.Load(esQueryType.StoredProcedure, "sp_MyProc", "Joe", "Smith", 27.53);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parameters">A list of parameters. It is important that you do not tack
+            leading decorators such as @ or ? or whatever your database might require. The EntitySpaces
+            data providers will do this for you.</param>
+            <returns>True if a record was loaded.</returns>
+            <seealso cref="T:EntitySpaces.DynamicQuery.esQueryType"/>
+            <seealso cref="T:EntitySpaces.Interfaces.esParameters"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.Load(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            This can be called to custom load your esEntity class. The <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/> provides
+            a lot of flexibiliy allowing you load your esEntity in any way desired. 
+            </summary>
+            <remarks>
+            This sample demonstrates how to load an esEntity via a stored procedure.
+            </remarks>
+            <example>
+            <code>
+            public partial class Employees : esEmployees
+            {
+                public bool CustomLoad()
+                {
+                    esParameters esParams = new esParameters();   
+                    esParams.Add("FirstName", "Joe");   
+                    esParams.Add("LastName", "Smith");   
+                    esParams.Add("Salary", 27.53);   
+            
+            		return this.Load(esQueryType.StoredProcedure, "sp_MyProc", esParams);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parms">A list of parameters. See <see cref="T:EntitySpaces.Interfaces.esParameters"/>.</param>
+            <returns>True if a record was loaded.</returns>
+            <seealso cref="T:EntitySpaces.DynamicQuery.esQueryType"/>
+            <seealso cref="T:EntitySpaces.Interfaces.esParameters"/>/// 
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.PopulateEntity(System.Data.DataTable)">
+            <summary>
+            Called internally to bind the esEntity to its respective DataRow.
+            </summary>
+            <remarks>
+            Throws an exception if the entity contains more than 1 row.
+            </remarks>
+            <example>
+            <code>
+            </code>
+            </example>
+            <param name="table">The name of the table.</param>
+            <returns>True, if the entity was loaded.</returns>
+            <seealso cref="!:HasData"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            ExecuteNonQuery does not return any data. This method can be used to execute any SQL
+            statement that does not return any data. You cannot populate your esEntity with 
+            this method.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class Employees : esEmployees
+            {
+                public int CustomUpdate(string newName, int empID)
+                {
+            		string sqlText = String.Empty;
+            
+                    sqlText = "UPDATE [Employees] ";
+                    sqlText += "SET [LastName] = '" + newName + "' ";
+                    sqlText += "WHERE [EmployeeID] = " + empID;
+            
+                    return this.ExecuteNonQuery(esQueryType.Text, sqlText);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+            <seealso cref="T:EntitySpaces.DynamicQuery.esQueryType"/>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            ExecuteNonQuery does not return any data. This method can be used to execute any SQL
+            statement that does not return any data. You cannot populate your esEntity with 
+            this method.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class Employees : esEmployees
+            {
+                public int CustomUpdate(string newName, int empID)
+                {
+            		string sqlText = String.Empty;
+            
+                    sqlText = "UPDATE [Employees] ";
+                    sqlText += "SET [LastName] = {0} ";
+                    sqlText += "WHERE [EmployeeID] = {1}";
+            
+                    return this.ExecuteNonQuery(esQueryType.Text, sqlText, newName, empID);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            ExecuteNonQuery does not return any data. This method can be used to execute any SQL
+            statement that does not return any data. You cannot populate your esEntity with 
+            this method.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class Employees : esEmployees
+            {
+                public int CustomUpdate(string newName)
+                {
+            		string sqlText = String.Empty;
+            		esParameters esParams = new esParameters();
+            		esParams.Add("FirstName", newName);
+            		esParams.Add("LastName", "Doe");
+            		esParams.Add("Salary", 27.53);
+            
+                    sqlText = "UPDATE [Employees] ";
+            		sqlText += "SET [FirstName] =  @FirstName ";
+            		sqlText += "WHERE [LastName] = @LastName ";
+            		sqlText += "AND [Salary] = @Salary";
+            
+                    return this.ExecuteNonQuery(esQueryType.Text, sqlText, esParams);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parms">A list of parameters. See <see cref="T:EntitySpaces.Interfaces.esParameters"/>.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class Employees : esEmployees
+            {
+                public int CustomUpdate()
+                {
+            		return this.ExecuteNonQuery(this.es.Schema, "MyStoredProc");
+                }
+            }
+            </code>
+            </example>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class Employees : esEmployees
+            {
+                public int CustomUpdate(string newName, int empID)
+                {
+            		return this.ExecuteNonQuery(this.es.Schema, "MyStoredProc", newName, empID);
+                }
+            }
+            </code>
+            </example>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class Employees : esEmployees
+            {
+                public int CustomUpdate(string newName)
+                {
+            		esParameters esParams = new esParameters();
+            		esParams.Add("FirstName", newName);
+            		esParams.Add("LastName", "Doe");
+            		esParams.Add("Salary", 27.53);
+            
+            		return this.ExecuteNonQuery(this.es.Schema, "MyStoredProc", esParams);
+                }
+            }
+            </code>
+            </example>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters. See <see cref="T:EntitySpaces.Interfaces.esParameters"/>.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteReader(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Can be called by a method in your Custom esEntity or esEntityCollection. This does not populate
+            your entity with data, for that see <see cref="!:esLoadData"/>
+            </summary>
+            <remarks>
+            See the .NET documentation for SqlCommand.ExecuteReader. 
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples, overloads, and parameters.
+            </example>
+            <returns>The IDataReader</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteReader(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteReader(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            <code>
+            public MyCollection : esMyCollection
+            {
+            	public IDataReader CustomExecuteReader()
+            	{
+            		// The "proc_GetByLastName" stored procedure requires a LastName parameter. Notice we do not
+            		// use @, or :, or ? or any type of prefix, the EntitySpaces DataProvider
+            		// knows what kind of prefix to use thereby allowing you to write database
+            		// independent code even when accessing custom stored procedures.
+            		esParameters esParams = new esParameters();			
+            		esParams.Add("LastName", "Doe");
+            			
+            		return this.ExecuteReader(esQueryType.StoredProcedure, "proc_GetByLastName", esParams);
+            	}
+            }
+            </code> 
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteReader(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteReader(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteReader(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar``1(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar``1(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar``1(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar``1(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar``1(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.ExecuteScalar``1(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntity.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.AcceptChangesGraph">
+            <summary>
+            Will call AcceptChanges on the entire object graph.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.RejectChangesGraph">
+            <summary>
+            Will call RejectChanges() on the entire object graph.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.PruneGraph">
+            <summary>
+            Will eliminate all objects that are not modified from the object graph. If an object
+            is not dirty but has children that are then it remains in the graph.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.PruneGraph(EntitySpaces.Interfaces.esDataRowState)">
+            <summary>
+            Will eliminate all objects that have the state or state(s) that you pass in. If you want to
+            Prune all unmodified objects then PruneGraph() with no parameters, it's faster.
+            </summary>
+            <param name="statesToPrune">The states you wish to prune, can be many such as PruneGraph(esDataRowState.Modified | esDataRowState.Deleted)</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.System#ComponentModel#IEditableObject#BeginEdit">
+            <summary>
+            This method backs up all the values so that at anytime during edit that <see cref="!:CancelEdit"/> is called
+            the values can be restored. <see cref="!:EndEdit"/> makes the proposed values the current values.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.System#ComponentModel#IEditableObject#CancelEdit">
+            <summary>
+            Restored the original values that were captured during <see cref="!:BeginEdit"/> when the editing began.
+            <see cref="!:EndEdit"/> makes the proposed values the current values.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.System#ComponentModel#IEditableObject#EndEdit">
+            <summary>
+            When EndEdit is called the proposed values become the current values. 
+            </summary>
+            <seealso cref="!:BeginEdit"/><seealso cref="!:CancelEdit"/>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#Connection">
+            <summary>
+            Allows you access the Connection information that is contained in your config file or that was
+            setup via the configless methods.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#ModifiedColumns">
+            <summary>
+            Contains a list of modified columns
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#Catalog">
+            <summary>
+            The Catalog of this entity
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#Schema">
+            <summary>
+            The Schema of this entity
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#Destination">
+            <summary>
+            The Destination of this entity. This is the Table this entity is saved to
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#Source">
+            <summary>
+            The source of this entity
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#spInsert">
+            <summary>
+            The INSERT stored procedure name
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#spUpdate">
+            <summary>
+            The UPDATE stored procedure name
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#spDelete">
+            <summary>
+            The DELETE stored procedure name
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#spLoadAll">
+            <summary>
+            The LoadAll stored procedure name
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#spLoadByPrimaryKey">
+            <summary>
+            The LoadByPrimaryKey stored procedure name
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#HasData">
+            <summary>
+            This method returns true if the esEntity has been loaded with data and the esEntity is not
+            marked as Deleted. Remember, an esEntity can only represent a single row. However the full Query
+            syntax is allowed to load an esEntity. See <see cref="T:EntitySpaces.Interfaces.esDynamicQuery"/>
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#IsDirty">
+            <summary>
+            This is set to true if it is a new entity, MarkAsDeleted(), or if any of the esEntities table based properties 
+            have been changed. After a successful call to <see cref="M:EntitySpaces.Core.esEntity.Save"/> IsDirty will report false.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#IsGraphDirty">
+            <summary>
+            Returns true if any entity or collection in the object graph returns true from thier 
+            respect IsDirty property.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#IsModified">
+            <summary>
+            Returns true of the RowState is esDataRowState.Modified
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#IsAdded">
+            <summary>
+            Returns true of the RowState is esDataRowState.Added
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#IsDeleted">
+            <summary>
+            Returns true of the RowState is esDataRowState.Deleted
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#RowState">
+            <summary>
+            See the ADO.NET esDataRowState enum for more information. 
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#RowError">
+            <summary>
+            See the ADO.NET DataRow.RowError for more information.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#Meta">
+            <summary>
+            Allow you to gain access to the on-board metadata
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#IsLazyLoadDisabled">
+            <summary>
+            If true, disables lazy loading for all hierarchical properties
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.EntitySpaces#Core#IEntity#CreateCollection(System.String)">
+            <summary>
+            Called by EntitySpaces during the DynamicQuery Prefetch logic
+            </summary>
+            <param name="name"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.NeedsTransactionDuringSave">
+            <summary>
+            True if an esTransactionScope is needed during Save due to hierarchical properties of this entity being dirty.
+            EntitySpaces will automatically create the esTransactionScope transaction if true.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetPreSave(System.String)">
+            <summary>
+            Called internally by EntitySpaces as part of the Hierarchical logic.
+            </summary>
+            <param name="name"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.RemovePreSave(System.String)">
+            <summary>
+            Called internally by EntitySpaces as part of the Hierarchical logic.
+            </summary>
+            <param name="name"></param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetPreSave(System.String,EntitySpaces.Core.esEntity)">
+            <summary>
+            Called internally by EntitySpaces as part of the Hierarchical logic.
+            </summary>
+            <param name="name"></param>
+            <param name="entity"></param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.CommitPreSaves">
+            <summary>
+            Called internally by EntitySpaces, derived classes generated in conjuction with the Hierarchical
+            functionality implement this to Save nested sub-objects that need to be saved before the esEntity
+            itself is saved.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetPostSave(System.String)">
+            <summary>
+            Called internally by EntitySpaces as part of the Hierarchical logic.
+            </summary>
+            <param name="name"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.RemovePostSave(System.String)">
+            <summary>
+            Called internally by EntitySpaces as part of the Hierarchical logic.
+            </summary>
+            <param name="name"></param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetPostSave(System.String,EntitySpaces.Core.esEntityCollectionBase)">
+            <summary>
+            Called internally by EntitySpaces as part of the Hierarchical logic.
+            </summary>
+            <param name="name"></param>
+            <param name="coll"></param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.CommitPostSaves">
+            <summary>
+            Called internally by EntitySpaces, derived classes generated in conjuction with the Hierarchical
+            functionality implement this to Save nested sub-objects that need to be saved after the esEntity
+            itself is saved.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.GetPostOneSave(System.String)">
+            <summary>
+            Called internally by EntitySpaces as part of the Hierarchical logic.
+            </summary>
+            <param name="name"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.RemovePostOneSave(System.String)">
+            <summary>
+            Called internally by EntitySpaces as part of the Hierarchical logic.
+            </summary>
+            <param name="name"></param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.SetPostOneSave(System.String,EntitySpaces.Core.esEntity)">
+            <summary>
+            Called internally by EntitySpaces as part of the Hierarchical logic.
+            </summary>
+            <param name="name"></param>
+            <param name="ent"></param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.CommitPostOneSaves">
+            <summary>
+            Called internally by EntitySpaces, derived classes generated in conjuction with the Hierarchical
+            functionality implement this to Save nested sub-objects that need to be saved after the esEntity
+            itself is saved.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntity.Validate(System.String,EntitySpaces.Core.esEntity,EntitySpaces.Interfaces.esColumnMetadata)">
+            <summary>
+            Overridden in the generated classes to provide validation.
+            </summary>
+            <remarks>
+            See the ES 2007 v1.1021.0 Release notes for details at
+            http://www.entityspaces.net
+            </remarks>
+            <param name="columnName"></param>
+            <param name="entity"></param>
+            <param name="metadata"></param> 
+            <returns></returns>
+        </member>
+        <member name="T:EntitySpaces.Core.esEntity.ValidateDelegate">
+            <summary>
+            Validation by delegate
+            </summary>
+            <remarks>
+            See the ES 2007 v1.1021.0 Release notes for details at
+            http://www.entityspaces.net
+            </remarks>
+            <param name="columnName"></param>
+            <param name="entity"></param>
+            <param name="metadata"></param> 
+            <returns></returns>
+        </member>
+        <member name="E:EntitySpaces.Core.esEntity.OnValidateDelegate">
+            <summary>
+            Used to provide validation.
+            </summary> 
+            <remarks>
+            See the ES 2007 v1.1021.0 Release notes for details at
+            http://www.entityspaces.net
+            </remarks>
+        </member>
+        <member name="F:EntitySpaces.Core.esEntity.m_modifiedColumns">
+            <summary>
+            A list of column names that have been modified (or that are dirty) since this entity was
+            retrieved from the database or since it was instantied if created new.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esEntityCollection`1">
+            <summary>
+            The esEntityCollection is a collection of <see cref="T:EntitySpaces.Core.esEntity"/> objects. The esEntityCollection
+            represents 1 or more records from your database, each record is associated with an esEntity object 
+            within the collection.
+            </summary>
+            <remarks>
+            The sample below demonstrates how to load all of the Employee's in the database
+            and order them in decending order by salary.
+            <code>
+            EmployeesCollection coll = new EmployeesCollection();
+            coll.Query.OrderBy(coll.Query.Salary.Descending);
+            if(coll.Query.Load())
+            {
+            	foreach(Employees emp in coll)
+            	{
+            		// do something
+            	}
+             
+            	// Let's add a record and save it
+            	Employees newEmp = coll.AddNew();
+            	newEmp.FirstName = "James";
+            	newEmp.LastName  = "Murphy";
+            	
+            	// Save it, you call save on the collection
+            	coll.Save();
+            }
+            </code>
+            </remarks>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.AllowEdit">
+            <summary>
+            True if list items can be edited; otherwise, false. The default is true. If you set this value you are also setting IBindingList.AllowEdit.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.AllowNew">
+            <summary>
+            True if you can add items to the list with the AddNew method; otherwise, false. The default depends on the underlying type contained in the list. If you set this value you are also setting IBindingList.AllowNew.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.AllowDelete">
+            <summary>
+            True if you can add items to the list with the AddNew method; otherwise, false. The default depends on the underlying type contained in the list. 
+            If you set this value you are also setting IBindingList.AllowRemove.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.Debug">
+            <summary>
+            Called internally when debugging, allows you to easily view the collection while debugging
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.CreateEntity">
+            <summary>
+            Called by the collection when it needs to create an entity
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.AddNew">
+            <summary>
+            Call this method to add another entity to your collection
+            </summary>
+            <returns>The newly created entity</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Clone``1">
+            <summary>
+            Creates a shallow copy of the collection
+            </summary>
+            <typeparam name="C"></typeparam>
+            <returns>The newly created collection</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Combine(EntitySpaces.Core.esEntityCollection{`0})">
+             <summary>
+             Combines two collections into a single collection.
+             </summary>
+             <remarks>
+             After this method executes the collection passed in is no
+             longer valid and should no longer be used or reloaded.
+             </remarks>
+             <example>
+             This code combines the first three and last three rows from a
+             table into a single collection.
+             <code>
+             EmployeesCollection dest = new EmployeesCollection();
+             dest.Query.es.Top = 3;
+             dest.Query.OrderBy(dest.Query.EmployeeID, esOrderByDirection.Ascending);
+             dest.Query.Load();
+             
+             EmployeesCollection src = new EmployeesCollection();
+             src.Query.es.Top = 3;
+             src.Query.OrderBy(src.Query.EmployeeID, esOrderByDirection.Descending);
+             src.Query.Load();
+            
+             dest.Combine(src);
+             </code>
+             </example>
+             <param name="collectionToAdd">The collection to add, collectionToAdd is empty after this call</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.OnQueryLoaded(EntitySpaces.Interfaces.esDynamicQuery,System.Data.DataTable)">
+            <summary>
+            Called when the Query for this collection has finished loading
+            </summary>
+            <param name="query">The Query that was just loaded</param>
+            <param name="table">The DataTable returned from the EntitySpaces data provider</param>
+            <returns>True if at least one record was returned</returns>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.Filter">
+            <summary>
+            Use LINQ expressions to filter your collection
+            </summary>
+            <remarks>
+            The examples below demonstrates how to Filter and Sort, seperately and together. To clear the filter
+            merely set this property to 'null' or 'Nothing'
+            <code>
+            // Sorting by the Employee’s first name
+            coll.Filter = coll.AsQueryable().OrderByDescending(d => d.FirstName);
+            
+            // Filtering for all Empoyees missing their FirstName
+            coll.Filter = coll.AsQueryable().Where(d => d.FirstName == null);
+            
+            // Both Filtering and Sorting
+            coll.Filter = coll.AsQueryable().Where(d => d.FirstName == null).OrderByDescending(d => d.LastName);
+            </code>
+            </remarks>    
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.HasFilter">
+            <summary>
+            Returns true if the collection is currently filtered via the Filter property
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.Count">
+            <summary>
+            The number of entities in the collection
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.HasData">
+            <summary>
+            This method returns true if this Collection has been loaded with data 
+            and has at least one row of data that isn't marked as deleted.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.IsDirty">
+            <summary>
+            This is set to true if AddNew(), MarkAsDeleted(), or if any of the contained esEntities table based properties 
+            have been modified. After a successful call to <see cref="M:EntitySpaces.Core.esEntityCollection`1.Save"/> IsDirty will report false.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.Item(System.Int32)">
+            <summary>
+            The indexer for the collection. Using the foreach() syntax is preferred and faster.
+            </summary>
+            <param name="index">The zero based index of the desired entity</param>
+            <returns>The entity</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.PopulateCollection(System.Data.DataTable)">
+            <summary>
+            This method is always called when a collection is loaded and is responsible for turning the
+            ADO.NET DataTable into an EntitySpaces collection
+            </summary>
+            <param name="table">The DataTable containing the data to be loaded</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.CreateRequest">
+            <summary>
+            Called internally anytime the esEntityCollection class is about to make a call to
+            one of the EntitySpaces' DataPoviders. This method wraps up most of the common logic
+            required to make the actual call. 
+            </summary>
+            <returns>esDataRequest</returns>
+            <seealso cref="T:EntitySpaces.Interfaces.esDataRequest"/><seealso cref="T:EntitySpaces.Interfaces.esDataProvider"/><seealso cref="T:EntitySpaces.Interfaces.IDataProvider"/>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.Errors">
+            <summary>
+            If an error occurs during Save you can iterate through the errors. You use foreach
+            to iterator over the esEntity's who had an error during save checking their RowError
+            property
+            </summary>
+            <example>
+            <code>
+            EmployeesCollection coll = new EmployeesCollection();
+            // change some data ...
+            try
+            {
+               coll.Save();
+            }
+            catch
+            {
+               foreach (Employees emp in coll1.Errors)
+               { 
+                   Console.WriteLine(emp.RowError);
+               }
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.AttachEntity(`0)">
+            <summary>
+            Attaches the entity to this collection.
+            </summary>
+            <param name="entity">The entity you wish to attach to the collection.</param>
+            <returns>The entity just added</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.DetachEntity(`0)">
+            <summary>
+            Detaches the entity.
+            </summary>
+            <param name="entity">The entity you wish to detach from the collection.</param>
+            <returns>The entity just detached</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.AcceptChanges">
+            <summary>
+            Makes all of the proposed values be the current values. You should not call this before Save(). In fact,
+            in most case you will never call this method.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.RejectChanges">
+            <summary>
+            Rolls back all changes that have been made to the table since it was loaded, or the last time AcceptChanges was called.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.BulkInsert">
+            <summary>
+            Currently only supported for Microsoft SQL Server. Can only be used for bulk inserts.
+            This method does not fill in auto-identity columns or default columns values.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.BulkInsert(System.String[])">
+            <summary>
+            Currently only supported for Microsoft SQL Server. Can only be used for bulk inserts.
+            This method does not fill in auto-identity columns or default columns values.
+            </summary>
+            <param name="bulkInsertOptions">An example would be BulkInsert("KeepNulls", "FireTriggers") see the BulkCopyOptions for the ADO.NET provider in question</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Save">
+            <summary>
+            Called to save all of the modified entities in the collection. 
+            </summary>
+            <remarks>
+            The esSqlAccessType is determined by the current connections 'sqlAccessType'
+            as stored in the app/web config file.  The value is either DynamicSQL or StoredProcedure.
+            </remarks>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Save(System.Boolean)">
+            <summary>
+            Called to save all of the modified entities in the collection. 
+            </summary>
+            <param name="continueUpdateOnError">If true, continues updating when other records fail to update</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Save(EntitySpaces.Interfaces.esSqlAccessType)">
+            <summary>
+            Called to save all of the modified entities in the collection.
+            </summary>
+            <remarks>
+            The esSqlAccessType is determined by the current connections 'sqlAccessType'
+            as stored in the app/web config file.  The value is either DynamicSQL or StoredProcedure.
+            </remarks>
+            <param name="sqlAccessType">DynamicSQL or StoredProcedure</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Save(EntitySpaces.Interfaces.esSqlAccessType,System.Boolean)">
+            <summary>
+            Called to save all of the modified entities in the collection.
+            </summary>
+            <remarks>
+            The esSqlAccessType is determined by the current connections 'sqlAccessType'
+            as stored in the app/web config file.  The value is either DynamicSQL or StoredProcedure.
+            </remarks>
+            <param name="sqlAccessType">DynamicSQL or StoredProcedure</param>
+            <param name="continueUpdateOnError">If true, continues updating when other records fail to update</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.LoadAll">
+            <summary>
+            Loads all of the entities from the database.
+            </summary>
+            <remarks>
+            The esSqlAccessType is determined by the current connections 'sqlAccessType'
+            as stored in the app/web config file.  The value is either DynamicSQL or StoredProcedure.
+            </remarks>
+            <returns>True if at least one entity was loaded, otherwise false.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.LoadAll(EntitySpaces.Interfaces.esSqlAccessType)">
+            <summary>
+            Loads all of the entities from the database.
+            </summary>
+            <remarks>
+            This overload lets you override the sqlAccessType stored in the app/web config
+            file at runtime. The value is either DynamicSQL or StoredProcedure.
+            </remarks>
+            <example>
+            <code>
+            EmployeesCollection collection = new EmployeesCollection;
+            Employees entity = new Employees;
+            
+            collection.LoadAll(esSqlAccessType.StoredProcedure);
+            </code>
+            </example>
+            <param name="sqlAccessType">Either DynamicSQL or StoredProcedure.</param>
+            <returns>True if at least one entity was loaded, otherwise false.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Load(System.Data.Linq.DataContext,System.Linq.IQueryable)">
+             <summary>
+             Allows you to use LinqToSql to load your Collection
+             </summary>
+             <param name="context">The System.Data.Linq.DataContext</param>
+             <param name="query">The LINQ query itself</param>
+             <returns>True if the record was loaded</returns>
+             <remarks>
+             This sample loads an EntitySpaces entity via a LINQ query.
+             <code>
+             EmployeesCollection coll = new EmployeesCollection();
+             
+             DataContext context = new DataContext(coll.es.Connection.ConnectionString);
+            
+             var linqQuery = context.GetTable&lt;Employees&gt;().Where(s => s.LastName == "Griffin")
+                 .OrderBy(s => s.LastName); 
+             
+             if(coll.Load(context, linqQuery))
+             {
+                 foreach (Employees emp in coll)
+                 {
+                     Console.WriteLine(emp.FirstName);
+                 }
+             }
+             </code>
+             </remarks>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Load(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Called by the EntitySpaces Dynamic Query mechanism to load a collection.
+            It can also be called from a method in your Custom entity.
+            </summary>
+            <remarks>
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public bool CustomLoad(string whereClause)
+                {
+            		string sqlText = String.Empty;
+            
+                    sqlText = "SELECT [LastName], [DepartmentID], [HireDate] ";
+                    sqlText += "FROM [Employees] ";
+                    sqlText += whereClause;
+            
+                    return this.Load(esQueryType.Text, sqlText);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <returns>True if the entity was loaded.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Load(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Called by the EntitySpaces Dynamic Query mechanism to load a collection.
+            It can also be called from a method in your Custom entity.
+            </summary>
+            <remarks>
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public bool CustomLoad()
+                {
+            		string sqlText = String.Empty;
+            
+            		sqlText = "SELECT [LastName], [DepartmentID], [HireDate] ";
+            		sqlText += "FROM [Employees] ";
+            		sqlText += "WHERE [DepartmentID] = {0} ";
+            		sqlText += "AND [EmployeeID] = {1}";
+            
+            		return this.Load(esQueryType.Text, sqlText, 1, 23);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>True if the entity was loaded.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.Load(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Called by the EntitySpaces Dynamic Query mechanism to load a collection.
+            It can also be called from a method in your Custom entity.
+            </summary>
+            <remarks>
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public bool CustomLoad(int empID)
+                {
+            		string sqlText = String.Empty;
+            		esParameters esParams = new esParameters();
+            		esParams.Add("EmployeeID", empID);
+            
+            		sqlText = "SELECT [LastName], [DepartmentID], [HireDate] ";
+            		sqlText += "FROM [Employees] ";
+            		sqlText += "WHERE [EmployeeID] = @EmployeeID";
+            
+            		return this.Load(esQueryType.Text, sqlText, esParams);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parms">A list of parameters.</param>
+            <returns>True if the entity was loaded.</returns>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollection`1.IsGraphDirty">
+            <summary>
+            Returns true if any entity or collection in the object graph returns true from thier 
+            respect IsDirty property.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.AcceptChangesGraph">
+            <summary>
+            Will call AcceptChanges on the entire object graph.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.RejectChangesGraph">
+            <summary>
+            Will call RejectChanges() on the entire object graph.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.PruneGraph">
+            <summary>
+            Will eliminate all objects that are not modified from the object graph. If an object
+            is not dirty but has children that are then it remains in the graph.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.PruneGraph(EntitySpaces.Interfaces.esDataRowState)">
+            <summary>
+            Will eliminate all objects that have the state or state(s) that you pass in. If you want to
+            Prune all unmodified objects then PruneGraph() with no parameters, it's faster.
+            </summary>
+            <param name="statesToPrune">The states you wish to prune, can be many such as PruneGraph(esDataRowState.Modified | esDataRowState.Deleted)</param>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public int CustomUpdate(string newName, int empID)
+                {
+            		string sqlText = String.Empty;
+            
+                    sqlText = "UPDATE [Employees] ";
+                    sqlText += "SET [LastName] = '" + newName + "' ";
+                    sqlText += "WHERE [EmployeeID] = " + empID;
+            
+                    return this.ExecuteNonQuery(esQueryType.Text, sqlText);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public int CustomUpdate(string newName, int empID)
+                {
+            		string sqlText = String.Empty;
+            
+                    sqlText = "UPDATE [Employees] ";
+                    sqlText += "SET [LastName] = {0} ";
+                    sqlText += "WHERE [EmployeeID] = {1}";
+            
+                    return this.ExecuteNonQuery(esQueryType.Text, sqlText, newName, empID);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public int CustomUpdate(string newName)
+                {
+            		string sqlText = String.Empty;
+            		esParameters esParams = new esParameters();
+            		esParams.Add("FirstName", newName);
+            		esParams.Add("LastName", "Doe");
+            		esParams.Add("Salary", 27.53);
+            
+                    sqlText = "UPDATE [Employees] ";
+            		sqlText += "SET [FirstName] =  @FirstName ";
+            		sqlText += "WHERE [LastName] = @LastName ";
+            		sqlText += "AND [Salary] = @Salary";
+            
+                    return this.ExecuteNonQuery(esQueryType.Text, sqlText, esParams);
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parms">A list of parameters. See <see cref="T:EntitySpaces.Interfaces.esParameters"/>.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public int CustomUpdate()
+                {
+            		return this.ExecuteNonQuery(this.es.Schema, "MyStoredProc");
+                }
+            }
+            </code>
+            </example>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public int CustomUpdate(string newName, int empID)
+                {
+            		return this.ExecuteNonQuery(this.es.Schema, "MyStoredProc", newName, empID);
+                }
+            }
+            </code>
+            </example>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public int CustomUpdate(string newName)
+                {
+            		esParameters esParams = new esParameters();
+            		esParams.Add("FirstName", newName);
+            		esParams.Add("LastName", "Doe");
+            		esParams.Add("Salary", 27.53);
+            
+            		return this.ExecuteNonQuery(this.es.Schema, "MyStoredProc", esParams);
+                }
+            }
+            </code>
+            </example>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters. See <see cref="T:EntitySpaces.Interfaces.esParameters"/>.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(System.String,System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public int CustomUpdate()
+                {
+            		return this.ExecuteNonQuery(this.es.Catalog, this.es.Schema, "MyStoredProc");
+                }
+            }
+            </code>
+            </example>
+            <param name="catalog">"Northwind" for example. See <see cref="P:EntitySpaces.Core.IEntity.Catalog"/>.</param>
+            <param name="schema">"dbo" for example. See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(System.String,System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public int CustomUpdate(string newName, int empID)
+                {
+            		return this.ExecuteNonQuery(this.es.Catalog, this.es.Schema, "MyStoredProc", newName, empID);
+                }
+            }
+            </code>
+            </example>
+            <param name="catalog">"Northwind" for example. See <see cref="P:EntitySpaces.Core.IEntity.Catalog"/>.</param>
+            <param name="schema">"dbo" for example. See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(System.String,System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteNonQuery.
+            </remarks>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public int CustomUpdate(string newName)
+                {
+            		esParameters esParams = new esParameters();
+            		esParams.Add("FirstName", newName);
+            		esParams.Add("LastName", "Doe");
+            		esParams.Add("Salary", 27.53);
+            
+            		return this.ExecuteNonQuery(this.es.Catalog, this.es.Schema, "MyStoredProc", esParams);
+                }
+            }
+            </code>
+            </example>
+            <param name="catalog">"Northwind" for example. See <see cref="P:EntitySpaces.Core.IEntity.Catalog"/>.</param>
+            <param name="schema">"dbo" for example. See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>The result of ExecuteNonQuery.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteReader(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteReader(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteReader(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteReader(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteReader(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteReader(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteReader(System.String,System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteReader(System.String,System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteReader(System.String,System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteReader.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteReader.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar(System.String,System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar(System.String,System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar(System.String,System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar``1(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar``1(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar``1(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar``1(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar``1(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.ExecuteScalar``1(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <remarks>
+            See the .NET documentation for ExecuteScalar.
+            </remarks>
+            <example>
+            See <see cref="M:EntitySpaces.Core.esEntityCollection`1.ExecuteNonQuery(EntitySpaces.DynamicQuery.esQueryType,System.String)"/> for examples,
+            overloads, and parameters.
+            </example>
+            <returns>The result of ExecuteScalar.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataTable(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public DataTable CustomFillTable()
+                {
+            		string sqlText = String.Empty;
+            
+                    sqlText = "SELECT * ";
+                    sqlText += "FROM [Employees] ";
+                    sqlText += "WHERE [LastName] = {0} ";
+                    sqlText += "OR [LastName] = {1}";
+            
+                    return this.FillDataTable(esQueryType.Text, sqlText, "Doe", "Johnson");
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <returns>A DataTable containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataTable(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataTable containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataTable(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parms">A list of parameters.</param>
+            <returns>A DataTable containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataTable(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public DataTable CustomFillTable()
+                {
+            		return this.FillDataTable(this.es.Schema, "MyStoredProc");
+                }
+            }
+            </code>
+            </example>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <returns>A DataTable containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataTable(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataTable containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataTable(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataTable containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataTable(System.String,System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <param name="catalog">"Northwind" for example. See <see cref="P:EntitySpaces.Core.IEntity.Catalog"/>.</param>
+            <param name="schema">"dbo" for example. See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <returns>A DataTable containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataTable(System.String,System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <param name="catalog">"Northwind" for example. See <see cref="P:EntitySpaces.Core.IEntity.Catalog"/>.</param>
+            <param name="schema">"dbo" for example. See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataTable containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataTable(System.String,System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <param name="catalog">"Northwind" for example. See <see cref="P:EntitySpaces.Core.IEntity.Catalog"/>.</param>
+            <param name="schema">"dbo" for example. See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataTable containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataSet(EntitySpaces.DynamicQuery.esQueryType,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public DataSet CustomFillDataSet()
+                {
+            		string sqlText = String.Empty;
+            
+                    sqlText = "SELECT * ";
+                    sqlText += "FROM [Employees] ";
+                    sqlText += "WHERE [LastName] = {0}";
+            
+                    return this.FillDataSet(esQueryType.Text, sqlText, "Doe");
+                }
+            }
+            </code>
+            </example>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <returns>A DataSet containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataSet(EntitySpaces.DynamicQuery.esQueryType,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataSet containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataSet(EntitySpaces.DynamicQuery.esQueryType,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <param name="queryType">See <see cref="T:EntitySpaces.DynamicQuery.esQueryType"/>.</param>
+            <param name="query">Either the SQL for the Query or the name of a stored procedure.</param>
+            <param name="parms">A list of parameters.</param>
+            <returns>A DataSet containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataSet(System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <example>
+            <code>
+            public partial class EmployeesCollection : esEmployeesCollection
+            {
+                public DataSet CustomFillDataSet()
+                {
+            		return this.FillDataSet(this.es.Schema, "MyStoredProc");
+                }
+            }
+            </code>
+            </example>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <returns>A DataSet containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataSet(System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataSet containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataSet(System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom entity.
+            This does not populate your entity.
+            </summary>
+            <param name="schema">See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataSet containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataSet(System.String,System.String,System.String)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <param name="catalog">"Northwind" for example. See <see cref="P:EntitySpaces.Core.IEntity.Catalog"/>.</param>
+            <param name="schema">"dbo" for example. See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <returns>A DataSet containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataSet(System.String,System.String,System.String,System.Object[])">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <param name="catalog">"Northwind" for example. See <see cref="P:EntitySpaces.Core.IEntity.Catalog"/>.</param>
+            <param name="schema">"dbo" for example. See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataSet containing the result set.</returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollection`1.FillDataSet(System.String,System.String,System.String,EntitySpaces.Interfaces.esParameters)">
+            <summary>
+            Can be called by a method in your Custom collection.
+            This does not populate your entity.
+            </summary>
+            <param name="catalog">"Northwind" for example. See <see cref="P:EntitySpaces.Core.IEntity.Catalog"/>.</param>
+            <param name="schema">"dbo" for example. See <see cref="P:EntitySpaces.Core.IEntity.Schema"/>.</param>
+            <param name="storedProcedure">The name of a stored procedure.</param>
+            <param name="parameters">A list of parameters.</param>
+            <returns>A DataSet containing the result set.</returns>
+        </member>
+        <member name="E:EntitySpaces.Core.esEntityCollection`1.ListChanged">
+            <summary>
+            Called whenever the esEntityCollection data is changed.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Core.esEntityCollection`1.fks">
+            <summary>
+            This is used by the Hierarchical Code.
+            </summary>
+            
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollectionBase.Dispose">
+            <summary>
+            For <see cref="T:System.IDisposable"/> support.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollectionBase.GetConnectionName">
+            <summary>
+            Called whenever the Entity needs a connection. This can be used to override the default connection 
+            per object manually, or automatically by filling in the "Connection Name" on the "Generated Master"
+            template. 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollectionBase.PopulateCollectionPrefetch(System.Data.DataRow,System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Overridden by the Generated classes to support the DynamicQuery Prefetch logic
+            </summary>
+            <param name="row">The row used to create the Entity in question</param>
+            <param name="ordinals">The column ordinals, if null then create and return</param>
+            <returns>The column ordinal positions</returns>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollectionBase.es">
+            <summary>
+            The IEntityCollection interface serves to semi-hide many of the base class properties required by EntitySpaces. 
+            This serves two purposes, it keeps intellisense from getting polluted by noise and prevents the EntitySpaces
+            "core" functionaltiy from colliding with your properties during code generation.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollectionBase.EnableHierarchicalBinding">
+            <summary>
+            This method is valid for Windows.Forms applications only
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esEntityCollectionEnumeratorGeneric`1">
+            <summary>
+            Added to the Generated Collections to support <B>LINQ</B> Queries into the collections.
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollectionEnumeratorGeneric`1.#ctor(System.Collections.Generic.List{`0})">
+            <summary>
+            Added to the Generated Collections to support <B>LINQ</B> Queries into the collections.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esEntityCollectionView`1.#ctor(EntitySpaces.Core.esEntityCollection{`0})">
+            <summary>
+            The only Constructor for the esEntityCollectionView class
+            </summary>
+            <param name="collection">The Collection the View is based upon</param>
+        </member>
+        <member name="E:EntitySpaces.Core.esEntityCollectionView`1.ListChanged">
+            <summary>
+            Called whenever the esEntityCollection data is changed.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollectionView`1.AllowEdit">
+            <summary>
+            True if list items can be edited; otherwise, false. The default is true. If you set this value you are also setting IBindingList.AllowEdit.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollectionView`1.AllowNew">
+            <summary>
+            True if you can add items to the list with the AddNew method; otherwise, false. The default depends on the underlying type contained in the list. If you set this value you are also setting IBindingList.AllowNew.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esEntityCollectionView`1.AllowDelete">
+            <summary>
+            True if you can add items to the list with the AddNew method; otherwise, false. The default depends on the underlying type contained in the list. 
+            If you set this value you are also setting IBindingList.AllowRemove.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esEntityComparer`1">
+            <summary>
+            Used by EntitySpaces when sorting Collections
+            </summary>
+            <typeparam name="T">The type of entity being compared</typeparam>
+        </member>
+        <member name="T:EntitySpaces.Core.esEntityDebuggerView">
+            <summary>
+            A tiny helper class used when you inspect entity's in the debugger
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esMetadata">
+            <summary>
+            Serves as a base class to the generated meta data classes.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esMetadata.MapToMeta">
+            <summary>
+            Used to eliminate the need for Reflection so EntitySpaces can run under
+            medium trust
+            </summary>
+            <param name="mapName">The name of the 'providerMetadataKey' from the config file</param>
+            <returns>A delegate that can be called to get the esProviderSpecificMetadata matching the 'providerMetadataKey'</returns>
+        </member>
+        <member name="T:EntitySpaces.Core.DynamicGetValue">
+            <summary>
+            Used when DataBinding internally by EntitySpaces
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.DynamicSetValue">
+            <summary>
+            Used when DataBinding internally by EntitySpaces
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esPropertyDescriptor">
+            <summary>
+            Used when DataBinding internally by EntitySpaces
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esUpdateViewEventHandler">
+            <summary>
+            Used by the <see cref="!:esEntityCollectionView"/> class to monitor changes in the Collection that
+            they are acting as a view upon.
+            </summary>
+            <param name="sender"></param>
+            <param name="changeType"></param>
+            <param name="entity"></param>
+        </member>
+        <member name="T:EntitySpaces.Core.esExtendedPropertyAttribute">
+            <summary>
+            Used to define extended properties
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esUtility">
+            <summary>
+            Provides all of the protected methods available to you in your Custom classes that query the database.
+            This class can be useful to query the database when certain calls don't seem to fit in your business
+            objects.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esVisitableNodeType">
+            <summary>
+            Indicated whether a node being visited is an Entity or a Collection
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Core.esVisitableNodeType.Unassigned">
+            <summary>
+            Unassigned - Should never ocurr
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Core.esVisitableNodeType.Collection">
+            <summary>
+            This object being visited is a Collection
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Core.esVisitableNodeType.Entity">
+            <summary>
+            The object being visited is an Entity
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esVisitableNode">
+            <summary>
+            Contains information about the Node being visited
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esVisitableNode.NodeType">
+            <summary>
+            The type of node, Collection or Entity
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esVisitableNode.Collection">
+            <summary>
+            If NodeType is esVisitableNodeType.Collection then this property is valid
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esVisitableNode.Entity">
+            <summary>
+            If NodeType is esVisitableNodeType.Entity then this property is valid
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esVisitableNode.PropertyName">
+            <summary>
+            If the object being visited is a hierarchical property this is the name
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.esVisitableNode.UserState">
+            <summary>
+            You can use this during visitation to attach user state to this node
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esVisitableNode.SetValueToNull(System.Object)">
+            <summary>
+            Allows you to set a property in the object graph to null, this is used
+            by the PruneGraph() method.
+            </summary>
+            <param name="parent">The parent of this node</param>
+        </member>
+        <member name="T:EntitySpaces.Core.esVisitParameters">
+            <summary>
+            Passed to each callback method during visitation. Contains everything you need
+            to implement your logic.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Core.esVisitParameters.Root">
+            <summary>
+            The root node passed into static Visit() method, can be a Collection or an Entity
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Core.esVisitParameters.Parent">
+            <summary>
+            The parent of the "Node" being visited, can be a collection or an entity
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Core.esVisitParameters.Node">
+            <summary>
+            The "Node being visited, can be either a collection or an entity
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Core.esVisitParameters.UserState">
+            <summary>
+            You can store data here and it will passed throughout the visitation process.
+            </summary>
+        </member>
+        <member name="F:EntitySpaces.Core.esVisitParameters.ProcessChildren">
+            <summary>
+            Set to false and the current nodes children will not be visited. This does not
+            however terminate the entire visit process.
+            </summary>
+        </member>
+        <member name="T:EntitySpaces.Core.esVisitor">
+            <summary>
+            This class can be used to visit the EntitySpaces hierarchical object graph. It will
+            not cause any data to be Lazy Loaded. The esVisitor class is used internally by 
+            the EntitySpaces code to implement methods such as IsGraphDirty, AcceptChangesGraph
+            and so on.
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.esVisitor.Visit(System.Object,EntitySpaces.Core.esVisitor.VisitCallback)">
+            <summary>
+            This method will visit each object once
+            </summary>
+            <param name="root">Pass in a collection or an entity</param>
+            <param name="callback">Your callback method</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esVisitor.Visit(System.Object,EntitySpaces.Core.esVisitor.VisitCallback,EntitySpaces.Core.esVisitor.VisitCallback)">
+            <summary>
+            This method will visit objects in a sandwich mode, EnterCallback, operate on children, ExitCallback.
+            </summary>
+            <param name="root">Pass in a collection or an entity</param>
+            <param name="enterCallback">The enter callback method</param>
+            <param name="exitCallback">The exit callback method</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esVisitor.Visit(System.Object,EntitySpaces.Core.esVisitor.VisitCallback,System.Object)">
+            <summary>
+            This method will visit each object once
+            </summary>
+            <param name="root">Pass in a collection or an entity</param>
+            <param name="callback">Your callback method</param>
+            <param name="userState">Pass in anything you like, it will be available to your callback method</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntitySpaces.Core.esVisitor.Visit(System.Object,EntitySpaces.Core.esVisitor.VisitCallback,EntitySpaces.Core.esVisitor.VisitCallback,System.Object)">
+            <summary>
+            This method will visit objects in a sandwich mode, EnterCallback, operate on children, ExitCallback.
+            </summary>
+            <param name="root">Pass in a collection or an entity</param>
+            <param name="enterCallback">The enter callback method</param>
+            <param name="exitCallback">The exit callback method</param>
+            <param name="userState">Pass in anything you like, it will be available to your callback methods</param>
+            <returns></returns>
+        </member>
+        <member name="T:EntitySpaces.Core.IEntity">
+            <summary>
+            The IEntity interface really serves to semi-hide certain properties
+            and avoid collisions that might occur during code generation. This
+            interface is obtained as follows using the "es" property.
+            </summary>
+            <remarks>
+            This code overrides the default connection in the config file and
+            uses an alternate entry in the config file named "Oracle" as the
+            connection information. 
+            <code>
+            Employees emp = new Employees();
+            emp.es.Connection.Name = "Oracle";
+            emp.LoadByPrimaryKey(1);
+            </code>
+            </remarks>
+            <seealso cref="T:EntitySpaces.Core.IEntityCollection"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.Connection">
+            <summary>
+            Get or Set the current esEntity's connection information. See <see cref="T:EntitySpaces.Interfaces.esConnection"/>
+            </summary>
+            <seealso cref="T:EntitySpaces.Interfaces.esConnection"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.ModifiedColumns">
+            <summary>
+            The esEntity class keeps a list of modified columns in order to update only those 
+            columns which have truly changed during DynamicSQL updates. The modified columns
+            list is not used when saving via stored procedures, in that case all columns are 
+            always updated whether they are modified or not. The ModifiedColumns list is cleared
+            after a successful call to Save.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.Catalog">
+            <summary>
+            The name of the DBMS catalog (or database). This catalog can be driven by the connection
+            string or it can be pulled from the meta data class which is generated during code
+            generation.
+            </summary>
+            <seealso cref="P:EntitySpaces.Core.IEntity.Schema"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.Schema">
+            <summary>
+            The name of the DBMS schema. This schema be driven by the connection
+            string or will be pulled from the meta data class which is generated during code
+            generation.
+            </summary>
+            <seealso cref="P:EntitySpaces.Core.IEntity.Catalog"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.Destination">
+            <summary>
+            By default this is the name of the table or view which was used to generate
+            the esEntity during code generation. 
+            </summary>
+            <seealso cref="P:EntitySpaces.Core.IEntity.Source"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.Source">
+            <summary>
+            By default this is the name of the table or view which was used to generate
+            the esEntity during code generation. 
+            </summary>
+            <seealso cref="P:EntitySpaces.Core.IEntity.Destination"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.spInsert">
+            <summary>
+            Created during the code generation process. This is the name of the INSERT stored
+            procedure used when saving via stored procedures. This is not used when the current
+            connection for the esEntity has "sqlAccessType" set to "DynamicSQL".
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.spUpdate">
+            <summary>
+            Created during the code generation process. This is the name of the UPDATE stored
+            procedure used when saving via stored procedures. This is not used when the current
+            connection for the esEntity has "sqlAccessType" set to "DynamicSQL".
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.spDelete">
+            <summary>
+            Created during the code generation process. This is the name of the DELETE stored
+            procedure used when saving via stored procedures. This is not used when the current
+            connection for the esEntity has "sqlAccessType" set to "DynamicSQL".
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.spLoadAll">
+            <summary>
+            Created during the code generation process. This is the name of the stored
+            procedure used to load all of the records when calling LoadAll(). LoadAll() is
+            not generally called however on an esEntity because loading more than one 
+            record into an esEntity results in an exception.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.spLoadByPrimaryKey">
+            <summary>
+            Created during the code generation process. This is the name of the stored
+            procedure used to load a specific record by its primary key when calling LoadByPrimaryKey().
+            This is not used when the current connection for the esEntity has "sqlAccessType" set to "DynamicSQL".
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.HasData">
+            <summary>
+            This method returns true if the esEntity has been loaded with data and the esEntity is not
+            marked as Deleted. Remember, an esEntity can only represent a single row. However the full Query
+            syntax is allowed to load an esEntity. See <see cref="T:EntitySpaces.Interfaces.esDynamicQuery"/>
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.IsDirty">
+            <summary>
+            This is set to true if AddNew(), MarkAsDeleted(), or if any of the esEntities table based properties 
+            have been changed. After a successful call to <see cref="!:Save"/> IsDirty will report false.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.IsGraphDirty">
+            <summary>
+            This is set to true if any entity or collection in the hierarchical model (which has already been loaded)
+            is dirty. This is also available on the Collection class as well.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.IsModified">
+            <summary>
+            Returns true of the RowState is esDataRowState.Modified
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.IsAdded">
+            <summary>
+            Returns true of the RowState is esDataRowState.Added
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.IsDeleted">
+            <summary>
+            Returns true of the RowState is esDataRowState.Deleted
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.RowState">
+            <summary>
+            See the ADO.NET esDataRowState enum for more information. 
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.RowError">
+            <summary>
+            See the ADO.NET DataRow.RowError for more information.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.Meta">
+            <summary>
+            Provides access to the on-board metadata
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntity.IsLazyLoadDisabled">
+            <summary>
+            Indicates whether or not the Lazy Loading of the Hierarchical Data Model is turned off
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.IEntity.CreateCollection(System.String)">
+            <summary>
+            Called by the DynamicQuery Prefetch logic
+            </summary>
+            <param name="collection">The name of the collection, example "OrdersCollectionByEmployeeID"</param>
+            <returns>The proper collection type, example, "OrdersCollection"</returns>
+        </member>
+        <member name="T:EntitySpaces.Core.IEntityCollection">
+            <summary>
+            The IEntityCollection interface really serves to semi-hide certain properties
+            and avoid collisions that might occur during code generation. This
+            interface is obtained as follows using the "es" property.
+            </summary>
+            <remarks>
+            This code overrides the default connection in the config file and
+            uses an alternate entry in the config file named "Oracle" as the
+            connection information. 
+            <code>
+            Employees emp = new Employees();
+            emp.es.Connection.Name = "Oracle";
+            emp.LoadByPrimaryKey(1);
+            </code>
+            </remarks>
+            <seealso cref="T:EntitySpaces.Core.IEntity"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.Connection">
+            <summary>
+            Get or Set the current esEntity's connection information. See <see cref="T:EntitySpaces.Interfaces.esConnection"/>
+            </summary>
+            <seealso cref="T:EntitySpaces.Interfaces.esConnection"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.Catalog">
+            <summary>
+            The name of the DBMS catalog (or database). This catalog can be driven by the connection
+            string or it can be pulled from the meta data class which is generated during code
+            generation.
+            </summary>
+            <seealso cref="P:EntitySpaces.Core.IEntityCollection.Schema"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.Schema">
+            <summary>
+            The name of the DBMS schema. This schema be driven by the connection
+            string or will be pulled from the meta data class which is generated during code
+            generation.
+            </summary>
+            <seealso cref="P:EntitySpaces.Core.IEntityCollection.Catalog"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.Destination">
+            <summary>
+            By default this is the name of the table or view which was used to generate
+            the esEntity during code generation. 
+            </summary>
+            <seealso cref="P:EntitySpaces.Core.IEntityCollection.Source"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.Source">
+            <summary>
+            By default this is the name of the table or view which was used to generate
+            the esEntity during code generation. 
+            </summary>
+            <seealso cref="P:EntitySpaces.Core.IEntityCollection.Destination"/>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.spInsert">
+            <summary>
+            Created during the code generation process. This is the name of the INSERT stored
+            procedure used when saving via stored procedures. This is not used when the current
+            connection for the esEntity has "sqlAccessType" set to "DynamicSQL".
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.spUpdate">
+            <summary>
+            Created during the code generation process. This is the name of the UPDATE stored
+            procedure used when saving via stored procedures. This is not used when the current
+            connection for the esEntity has "sqlAccessType" set to "DynamicSQL".
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.spDelete">
+            <summary>
+            Created during the code generation process. This is the name of the DELETE stored
+            procedure used when saving via stored procedures. This is not used when the current
+            connection for the esEntity has "sqlAccessType" set to "DynamicSQL".
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.spLoadAll">
+            <summary>
+            Created during the code generation process. This is the name of the stored
+            procedure used to load all of the records when calling LoadAll(). LoadAll() is
+            not generally called however on an esEntity because loading more than one 
+            record into an esEntity results in an exception.
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.spLoadByPrimaryKey">
+            <summary>
+            Created during the code generation process. This is the name of the stored
+            procedure used to load a specific record by its primary key when calling LoadByPrimaryKey().
+            This is not used when the current connection for the esEntity has "sqlAccessType" set to "DynamicSQL".
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.Query">
+            <summary>
+            Used by esDataSource to gain access to the Query so that it can
+            implement AutoPaging and AutoSorting
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.IEntityCollection.HookupQuery(EntitySpaces.Interfaces.esDynamicQuery)">
+            <summary>
+            Called by esDataSource to hookup the query to the collection during the esSelect event.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.DeletedEntities">
+            <summary>
+            The List of Entities marked for deletion
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.Meta">
+            <summary>
+            Provides access to the on-board metadata
+            </summary>
+        </member>
+        <member name="P:EntitySpaces.Core.IEntityCollection.IsLazyLoadDisabled">
+            <summary>
+            Indicates whether or not the Lazy Loading of the Hierarchical Data Model is turned off
+            </summary>
+        </member>
+        <member name="M:EntitySpaces.Core.IEntityCollection.PopulateCollection(System.Data.DataRow,System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            Called by EntitySpaces when prefetching data
+            </summary>
+            <param name="row">The DataRow for the new entity (to be created)</param>
+            <param name="ordinals">The columm ordinals, null upon the first one</param>
+            <returns>The column ordrinals, passed right back in as a parameter</returns>
+        </member>
+    </members>
+</doc>

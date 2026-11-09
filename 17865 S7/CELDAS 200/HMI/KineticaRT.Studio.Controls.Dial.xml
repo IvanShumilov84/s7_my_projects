@@ -1,0 +1,331 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>KineticaRT.Studio.Controls.Dial</name>
+    </assembly>
+    <members>
+        <member name="T:KineticaRT.Studio.Controls.Dial">
+            <summary>
+            KineticaRT Studio Linear control.
+            Displays a numeric Value from a source channel on a dial,
+            together with an optional description and units
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Dial.thresholdChannel">
+            <summary>
+            The threshold channel that this control is connected to or null if not connected to a threshold channel.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.#ctor">
+            <summary>
+            Initialises a new instance of the Dial class
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify 
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ValueColor">
+            Added property N Savidge 7 Dec 2010 - copied from Studio.Controls.Display.
+            <summary>
+            Gets or Sets the Color of the Value text
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.Description">
+            <summary>
+            Gets the Description displayed. Value depends on DescriptionSource property
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.GradientEnabled">
+            <summary>
+            Gets or sets whether the gradient is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.DefaultGradientColor">
+            <summary>
+            Gets or sets the default gradient color
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.LinearGradientMode">
+            <summary>
+            Gets or sets the linear gradient mode
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.SourceChannel">
+            <summary>
+            Gets or sets the Source channel to which this object is connected
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.CustomDescription">
+            <summary>
+            Gets or sets a Custom Description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.DescriptionSource">
+            <summary>
+            Gets or sets where to get the Description from
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.CustomToolTip">
+            <summary>
+            Gets or sets the custom Tool Tip
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ToolTipSource">
+            <summary>
+            Gets or sets where the Tool Tip gets its value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ValueFont">
+            <summary>
+            Gets or sets the font for the digital value display,
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ToolTip">
+            <summary>
+            Gets the current Tool Tip
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.Value">
+            <summary>
+            Gets the current Value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.Source">
+            <summary>
+            Gets or sets the name of Source channel whose value is displayed
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.CustomUnits">
+            <summary>
+            Gets or sets a Custom Units string
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.UseCustomUnits">
+            <summary>
+            Gets or sets whether to use the Custom units string or the Source channel's value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.Format">
+            <summary>
+            Gets or sets the text formatting of the Value
+            If specified (ie non-blank string), overrides the format of the Source
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.Units">
+            <summary>
+            Gets the Units string displayed. Value depends on UseCustomUnits property
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.NeedleColor">
+            <summary>
+            Gets or Sets the Color of the Needle
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.FillColor">
+            <summary>
+            Gets or Sets the Color of the Fill
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ScaleColor">
+            <summary>
+            Gets or Sets the Color of the Scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ValueBackColor">
+            <summary>
+            Gets or sets the background color of the digital display area when input is not enabled.
+            </summary>
+            <remarks>Set to Empty to use threshold colors.</remarks>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.FillEnabled">
+            <summary>
+            Gets or sets whether fill is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.EngineNoRunZone1StartValue">
+            <summary>
+            Gets or sets engine no run zone1 starting value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.EngineNoRunZone1EndValue">
+            <summary>
+            Gets or sets engine no run zone1 ending value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.EngineNoRunZone2StartValue">
+            <summary>
+            Gets or sets engine no run zone2 starting value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.EngineNoRunZone2EndValue">
+            <summary>
+            Gets or sets engine no run zone2 ending value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.UseCustomRange">
+            <summary>
+            Gets or sets whether to use the custom minimum and maximum, or those of the source channel
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.CustomMinimum">
+            <summary>
+            Gets or sets the custom Minimum value of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.Minimum">
+            <summary>
+            Gets the Minimum value of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.CustomMaximum">
+            <summary>
+            Gets or sets the custom Maximum value of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.Maximum">
+            <summary>
+            Gets the Maximum value of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.UseCustomDecimalPlaces">
+            <summary>
+            Gets or sets whether to use custom decimal places, or that of the source channel
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.CustomDecimalPlaces">
+            <summary>
+            Gets or sets the custom Decimal Places of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.DecimalPlaces">
+            <summary>
+            Gets the number of Decimal Places displayed by the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.CausesValidation">
+            <summary>
+            Gets or sets the name of the control used by accessibility client applications.
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ToolTipText">
+            <summary>
+            Gets or Sets the Tool Tip Text that appears when hovering over the control
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.UpdateSpeed">
+            <summary>
+            Gets or Sets whether the rate at which the Control redraws
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ErrorProviderEnabled">
+            <summary>
+            Gets or Sets the Tool Error Provider that appears when hovering over the control
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.Scale">
+            <summary>
+            Gets the Scale object
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.TopText">
+            <summary>
+            Gets or sets the Text shown above the centre of the Dial
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.BottomText">
+            <summary>
+            Gets or sets the Text shown below the centre of the Dial
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ScalePosition">
+            <summary>
+            Gets or sets the position of the scale from the Dial's centre as a proportion of the Dial's radius (0..1)
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.UseSourceFormat">
+            <summary>
+            Gets or sets whether the Dial gets its ToolTip, TopText, BottomText, Minimum and Maximum
+            from the Source of it's primary Needle
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.Needle">
+            <summary>
+            Gets or sets the Needle object
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.UpdateLayout">
+            <summary>
+            Updates the sizes of all sections
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.NewToolTip(System.String)">
+            <summary>
+            A new tool tip is being set
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.NewRange(System.Double,System.Double)">
+            <summary>
+            Set the range of scaled objects
+            </summary>
+            <param name="Min">New minimum value</param>
+            <param name="Max">New Maximum value</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.NewDPs(System.Int32)">
+            <summary>
+            Set the decimal places of scaled objects
+            </summary>
+            <param name="DPs">New decimal places</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.OnSourcePropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)">
+            <summary>
+            A property in the Source channel has changed
+            </summary>
+            <param name="Sender">Object generating the event</param>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Dial.ValueScale">
+            <summary>
+            Gets the scale for the Scaled Control.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.SetFill(System.Double,System.Drawing.Color)">
+            <summary>
+            Sets the fill color for this object.
+            Used for setting the LowLow threshold color when connected to threshold channels.
+            </summary>
+            <param name="color">The new color.</param>
+            <param name="centrePoint">The new center point about which the fill is drawn.</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.OnResize(System.EventArgs)">
+            <summary>
+            Rezise event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.Connect">
+            <summary>
+            Connects this object to others.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.Disconnect">
+            <summary>
+            Disconnects this object from others.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.OnDragEnter(System.Windows.Forms.DragEventArgs)">
+            <summary>
+            DragEnter event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Dial.OnDragDrop(System.Windows.Forms.DragEventArgs)">
+            <summary>
+            DragDrop eventNumericVariable
+            </summary>
+            <param name="e">Event data</param>
+        </member>
+    </members>
+</doc>

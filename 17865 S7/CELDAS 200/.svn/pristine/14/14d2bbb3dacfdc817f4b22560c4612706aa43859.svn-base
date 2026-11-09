@@ -1,0 +1,424 @@
+<SOAP-ENV:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:clr="http://schemas.microsoft.com/soap/encoding/clr/1.0" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<SOAP-ENV:Body>
+<a1:ChannelCollection id="ref-1" xmlns:a1="http://schemas.microsoft.com/clr/nsassem/KineticaRT/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<LB_DOWN_DEMAND href="#ref-5"/>
+<LB_UP_DEMAND href="#ref-6"/>
+<LOAD_AIR_VALVE_DOWN_DEMAND href="#ref-7"/>
+<LOAD_AIR_VALVE_UP_DEMAND href="#ref-8"/>
+<Log_Perf_ApuDryWeight href="#ref-9"/>
+<Log_Perf_ATSAirPressure href="#ref-10"/>
+<Log_Perf_ATSAirTemp href="#ref-11"/>
+<Log_Perf_ATSStarterCutOutTime_OPC href="#ref-12"/>
+<Log_Perf_ATSStartTime_OPC href="#ref-13"/>
+<Log_Perf_CaptureATS href="#ref-14"/>
+<Log_Perf_CaptureWbcdnaClose href="#ref-15"/>
+<Log_Perf_CaptureWbcdnaOpen href="#ref-16"/>
+<Log_Perf_ElecStarterCutOutTime_OPC href="#ref-17"/>
+<Log_Perf_ElecStartTime_OPC href="#ref-18"/>
+<Log_Perf_NbApuFaults href="#ref-19"/>
+<Log_Perf_NumberOfStarts href="#ref-20"/>
+<Log_Perf_OperatingTime href="#ref-21"/>
+<Log_Perf_SCVStability href="#ref-22"/>
+<Log_Perf_WbcdnaClose href="#ref-23"/>
+<Log_Perf_WbcdnaHiClose href="#ref-24"/>
+<Log_Perf_WbcdnaHiOpen href="#ref-25"/>
+<Log_Perf_WbcdnaLoClose href="#ref-26"/>
+<Log_Perf_WbcdnaLoOpen href="#ref-27"/>
+<Log_Perf_WbcdnaOpen href="#ref-28"/>
+<OPC_ARINC_ATSCMD href="#ref-29"/>
+<OPC_ARINC_DP href="#ref-30"/>
+<OPC_ARINC_ELSCMD href="#ref-31"/>
+<OPC_ARINC_IGV_POS href="#ref-32"/>
+<OPC_ARINC_P2 href="#ref-33"/>
+<OPC_ARINC_PT href="#ref-34"/>
+<OPC_ARINC_SCV_POS href="#ref-35"/>
+<OPC_ARINC_T2 href="#ref-36"/>
+<OPC_ARINC_WC href="#ref-37"/>
+<OPC_GCU_K1_CMD href="#ref-38"/>
+<OPC_LOAD_BANK_ON href="#ref-39"/>
+</a1:ChannelCollection>
+<a2:BooleanLink id="ref-5" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/CEL.KineticaRT.Servers.Logger/CEL.KineticaRT.Servers.Logger%2C%20Version%3D1.1.3054.27872%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3Dnull">
+<Name id="ref-40">LB_DOWN_DEMAND</Name>
+<Description id="ref-41"></Description>
+<ToolTip href="#ref-41"/>
+<TrueText id="ref-42">True</TrueText>
+<FalseText id="ref-43">False</FalseText>
+<Source href="#ref-41"/>
+<Destination href="#ref-41"/>
+<Logger href="#ref-41"/>
+<EventLogger href="#ref-41"/>
+<Index>0</Index>
+<Enabled>true</Enabled>
+</a2:BooleanLink>
+<a2:BooleanLink id="ref-6" xmlns:a2="http://schemas.microsoft.com/clr/nsassem/CEL.KineticaRT.Servers.Logger/CEL.KineticaRT.Servers.Logger%2C%20Version%3D1.1.3054.27872%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3Dnull">
+<Name id="ref-44">LB_UP_DEMAND</Name>
+<Description href="#ref-41"/>
+<ToolTip href="#ref-41"/>
+<TrueText href="#ref-42"/>
+<FalseText href="#ref-43"/>
+<Source href="#ref-41"/>
+<Destination href="#ref-41"/>
+<Logger href="#ref-41"/>
+<EventLogger href="#ref-41"/>
+<Index>0</Index>
+<Enabled>true</Enabled>
+</a2:BooleanLink>
+<a3:BooleanChannel id="ref-7" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-45">LOAD_AIR_VALVE_DOWN_DEMAND</Name>
+<Description href="#ref-41"/>
+<ToolTip href="#ref-41"/>
+<TrueText id="ref-46">True</TrueText>
+<FalseText id="ref-47">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-8" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-48">LOAD_AIR_VALVE_UP_DEMAND</Name>
+<Description href="#ref-41"/>
+<ToolTip href="#ref-41"/>
+<TrueText id="ref-49">True</TrueText>
+<FalseText id="ref-50">False</FalseText>
+</a3:BooleanChannel>
+<a3:NumericChannel id="ref-9" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-51">Log_Perf_ApuDryWeight</Name>
+<Description id="ref-52">APU dry weight</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-53"> lb</Units>
+<Min>0</Min>
+<Max>1000</Max>
+<Format id="ref-54">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-10" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-55">Log_Perf_ATSAirPressure</Name>
+<Description id="ref-56">ATS air inlet total pressure</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-57"> psig</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-58">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-11" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-59">Log_Perf_ATSAirTemp</Name>
+<Description id="ref-60">ATS air inlet total temperature</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-61"> °F</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-62">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+</a3:NumericChannel>
+<a4:Item id="ref-12" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-63">Log_Perf_ATSStarterCutOutTime_OPC</Name>
+<Description id="ref-64">ATS starter cutout</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-65"> sec</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-66">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-67">Group_Fast</Group>
+<ItemID id="ref-68">DACN1.DACN1_User_Interface.AirStarterCutoutTime</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-13" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-69">Log_Perf_ATSStartTime_OPC</Name>
+<Description id="ref-70">ATS start time</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-71"> sec</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-72">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-73">Group_Fast</Group>
+<ItemID id="ref-74">DACN1.DACN1_User_Interface.AirEngineAccelerationTime</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a3:BooleanChannel id="ref-14" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-75">Log_Perf_CaptureATS</Name>
+<Description id="ref-76">Capture ATS Parameters</Description>
+<ToolTip href="#ref-41"/>
+<TrueText id="ref-77">True</TrueText>
+<FalseText id="ref-78">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-15" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-79">Log_Perf_CaptureWbcdnaClose</Name>
+<Description id="ref-80">Capture WBCDNA SCV Close</Description>
+<ToolTip href="#ref-41"/>
+<TrueText id="ref-81">True</TrueText>
+<FalseText id="ref-82">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-16" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-83">Log_Perf_CaptureWbcdnaOpen</Name>
+<Description id="ref-84">Capture WBCDNA SCV Open</Description>
+<ToolTip href="#ref-41"/>
+<TrueText id="ref-85">True</TrueText>
+<FalseText id="ref-86">False</FalseText>
+</a3:BooleanChannel>
+<a4:Item id="ref-17" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-87">Log_Perf_ElecStarterCutOutTime_OPC</Name>
+<Description id="ref-88">Electric starter cutout</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-89"> sec</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-90">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-91">Group_Fast</Group>
+<ItemID id="ref-92">DACN1.DACN1_User_Interface.DCStarterCutoutTime</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-18" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-93">Log_Perf_ElecStartTime_OPC</Name>
+<Description id="ref-94">Electric start time</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-95"> sec</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-96">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-97">Group_Fast</Group>
+<ItemID id="ref-98">DACN1.DACN1_User_Interface.DCEngineAccelerationTime</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a3:NumericChannel id="ref-19" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-99">Log_Perf_NbApuFaults</Name>
+<Description id="ref-100">APU faults seen during test</Description>
+<ToolTip href="#ref-41"/>
+<Units href="#ref-41"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-101">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-20" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-102">Log_Perf_NumberOfStarts</Name>
+<Description id="ref-103">Total number of starts during test</Description>
+<ToolTip href="#ref-41"/>
+<Units href="#ref-41"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-104">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+</a3:NumericChannel>
+<a3:TextChannel id="ref-21" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-105">Log_Perf_OperatingTime</Name>
+<Description id="ref-106">Total operating time during test</Description>
+<ToolTip href="#ref-41"/>
+</a3:TextChannel>
+<a3:BooleanChannel id="ref-22" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-107">Log_Perf_SCVStability</Name>
+<Description id="ref-108">SCV stability test</Description>
+<ToolTip href="#ref-41"/>
+<TrueText id="ref-109">True</TrueText>
+<FalseText id="ref-110">False</FalseText>
+</a3:BooleanChannel>
+<a3:NumericChannel id="ref-23" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-111">Log_Perf_WbcdnaClose</Name>
+<Description id="ref-112">WBCDNA SCV close</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-113"> lb/min</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-114">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-24" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-115">Log_Perf_WbcdnaHiClose</Name>
+<Description id="ref-116">WBCDNA High limit SCV close</Description>
+<ToolTip href="#ref-41"/>
+<Units href="#ref-41"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-117">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-25" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-118">Log_Perf_WbcdnaHiOpen</Name>
+<Description id="ref-119">WBCDNA High limit SCV open</Description>
+<ToolTip href="#ref-41"/>
+<Units href="#ref-41"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-120">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-26" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-121">Log_Perf_WbcdnaLoClose</Name>
+<Description id="ref-122">WBCDNA Low limit SCV close</Description>
+<ToolTip href="#ref-41"/>
+<Units href="#ref-41"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-123">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-27" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-124">Log_Perf_WbcdnaLoOpen</Name>
+<Description id="ref-125">WBCDNA Low limit SCV open</Description>
+<ToolTip href="#ref-41"/>
+<Units href="#ref-41"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-126">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-28" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-127">Log_Perf_WbcdnaOpen</Name>
+<Description id="ref-128">WBCDNA SCV open</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-129"> lb/min</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-130">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+</a3:NumericChannel>
+<a4:Item id="ref-29" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-131">OPC_ARINC_ATSCMD</Name>
+<Description id="ref-132">AT Start Cmd</Description>
+<ToolTip href="#ref-41"/>
+<Units href="#ref-41"/>
+<Min>0</Min>
+<Max>0</Max>
+<Format id="ref-133">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-134">Group_Fast</Group>
+<ItemID id="ref-135">DACN1.DACN1_User_Interface.SerialArinc[9].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-30" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-136">OPC_ARINC_DP</Name>
+<Description id="ref-137">DP</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-138"> psid</Units>
+<Min>0</Min>
+<Max>20</Max>
+<Format id="ref-139">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-140">Group_Fast</Group>
+<ItemID id="ref-141">DACN1.DACN1_User_Interface.SerialArinc[5].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-31" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-142">OPC_ARINC_ELSCMD</Name>
+<Description id="ref-143">El Start Cmd</Description>
+<ToolTip href="#ref-41"/>
+<Units href="#ref-41"/>
+<Min>0</Min>
+<Max>0</Max>
+<Format id="ref-144">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-145">Group_Fast</Group>
+<ItemID id="ref-146">DACN1.DACN1_User_Interface.SerialArinc[8].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-32" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-147">OPC_ARINC_IGV_POS</Name>
+<Description id="ref-148">IGV position</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-149"> Deg</Units>
+<Min>0</Min>
+<Max>76</Max>
+<Format id="ref-150">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-151">Group_Fast</Group>
+<ItemID id="ref-152">DACN1.DACN1_User_Interface.SerialArinc[1].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-33" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-153">OPC_ARINC_P2</Name>
+<Description id="ref-154">P2</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-155"> psia</Units>
+<Min>0</Min>
+<Max>20</Max>
+<Format id="ref-156">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-157">Group_Fast</Group>
+<ItemID id="ref-158">DACN1.DACN1_User_Interface.SerialArinc[6].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-34" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-159">OPC_ARINC_PT</Name>
+<Description id="ref-160">PT</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-161"> psia</Units>
+<Min>0</Min>
+<Max>75</Max>
+<Format id="ref-162">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-163">Group_Fast</Group>
+<ItemID id="ref-164">DACN1.DACN1_User_Interface.SerialArinc[4].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-35" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-165">OPC_ARINC_SCV_POS</Name>
+<Description id="ref-166">SCV position</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-167"> Deg</Units>
+<Min>10</Min>
+<Max>90</Max>
+<Format id="ref-168">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-169">Group_Fast</Group>
+<ItemID id="ref-170">DACN1.DACN1_User_Interface.SerialArinc[2].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-36" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-171">OPC_ARINC_T2</Name>
+<Description id="ref-172">T2</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-173"> °F</Units>
+<Min>-55</Min>
+<Max>220</Max>
+<Format id="ref-174">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-175">Group_Fast</Group>
+<ItemID id="ref-176">DACN1.DACN1_User_Interface.SerialArinc[3].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-37" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-177">OPC_ARINC_WC</Name>
+<Description id="ref-178">WC</Description>
+<ToolTip href="#ref-41"/>
+<Units id="ref-179"> lb/sec</Units>
+<Min>0</Min>
+<Max>4000</Max>
+<Format id="ref-180">F1</Format>
+<DecimalDigits>1</DecimalDigits>
+<Group id="ref-181">Group_Fast</Group>
+<ItemID id="ref-182">DACN1.DACN1_User_Interface.SerialArinc[7].value</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-38" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-183">OPC_GCU_K1_CMD</Name>
+<Description href="#ref-41"/>
+<ToolTip href="#ref-41"/>
+<TrueText id="ref-184">True</TrueText>
+<FalseText id="ref-185">False</FalseText>
+<Group id="ref-186">Group_Fast</Group>
+<ItemID id="ref-187">DACN1.DACN1_User_Interface.GCU_K1_Cmd</ItemID>
+</a4:BooleanItem>
+<a4:BooleanItem id="ref-39" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-188">OPC_LOAD_BANK_ON</Name>
+<Description href="#ref-41"/>
+<ToolTip href="#ref-41"/>
+<TrueText id="ref-189">True</TrueText>
+<FalseText id="ref-190">False</FalseText>
+<Group id="ref-191">Group_Fast</Group>
+<ItemID id="ref-192">dacn1.dacn1_user_interface.load_bank_on</ItemID>
+</a4:BooleanItem>
+</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

@@ -1,0 +1,107 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+CEL.Library
+</name>
+</assembly>
+<members>
+<member name="T:CEL.Library.My.Resources.Resources">
+<summary>
+  A strongly-typed resource class, for looking up localized strings, etc.
+</summary>
+</member>
+<member name="P:CEL.Library.My.Resources.Resources.ResourceManager">
+<summary>
+  Returns the cached ResourceManager instance used by this class.
+</summary>
+</member>
+<member name="P:CEL.Library.My.Resources.Resources.Culture">
+<summary>
+  Overrides the current thread's CurrentUICulture property for all
+  resource lookups using this strongly typed resource class.
+</summary>
+</member>
+<member name="T:CEL.Library.IExpressionUnitConverter">
+ <summary>
+ Interface definition for conversion between units
+ and its corresponding inverse conversion
+ </summary>
+ <remarks></remarks>
+</member>
+<member name="M:CEL.Library.IExpressionUnitConverter.Convert(System.String)">
+ <summary>
+ Converts the specified value from a unit to another unit.
+ </summary>
+ <param name="Value">The value to convert from.</param>
+ <returns>The converted value</returns>
+</member>
+<member name="M:CEL.Library.IExpressionUnitConverter.Inverse(System.String)">
+ <summary>
+ Perform the Inverses conversion i.e 
+ If y = converter.Convert(x) Then
+     x = converter.Inverse(y)
+ End If
+ </summary>
+ <param name="Value">The value</param>
+ <returns>The inverse of dValue</returns>
+</member>
+<member name="T:CEL.Library.ExpressionMxBConverter">
+ <summary>
+ Implements the simple 'y = m(x) + b' conversion and its inverse 'x = (y - b) / m'
+ </summary>
+</member>
+<member name="M:CEL.Library.MappedDriveResolver.ResolveToUNC(System.String)">
+/// <summary>Resolves the given path to a full UNC path, or full local drive path.</summary>
+/// <param name="pPath"></param>
+/// <returns></returns>
+</member>
+<member name="M:CEL.Library.MappedDriveResolver.ResolveToRootUNC(System.String)">
+/// <summary>Resolves the given path to a root UNC path, or root local drive path.</summary>
+/// <param name="pPath"></param>
+/// <returns>\\server\share OR C:\</returns>
+</member>
+<member name="M:CEL.Library.MappedDriveResolver.IsNetworkDrive(System.String)">
+/// <summary>Checks if the given path is on a network drive.</summary>
+/// <param name="pPath"></param>
+/// <returns></returns>
+</member>
+<member name="M:CEL.Library.MappedDriveResolver.GetDriveLetter(System.String)">
+/// <summary>Given a path will extract just the drive letter with volume separator.</summary>
+/// <param name="pPath"></param>
+/// <returns>C:</returns>
+</member>
+<member name="P:CEL.Library.ProcessHelper.Is64BitOperatingSystem">
+ <summary>
+ Determines whether or not the operating system is 64 bit
+ </summary>
+</member>
+<member name="M:CEL.Library.ProcessHelper.IsWow64Process(System.IntPtr,System.Boolean@)">
+ <summary>
+ Determines if a process is running on a 64 bit Operating System but in 32 bit emulation mode (WOW64)
+ </summary>
+ <param name="hProcess">A handle to the process to check</param>
+ <param name="Wow64Process">Output parameter. A boolean that will be set to True if the process is running in WOW64 mode</param>
+</member>
+<member name="M:CEL.Library.ProcessHelper.DoesWin32MethodExist(System.String,System.String)">
+ <summary>
+ Determines if a method exists in the specified DLL
+ </summary>
+ <param name="moduleName">The DLL to look for the method in</param>
+ <param name="methodName">The method to look for</param>
+</member>
+<member name="M:CEL.Library.ProcessHelper.GetModuleHandle(System.String)">
+ <summary>
+ Gets a handle to a specified DLL
+ </summary>
+ <param name="moduleName">The module to return a handle for</param>
+</member>
+<member name="M:CEL.Library.ProcessHelper.GetProcAddress(System.IntPtr,System.String)">
+ <summary>
+ Retrieves the address of an exported function or variable from the specified dynamic-link library (DLL)
+ </summary>
+ <param name="hModule">A handle to the DLL to look for the method in</param>
+ <param name="methodName">The method to look for</param>
+</member>
+</members>
+</doc>

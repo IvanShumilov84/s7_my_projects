@@ -1,0 +1,3 @@
+<Window BackColor="Control" Font="Trebuchet MS, 9.75pt, style=Bold" ForeColor="White" RightToLeft="0" TabIndex="0" BorderColor="LightSteelBlue" BorderStyle="1" BorderWidth="0.1" Name="TFE731_Big_Screen" Shape="0" ToolTipText="" UpdateSpeed="1" HorizontalGrid.Size="8" HorizontalGrid.Spacing="2" VerticalGrid.Size="8" VerticalGrid.Spacing="2" TitleEnabled="false" Title="TFE731 Big Screen" WindowState="0" Left="1" Top="1" Width="2562" Height="995" CurrentPanelIndex="0">
+  <Panel File="TFE731_Big_Screen.dll" Text="TFE731 Series" />
+</Window>

@@ -1,0 +1,383 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>KineticaRT.Studio.Controls.Linear</name>
+    </assembly>
+    <members>
+        <member name="T:KineticaRT.Studio.Controls.Linear">
+            <summary>
+            KineticaRT Studio Linear control.
+            Displays a numeric Value from a source channel on a slider,
+            together with an optional description and units
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Linear.thresholdChannel">
+            <summary>
+            The threshold channel that this control is connected to or null if not connected to a threshold channel.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.#ctor">
+            <summary>
+            Initialises a new instance of the Linear class
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify 
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ValueColor">
+            Added property N Savidge 7 Dec 2010 - copied from Studio.Controls.Display.
+            <summary>
+            Gets or Sets the Color of the Value text
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Description">
+            <summary>
+            Gets the Description displayed. Value depends on DescriptionSource property
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.GradientEnabled">
+            <summary>
+            Gets or sets whether the gradient is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.DefaultGradientColor">
+            <summary>
+            Gets or sets the default gradient color
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.LinearGradientMode">
+            <summary>
+            Gets or sets the Color at the left hand side of the title bar
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ForeColor">
+            <summary>
+            Gets or Sets the Color of the Value text
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.SourceChannel">
+            <summary>
+            Gets or sets the Source channel to which this object is connected
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.CustomDescription">
+            <summary>
+            Gets or sets a Custom Description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.DescriptionSource">
+            <summary>
+            Gets or sets where to get the Description from
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.CustomToolTip">
+            <summary>
+            Gets or sets the custom Tool Tip
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ToolTipSource">
+            <summary>
+            Gets or sets where the Tool Tip gets its value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ValueFont">
+            <summary>
+            Gets or sets the font for the digital value display,
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ToolTip">
+            <summary>
+            Gets the current Tool Tip
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Value">
+            <summary>
+            Gets the current Value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Source">
+            <summary>
+            Gets or sets the name of Source channel whose value is displayed
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.CustomUnits">
+            <summary>
+            Gets or sets a Custom Units string
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.UseCustomUnits">
+            <summary>
+            Gets or sets whether to use the Custom units string or the Source channel's value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Format">
+            <summary>
+            Gets or sets the text formatting of the Value
+            If specified (ie non-blank string), overrides the format of the Source
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Units">
+            <summary>
+            Gets the Units string displayed. Value depends on UseCustomUnits property
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.NeedleColor">
+            <summary>
+            Gets or Sets the Color of the Needle
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.FillColor">
+            <summary>
+            Gets or Sets the Color of the Fill
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ScaleColor">
+            <summary>
+            Gets or Sets the Color of the Scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.FillEnabled">
+            <summary>
+            Gets or sets whether fill is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.UseCustomRange">
+            <summary>
+            Gets or sets whether to use the custom minimum and maximum, or those of the source channel
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.CustomMinimum">
+            <summary>
+            Gets or sets the custom Minimum value of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Minimum">
+            <summary>
+            Gets the Minimum value of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.CustomMaximum">
+            <summary>
+            Gets or sets the custom Maximum value of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Maximum">
+            <summary>
+            Gets the Maximum value of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.UseCustomDecimalPlaces">
+            <summary>
+            Gets or sets whether to use custom decimal places, or that of the source channel
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.CustomDecimalPlaces">
+            <summary>
+            Gets or sets the custom Decimal Places of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.DecimalPlaces">
+            <summary>
+            Gets the number of Decimal Places displayed by the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ToolTipText">
+            <summary>
+            Gets or Sets the Tool Tip Text that appears when hovering over the control
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.UpdateSpeed">
+            <summary>
+            Gets or Sets whether the rate at which the Control redraws
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ErrorProviderEnabled">
+            <summary>
+            Gets or Sets the Tool Tip Text that appears when hovering over the control
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Scale">
+            <summary>
+            Gets the Scale object
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.UseSourceFormat">
+            <summary>
+            Gets or sets whether the Dial gets its ToolTip, TopText, BottomText, Minimum and Maximum
+            from the Source of it's primary Needle
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Needle">
+            <summary>
+            Gets or sets the Needle object
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.DescriptionHeight">
+            <summary>
+            Gets or sets the height of the description.
+            </summary>
+            <value >Integer number of lines to display</value>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.TabStop">
+            <summary>
+            Gets or sets a Custom Description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.Orientation">
+            <summary>
+            Gets or sets the orientation of the linear
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.NeedleEnabled">
+            <summary>
+            Gets or sets whether the needle is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.NeedleStyle">
+            <summary>
+            Gets or sets the style of the needle
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.NeedleWidth">
+            <summary>
+            Gets or sets the width of the needle in pixels
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ScaleWidth">
+            <summary>
+            Gets or sets the width devoted to the scale (in pixels)
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ScalePosition">
+            <summary>
+            Gets or sets the position of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.InputEnabled">
+            <summary>
+            Gets or sets whether input is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.InputBackColor">
+            <summary>
+            Gets or sets the background color of the input area when input is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ValueBackColor">
+            <summary>
+            Gets or sets the background color of the digital display area when input is not enabled.
+            </summary>
+            <remarks>Set to Empty to use threshold colors.</remarks>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.SetScalePosition">
+            <summary>
+            Correctly (re)position the scale
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.OnSourcePropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)">
+            <summary>
+            A property in the Source channel has changed
+            </summary>
+            <param name="sender">Object generating the event</param>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.UpdateLayout">
+            <summary>
+            Updates the sizes of all sections
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.NewToolTip(System.String)">
+            <summary>
+            A new tool tip is being set
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.NewRange(System.Double,System.Double)">
+            <summary>
+            Set the range of scaled objects
+            </summary>
+            <param name="minimum">New minimum value</param>
+            <param name="maximum">New Maximum value</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.NewDecimalPlaces(System.Int32)">
+            <summary>
+            Set the decimal places of scaled objects
+            </summary>
+            <param name="decimalPlaces">New decimal places</param>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Linear.ValueScale">
+            <summary>
+            Gets the scale for the Scaled Control.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.SetFill(System.Double,System.Drawing.Color)">
+            <summary>
+            Sets the fill color for this object.
+            Used for setting the LowLow threshold color when connected to threshold channels.
+            </summary>
+            <param name="color">The new color.</param>
+            <param name="centrePoint">The new center point about which the fill is drawn.</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.OnResize(System.EventArgs)">
+            <summary>
+            Rezise event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.Connect">
+            <summary>
+            Connects this object to others.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.Disconnect">
+            <summary>
+            Disconnects this object from others.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.OnDragEnter(System.Windows.Forms.DragEventArgs)">
+            <summary>
+            DragEnter event
+            </summary>
+            <param name="drgevent">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.OnDragDrop(System.Windows.Forms.DragEventArgs)">
+            <summary>
+            DragDrop event
+            </summary>
+            <param name="drgevent">Event data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.Repaint(System.Boolean,System.Drawing.Graphics)">
+            <summary>
+            Paint Event
+            </summary>
+            <param name="FullRedraw">true to redraw whole object.</param>
+            <param name="g">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.CalculateDisplayRectangle">
+            <summary>
+            Recalculates the DisplayRectangle based on the current ClientRectangle
+            and Appearance.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.OnMouseDown(System.Windows.Forms.MouseEventArgs)">
+            <summary>
+            Mouse Down Event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.OnMouseMove(System.Windows.Forms.MouseEventArgs)">
+            <summary>
+            Mouse Move Event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Linear.OnMouseUp(System.Windows.Forms.MouseEventArgs)">
+            <summary>
+            Mouse Up Event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+    </members>
+</doc>

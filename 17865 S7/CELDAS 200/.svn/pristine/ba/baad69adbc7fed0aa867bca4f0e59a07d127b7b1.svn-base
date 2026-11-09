@@ -1,0 +1,2362 @@
+'Imports Excel
+Imports Microsoft.Office.Interop 'Excel
+Imports KineticaRT
+Imports KineticaRT.Logic.Message
+Imports KineticaRT.Sequence
+Imports KineticaRT.Servers.OpcClient
+Imports KineticaRT.Values
+Imports KineticaRT.Channels
+Imports Microsoft.VisualBasic
+Imports System
+Imports System.Collections
+Imports System.Collections.Generic
+Imports System.Drawing
+Imports System.Data 
+Imports System.Data.OleDb 
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Runtime.InteropServices
+'Client/Server
+Imports PwcSharedInterface
+Imports System.ServiceModel
+'Imports System.ServiceModel.Channels
+'
+Imports System.Security
+Imports System.Security.Permissions
+Imports System.Text
+Imports System.Text.RegularExpressions
+Imports System.Threading
+Imports System.Windows.Forms
+Imports System.Math
+
+Imports CEL.HMI
+
+Namespace StudioDemonstration
+    Public Class PWC83020_Sequence 'Cette séquence a été créé à partir de PWC83020_Sequence pour 14085
+        Inherits CEL.KineticaRT.Sequence.Sequence
+
+        Private CELProject As CELDAS = CELDAS.Instance()
+
+        Private Const sPWCConfigurationPath As String = "C:\Program Files\Pratt & Whitney Canada\PWC83020\configuration\"
+        Private Const sDataPath As String = "C:\PWCData\PT6\" ' DLL Need a short Path in order to have a summary file created
+        Private Const sConfigurationPath As String = ".\PWC\PWC83020_configuration\"
+        Private Const sPWCdllInstallationPath As String = "C:\Program Files\Pratt & Whitney Canada\Pwc83020"
+
+        Public Function IsPWC83020Installed() As Boolean ' Inspiré de PWC83000. Booléen qui retourne si la DLL est installée ou pas
+            Return Directory.Exists(sPWCdllInstallationPath)
+        End Function
+
+        Private Sub CheckDLLInstallation() 'Routine qui vérifie si la DLL est installée
+            If Not IsPWC83020Installed() Then
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnTestSessionInitialized()" & vbCrLf & _
+                                             "PWC83020 DLL is either not installed or installation path is incorrect", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Exit Sub
+            End If
+        End Sub
+
+        Private Sub CopyConfigurationFiles()
+            Dim files As String() = Directory.GetFiles(sPWCConfigurationPath)
+            Dim baseFileName, fileName As String
+
+            If Directory.Exists(sConfigurationPath) = True Then 'TODO sur un pc en x64 le programme de Pratt PWC83020 s'installe dans Program FIles (x86) et non dans Program Files
+                Directory.Delete(sConfigurationPath, True)
+            End If
+
+            Directory.CreateDirectory(sConfigurationPath)
+
+            For Each fileName In files
+                baseFileName = Path.GetFileName(fileName)
+
+                File.Copy(fileName, sConfigurationPath + baseFileName)
+            Next
+        End Sub
+
+        Private Sub CreateDataPath() ' Vérifie s'il existe un Datapath, autrement il est créé
+
+            Try
+                If Directory.Exists(sDataPath) = False Then
+                    Directory.CreateDirectory(sDataPath)
+                    clsTopMostMessageBox.Show("DataPath doesn't exist and has been Created : ", sDataPath, MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : DataPath Error !" & vbCrLf & vbCrLf & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                clsTopMostMessageBox.Show("Please Create folder: ", sDataPath, MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Exit Sub
+            End Try
+
+        End Sub
+
+        Protected Overrides Sub OnEngineWorkingThread()
+            'DoNothing
+        End Sub
+
+        Private Function CreateHandler() As Boolean
+
+            Try
+                If CELProject.EngineFamily = "PT6A" OrElse CELProject.EngineFamily = "PT6C" OrElse CELProject.EngineFamily = "PT6T" Then
+
+                    ' Process performance button
+                    AddHandler PERF_PROCESS_RATING_ANALYSIS_BTN.ValueChanged, AddressOf OnBTN_PROCESS_RATING_ANALYSIS
+                    AddHandler PERF_PROCESS_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_PROCESS_TORQUE_TRIM
+
+                    ' Performance input
+                    AddHandler PERF_TRIM_ANSWER_YES_CHKBOX.ValueChanged, AddressOf OnTRIM_ANSWER
+                    AddHandler PERF_TRIM_ANSWER_NO_CHKBOX.ValueChanged, AddressOf OnTRIM_ANSWER
+
+                    If CELProject.EngineFamily = "PT6T" Then
+                        AddHandler PERF_ENGINE_SIDE_PORT_CHKBOX.ValueChanged, AddressOf OnENGINE_SIDE_ANSWER
+                        AddHandler PERF_ENGINE_SIDE_STBD_CHKBOX.ValueChanged, AddressOf OnENGINE_SIDE_ANSWER
+
+                    End If
+
+                    ' Capture condition button
+                    For index As Integer = 0 To NumberOfConditions - 1
+                        AddHandler PERF_CAPTURE_CONDITION_BTN(index).ValueChanged, AddressOf OnBTN_CAPTURE_CONDITION
+                    Next
+
+                    ' Clear condition button
+                    For index As Integer = 0 To NumberOfConditions - 1
+                        AddHandler PERF_CLEAR_CONDITION_BTN(index).ValueChanged, AddressOf OnBTN_CLEAR_CONDITION
+                    Next
+
+                End If
+
+                If CELProject.EngineFamily = "PT6A" Then
+
+                    'Capture BOV test button
+                    For index As Integer = 0 To NumberOfBovTestPoints - 1
+                        AddHandler PERF_BOV_TEST_CAPTURE_BTN(index).ValueChanged, AddressOf OnBTN_BOV_TEST
+                    Next
+                    AddHandler PERF_BOV_TEST_PROCESS_BTN.ValueChanged, AddressOf OnBTN_BOV_TEST
+
+                End If
+
+                Return True
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : CreateHandler()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        Private Function DeleteHandler() As Boolean
+            Try
+                If Not CELProject.EngineModel Is Nothing Then
+
+                    If CELProject.EngineFamily = "PT6A" OrElse CELProject.EngineFamily = "PT6C" OrElse CELProject.EngineFamily = "PT6T" Then
+
+                        If Not PERF_PROCESS_RATING_ANALYSIS_BTN Is Nothing Then
+                            RemoveHandler PERF_PROCESS_RATING_ANALYSIS_BTN.ValueChanged, AddressOf OnBTN_CAPTURE_CONDITION
+                        End If
+
+                        If Not PERF_PROCESS_TORQUE_TRIM_BTN Is Nothing Then
+                            RemoveHandler PERF_PROCESS_TORQUE_TRIM_BTN.ValueChanged, AddressOf OnBTN_CAPTURE_CONDITION
+                        End If
+
+                        If Not PERF_TRIM_ANSWER_NO_CHKBOX Is Nothing Then
+                            RemoveHandler PERF_TRIM_ANSWER_NO_CHKBOX.ValueChanged, AddressOf OnTRIM_ANSWER
+                        End If
+
+                        If Not PERF_TRIM_ANSWER_YES_CHKBOX Is Nothing Then
+                            RemoveHandler PERF_TRIM_ANSWER_YES_CHKBOX.ValueChanged, AddressOf OnTRIM_ANSWER
+                        End If
+
+                        If Not PERF_ENGINE_SIDE_PORT_CHKBOX Is Nothing Then
+                            RemoveHandler PERF_ENGINE_SIDE_PORT_CHKBOX.ValueChanged, AddressOf OnENGINE_SIDE_ANSWER
+                        End If
+
+                        If Not PERF_ENGINE_SIDE_STBD_CHKBOX Is Nothing Then
+                            RemoveHandler PERF_ENGINE_SIDE_STBD_CHKBOX.ValueChanged, AddressOf OnENGINE_SIDE_ANSWER
+                        End If
+
+                        For index As Integer = 0 To NumberOfConditions - 1
+                            If Not PERF_CAPTURE_CONDITION_BTN(index) Is Nothing Then
+                                RemoveHandler PERF_CAPTURE_CONDITION_BTN(index).ValueChanged, AddressOf OnBTN_CAPTURE_CONDITION
+                            End If
+                        Next
+
+                        For index As Integer = 0 To NumberOfConditions - 1
+                            If Not PERF_CLEAR_CONDITION_BTN(index) Is Nothing Then
+                                RemoveHandler PERF_CLEAR_CONDITION_BTN(index).ValueChanged, AddressOf OnBTN_CLEAR_CONDITION
+                            End If
+                        Next
+
+                    End If
+
+                    If CELProject.EngineFamily = "PT6A" Then
+
+                        For index As Integer = 0 To NumberOfBovTestPoints - 1
+                            If Not PERF_BOV_TEST_CAPTURE_BTN(index) Is Nothing Then
+                                RemoveHandler PERF_BOV_TEST_CAPTURE_BTN(index).ValueChanged, AddressOf OnBTN_BOV_TEST
+                            End If
+
+                        Next
+
+                        If Not PERF_BOV_TEST_PROCESS_BTN Is Nothing Then
+                            RemoveHandler PERF_BOV_TEST_PROCESS_BTN.ValueChanged, AddressOf OnBTN_BOV_TEST
+                        End If
+                    End If
+
+                End If
+
+                Return True
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : DeleteHandler()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        Private Function GetOutputFilename() As String
+            Dim conditionNo As Integer
+            Dim engineBuildNo As Integer
+            Dim engineSN As String = ""
+
+            pwc83020.GetEngine(engineSN)
+            pwc83020.GetBuild(engineBuildNo)
+            pwc83020.GetCondition(conditionNo)
+
+            Return sDataPath + "OUT_" + engineSN + "_" + Format(engineBuildNo, "0000") + _
+                "_" + Format(conditionNo, "0000") + ".DAT"
+        End Function
+
+        Private Function Init_Engine_Channels() As Boolean
+            Dim Return_Value As New ArrayList()
+            Dim EngineFamily As String = CELProject.EngineFamily
+            Dim EngineModel As String = CELProject.EngineModel
+
+            Return_Value.Clear()
+
+            Try
+                'Not For "DAS CALIBRATION"
+
+                ' Common Parameters for ALL Engines no matter the family
+
+                ' Initialize performance channel
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BARO_INHGA, "LOG_PERF_P_BARO_INHGA"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_FUEL_AVG_DEGF, "LOG_PERF_T_FUEL_AVG_DEGF"))
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_SAMPLE_SG_FUEL, "LOG_PERF_SAMPLE_SG_FUEL"))
+
+                'Select Case EngineFamily
+                '    Case "PT6A"
+                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_SHP_CORR_DYNO, "LOG_PERF_SHP_CORR_DYNO"))
+                'End Select
+
+                Select Case EngineFamily
+                    Case "PT6A"
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF_AVG_PPH, "LOG_PERF_WF_AVG_PPH"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_AVG_DEGF, "LOG_PERF_T_T1_AVG_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_PLENUM_INHG, "LOG_PERF_P_PLENUM_INHG"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_PS3_INHGG, "LOG_PERF_P_PS3_INHGG"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_RPM, "LOG_PERF_NG_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NF_RPM, "LOG_PERF_NF_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DYNO_TORQUE_LBSFT, "LOG_PERF_DYNO_TORQUE_LBSFT"))
+                        Select Case EngineModel
+                            Case "PT6A-68", "PT6A-68C"
+                                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PMU_Q_PCT, "LOG_PERF_PMU_Q_PCT"))
+                            Case "PT6A-68B"
+                                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PMU_Q_PROP_LBSFT, "LOG_PERF_PMU_Q_PROP_LBSFT"))
+                            Case Else
+                                Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_ENG_TORQUE_PTQ_INHGD, "LOG_PERF_ENG_TORQUE_PTQ_INHGD"))
+                        End Select
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_DCU_TRIM_GAIN, "PERF_DCU_TRIM_GAIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_DCU_TRIM_BIAS, "PERF_DCU_TRIM_BIAS"))
+
+                    Case "PT6C"
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_PS3_PSIA, "LOG_PERF_P_PS3_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_NGC_RPM, "LOG_PERF_NG_NGC_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NPT_NPTD_RPM, "LOG_PERF_NPT_NPTD_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TORQUE_METER_TORQUE_LBSFT, "LOG_PERF_TORQUE_METER_TORQUE_LBSFT"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TORQUE_QEEC_LBSFT, "LOG_PERF_TORQUE_QEEC_LBSFT"))
+                        'In 14085 we connected P Inlet to Wash Ring and fed the value to PWC83020 as PSN
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_INLET_INHGA, "LOG_PERF_P_INLET_INHGA"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_DCU_TRIM_GAIN, "PERF_DCU_TRIM_GAIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_DCU_TRIM_BIAS, "PERF_DCU_TRIM_BIAS"))
+
+                    Case "PT6T"
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF1_PPH, "LOG_PERF_WF1_PPH"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF2_PPH, "LOG_PERF_WF2_PPH"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_PS3_P_INHGA, "LOG_PERF_P_PS3_P_INHGA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_PS3_S_INHGA, "LOG_PERF_P_PS3_S_INHGA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_P_RPM, "LOG_PERF_NG_P_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NG_S_RPM, "LOG_PERF_NG_S_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NF_P_RPM, "LOG_PERF_NF_P_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_NF_S_RPM, "LOG_PERF_NF_S_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_ENGINE_TORQUE_P_LBSFT, "LOG_PERF_ENGINE_TORQUE_P_LBSFT"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_ENGINE_TORQUE_S_LBSFT, "LOG_PERF_ENGINE_TORQUE_S_LBSFT"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_DYNO_TORQUE_LBSFT, "LOG_PERF_DYNO_TORQUE_LBSFT"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_DCU_TRIM_GAIN, "PERF_DCU_TRIM_GAIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_DCU_TRIM_BIAS, "PERF_DCU_TRIM_BIAS"))
+
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_ENGINE_SIDE_PORT_CHKBOX, "PERF_ENGINE_SIDE_PORT_CHKBOX"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_ENGINE_SIDE_STBD_CHKBOX, "PERF_ENGINE_SIDE_STBD_CHKBOX"))
+
+                End Select
+
+                Select Case EngineModel
+                    Case "PT6A-6", "PT6A-6A", "PT6A-6B"
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T4_DEGF, "LOG_PERF_T_T4_DEGF"))
+                    Case "PT6T-3", "PT6T-3B", "PT6T-3BE", "PT6T-3BG", "PT6T-3D", "PT6T-3DE", "PT6T-3DF", "PT6T-6_BELL", "PT6T-6_SIKOR"
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T5_P_DEGF, "LOG_PERF_T_T5_P_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T5_S_DEGF, "LOG_PERF_T_T5_S_DEGF"))
+                    Case Else
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T5_DEGF, "LOG_PERF_T_T5_DEGF"))
+                End Select
+
+                Select Case EngineModel
+                    Case "PT6A-68B", "PT6A-68C"
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_PMU_ITT_DEGF, "LOG_PERF_PMU_ITT_DEGF"))
+                End Select
+
+                For index As Integer = 0 To NumberOfConditions - 1
+                    ' Initialize capture condition button 
+                    Return_Value.Add(MyBase.InitializeChannel(PERF_CAPTURE_CONDITION_BTN(index), "PERF_CAPTURE_CONDITION_" + (index + 1).ToString + "_BTN"))
+
+                    ' Initialize clear condition button 
+                    Return_Value.Add(MyBase.InitializeChannel(PERF_CLEAR_CONDITION_BTN(index), "PERF_CLEAR_CONDITION_" + (index + 1).ToString + "_BTN"))
+
+                    ' Initialize clear condition button 
+                    Return_Value.Add(MyBase.InitializeChannel(PERF_SHP_CONDITION(index), "PERF_SHP_CONDITION_" + (index + 1).ToString))
+                Next
+
+                ' Initialize process performance button
+                Return_Value.Add(MyBase.InitializeChannel(PERF_PROCESS_TORQUE_TRIM_BTN, "PERF_PROCESS_TORQUE_TRIM_BTN"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_PROCESS_RATING_ANALYSIS_BTN, "PERF_PROCESS_RATING_ANALYSIS_BTN"))
+
+                ' Initialize performance input
+                Return_Value.Add(MyBase.InitializeChannel(PERF_HEATING_RESISTANCE, "PERF_HEATING_RESISTANCE"))
+
+                Return_Value.Add(MyBase.InitializeChannel(PERF_REMARK_TEXT, "PERF_REMARK_TEXT"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_TRIM_ANSWER_YES_CHKBOX, "PERF_TRIM_ANSWER_YES_CHKBOX"))
+                Return_Value.Add(MyBase.InitializeChannel(PERF_TRIM_ANSWER_NO_CHKBOX, "PERF_TRIM_ANSWER_NO_CHKBOX"))
+
+                If CELProject.EngineFamily = "PT6T" Then
+                    Return_Value.Add(MyBase.InitializeChannel(PERF_ENGINE_SIDE_PORT_CHKBOX, "PERF_ENGINE_SIDE_PORT_CHKBOX"))
+                    Return_Value.Add(MyBase.InitializeChannel(PERF_ENGINE_SIDE_STBD_CHKBOX, "PERF_ENGINE_SIDE_STBD_CHKBOX"))
+                End If
+
+                Select Case EngineModel
+                    Case "PT6A-6", "PT6A-6A", "PT6A-6B"
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_T4_TRIM_DEGF, "PERF_T4_TRIM_DEGF"))
+                    Case Else
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_T5_TRIM_DEGF, "PERF_T5_TRIM_DEGF"))
+                End Select
+
+
+                ' Inlet (T1) and EGT (T7) Channel init 
+                ' Initialization is based on the Engine real Probe Number
+
+                Dim ConfigPrefix As String = "//ConfigurationSettings/" & CELProject.EngineModel & "/"
+                NumberOfTt1Probes = CELProject.Project.ReadOneIntegerConfigItem(ConfigPrefix & "T_T1_NUMBER_PROBE", 0)
+                NumberOfTt7Probes = CELProject.Project.ReadOneIntegerConfigItem(ConfigPrefix & "T_T7_NUMBER_PROBE", 0)
+
+                Debug.Assert(NumberOfTt1Probes <> 0, "Invalid NumberOfTt1Probes")
+                Debug.Assert(NumberOfTt7Probes <> 0, "Invalid NumberOfTt7Probes")
+
+                If CELProject.EngineFamily = "PT6T" Then
+                    ReDim LOG_PERF_T_T1P_DEGF(NumberOfTt1Probes - 1)
+                    ReDim LOG_PERF_T_T1S_DEGF(NumberOfTt1Probes - 1)
+                    ReDim LOG_PERF_T_T7P_DEGF(NumberOfTt1Probes - 1)
+                    ReDim LOG_PERF_T_T7S_DEGF(NumberOfTt1Probes - 1)
+                Else
+                    ReDim LOG_PERF_T_T1_DEGF(NumberOfTt1Probes - 1)
+                    ReDim LOG_PERF_T_T7_DEGF(NumberOfTt7Probes - 1)
+                End If
+
+
+                For index As Integer = 0 To NumberOfTt1Probes - 1
+                    Select Case EngineFamily
+                        Case "PT6A", "PT6C"
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1_DEGF(index), "LOG_PERF_T_T1_" + (index + 1).ToString + "_DEGF"))
+                        Case "PT6T"
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1P_DEGF(index), "LOG_PERF_T_T1_P_" + (index + 1).ToString + "_DEGF"))
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T1S_DEGF(index), "LOG_PERF_T_T1_S_" + (index + 1).ToString + "_DEGF"))
+                    End Select
+
+                Next
+
+                For index As Integer = 0 To NumberOfTt7Probes - 1
+                    Select Case EngineFamily
+                        Case "PT6A", "PT6C"
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_DEGF(index), "LOG_PERF_T_T7_" + (index + 1).ToString + "_DEGF"))
+                        Case "PT6T"
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7P_DEGF(index), "LOG_PERF_T_T7_P_" + (index + 1).ToString + "_DEGF"))
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7S_DEGF(index), "LOG_PERF_T_T7_S_" + (index + 1).ToString + "_DEGF"))
+                    End Select
+
+                Next
+
+                ' Initialize Channels needed for T5 plot at DLL Output,  for PT6A-67F
+                If CELProject.EngineModel = "PT6A-67F" Then
+                    Return_Value.Add(MyBase.InitializeChannel(T_T5A_DLL_OUTPUT_DEGR, "T_T5A_DLL_OUTPUT_DEGR"))
+                    Return_Value.Add(MyBase.InitializeChannel(T_T5D_DLL_OUTPUT_DEGR, "T_T5D_DLL_OUTPUT_DEGR"))
+                End If
+
+                'Initialize channels for bov test
+                If CELProject.EngineFamily = "PT6A" Then
+                    Return_Value.Add(MyBase.InitializeChannel(PERF_BOV_TEST_CLOSING_NG_RPM, "PERF_BOV_TEST_CLOSING_NG_RPM"))
+                    Return_Value.Add(MyBase.InitializeChannel(PERF_BOV_TEST_PROCESS_BTN, "PERF_BOV_TEST_PROCESS_BTN"))
+                    For index As Integer = 0 To NumberOfBovTestPoints - 1
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_BOV_TEST_CAPTURE_BTN(index), "PERF_BOV_TEST_0" + (index + 1).ToString + "_CAPTURE_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_BOV_TEST_NG_RPM(index), "PERF_BOV_TEST_0" + (index + 1).ToString + "_NG_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_BOV_TEST_P_BARO_INHGA(index), "PERF_BOV_TEST_0" + (index + 1).ToString + "_P_BARO_INHGA"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_BOV_TEST_P_PLENUM_INHG(index), "PERF_BOV_TEST_0" + (index + 1).ToString + "_P_PLENUM_INHG"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_BOV_TEST_T_T1_AVG_DEGF(index), "PERF_BOV_TEST_0" + (index + 1).ToString + "_T_T1_AVG_DEGF"))
+                    Next 'Use the format method for leading 0
+                End If
+
+                'Initialize channels for the PT6A-68 One P Moment Correction
+                If CELProject.EngineModel = "PT6A-68" AndAlso UserInputs.BedType = "1P Moment Rig" Then
+                    Return_Value.Add(MyBase.InitializeChannel(PWC83020_DYNO_TORQUE_CORRECTION_GAIN, "PWC83020_DYNO_TORQUE_CORRECTION_GAIN"))
+                    Return_Value.Add(MyBase.InitializeChannel(PWC83020_DYNO_TORQUE_CORRECTION_BIAS, "PWC83020_DYNO_TORQUE_CORRECTION_BIAS"))
+                    Return_Value.Add(MyBase.InitializeChannel(PWC83020_T7_CORRECTION_GAIN, "PWC83020_T7_CORRECTION_GAIN"))
+                    Return_Value.Add(MyBase.InitializeChannel(PWC83020_T7_CORRECTION_BIAS, "PWC83020_T7_CORRECTION_BIAS"))
+                    Return_Value.Add(MyBase.InitializeChannel(PWC83020_T5_CORRECTION_GAIN, "PWC83020_T5_CORRECTION_GAIN"))
+                    Return_Value.Add(MyBase.InitializeChannel(PWC83020_T5_CORRECTION_BIAS, "PWC83020_T5_CORRECTION_BIAS"))
+                    Return_Value.Add(MyBase.InitializeChannel(PWC83020_WF_CORRECTION_GAIN, "PWC83020_WF_CORRECTION_GAIN"))
+                    Return_Value.Add(MyBase.InitializeChannel(PWC83020_WF_CORRECTION_BIAS, "PWC83020_WF_CORRECTION_BIAS"))
+                End If
+
+
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("Init_Engine_Channels: " & ex.Message, "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return_Value.Add(False)
+            Finally
+
+            End Try
+
+            If Return_Value.Contains(False) Then
+                Init_Engine_Channels = False
+            Else
+                Init_Engine_Channels = True
+            End If
+        End Function
+
+        Private Function Initialize() As Boolean
+            Try
+                ' Performance output initialization
+                For index As Integer = 0 To NumberOfConditions - 1
+                    PERF_SHP_CONDITION(index).Value = Values.Zero
+                Next
+
+                ' Performance input initialization
+                PERF_HEATING_RESISTANCE.Value = Values.Zero
+                PERF_T5_TRIM_DEGF.Value = Values.Zero
+                PERF_REMARK_TEXT.Value = Values.EmptyString
+                PERF_TRIM_ANSWER_NO_CHKBOX.Value = Values.True
+                PERF_TRIM_ANSWER_YES_CHKBOX.Value = Values.False
+
+                If CELProject.EngineFamily = "PT6T" Then
+                    PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.True
+                    PERF_ENGINE_SIDE_STBD_CHKBOX.Value = Values.False
+                Else
+                    PERF_DCU_TRIM_GAIN.Value = Values.One
+                    PERF_DCU_TRIM_BIAS.Value = Values.Zero
+                End If
+
+                Return True
+
+            Catch Ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : Initialize()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End Try
+        End Function
+
+        Private Function Initialize_Perf() As Boolean
+            Dim iError, i As Integer
+            Const TEST_CASE_BUILD As Integer = 1
+
+            Try
+
+                ' Dll System Check and initialization
+                CheckDLLInstallation()
+                CopyConfigurationFiles()
+                CreateDataPath()
+
+                ' Should be called once, and called in this order (see DLL user guide)
+                pwc83020.SetConfigurationPath(sConfigurationPath)
+                pwc83020.SetDataPath(sDataPath)
+
+                Select Case CELProject.EngineFamily
+                    Case "PT6A"
+                        If CELProject.EngineModel = "PT6A-61" AndAlso
+                           Not String.IsNullOrEmpty(UserInputs.BuildSpec) AndAlso (UserInputs.BuildSpec <> "618") Then
+                            ' Seul l'engine avec BS618 n'est pas loadé en passant le BS
+                            pwc83020.LoadModel(iError, CELProject.EngineModel & "_BS" & UserInputs.BuildSpec)
+                            'Format should be: Model = "PT6A-61_BS1236"
+
+                        Else 'Almost All models are loaded this way. Only PT6A-61 is loaded differently as above
+
+                            'PWC83020 does not support the -6, -6A and -6B engines. They are too Old. Performance is done manually by using the OHM
+                            If CELProject.EngineModel = "PT6A-6" Or CELProject.EngineModel = "PT6A-6A" Or CELProject.EngineModel = "PT6A-6B" Then
+                                clsTopMostMessageBox.Show("Initialize_Perf():" & vbCr &
+                                                          "PWC83020 does not support this engine model." & vbCr &
+                                                          "Performance has to be done manually by using the OHM.",
+                                                          "PWC83020 Warning",
+                                                          MessageBoxButtons.OK,
+                                                          MessageBoxIcon.Information)
+                                Return False
+                            End If
+
+                            pwc83020.LoadModel(iError, CELProject.EngineModel, UserInputs.ServiceBulletin1.ToString(), UserInputs.ServiceBulletin2.ToString())
+                            'Format should be: Model = "PT6A-135", Sb1 = "PRE1351" , Sb2 = "PST14261"
+                        End If
+
+                    Case "PT6C"
+                        pwc83020.LoadModel(iError, CELProject.EngineModel & "_BS" & UserInputs.BuildSpec.ToString())
+                        'Format should be: Model = "PT6C-67C_BS1019" or "PT6C-67C_BS963"
+                    Case "PT6T"
+                        pwc83020.LoadModel(iError, CELProject.EngineModel, UserInputs.ServiceBulletin1.ToString(), UserInputs.ServiceBulletin2.ToString())
+
+                End Select
+                pwc83020.Initialize() ' Should be called after setting the Engine Model
+                pwc83020.GetUnitData() 'Load unit Data From unit.dat File
+
+                Dim UnitValues(15, 2) As String
+
+                Select Case CELProject.EngineFamily
+                    Case "PT6A"
+                        UnitValues = UnitValuesPT6A
+                    Case "PT6C"
+                        UnitValues = UnitValuesPT6C
+                    Case "PT6T"
+                        UnitValues = UnitValuesPT6T
+                End Select
+
+                ' Foreach UnitValues in array, change units with the ones we are using in the project
+                For i = UnitValues.GetLowerBound(0) To UnitValues.GetUpperBound(0)
+                    If Not pwc83020.PutUnitValue(UnitValues(i, 0), UnitValues(i, 1), "") Then
+                        clsTopMostMessageBox.Show("SetUnitValues: Unknown label Or unit '" +
+                            UnitValues(i, 0) + "' (" + UnitValues(i, 1) + ")", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+                Next
+
+                'Enging Torque for the PT6A-68 and PT6A-68C models is read from Arinc and is in %. We overwrite the unit data here for these models only
+                If CELProject.EngineModel = "PT6A-68" Or CELProject.EngineModel = "PT6A-68C" Then
+                    If Not pwc83020.PutUnitValue("ENG", "%", "") Then
+                        clsTopMostMessageBox.Show("SetUnitValues: Unknown label Or unit 'ENG' (%)", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+                End If
+
+                'Enging Torque for the PT6A-68B models is read from Arinc and is in lbsft. We overwrite the unit data here for this model only
+                If CELProject.EngineModel = "PT6A-68B" Then
+                    If Not pwc83020.PutUnitValue("ENG", "LBF-FT", "") Then
+                        clsTopMostMessageBox.Show("SetUnitValues: Unknown label Or unit 'ENG' (%)", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+                End If
+
+                pwc83020.SaveUnitData()
+                pwc83020.SetBuild(TEST_CASE_BUILD) 'Build is always set to 1 in test case
+
+                If iError <> 0 Then
+                    If iError >= 10 And iError <= 12 Then
+                        clsTopMostMessageBox.Show("PWC83000_Sequence.Initialize_Perf(): You do not have a valid license to run the program and you need to contact PWC for a license key. Error #: " & iError.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Else
+                        clsTopMostMessageBox.Show("PWC83020_Sequence : Initialize_Perf() Couldn't Load Model", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        Return False
+                    End If
+                Else
+                    Return True
+                End If
+            Catch Ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : Initialize_Perf() Cannot communicate with P&WC DLL Processing Server" & vbCrLf & vbCrLf & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Function
+
+        Public Function UpdateCustomHeaderLogFile(ByVal AppendOption As Boolean, ByVal IsPerfEntry As Boolean, ByRef ExcelWorksheet As Excel.Worksheet, ByRef RowIndex As Integer, ByRef ColumnIndex As Integer) As Boolean
+            Dim Log_Condition As Integer
+
+            If AppendOption = False Then
+                Log_Condition = 1
+            Else
+                'Log_Condition = (ExcelWorksheet.Cells(RowIndex + 1, 1).End(Excel.XlDirection.xlToRight).Column - 1)
+                'TODO: Ici changement du au nouveau Microsoft.Office.Interop.Excel	                        'Log_Condition = (ExcelWorksheet.Cells(RowIndex + 1, 1).End(XlDirection.xlToRight).Column - 1)  'cette ligne en office 2010 retourne toujours 16384 -1 donc 16383 et le reste du code plante
+                Log_Condition = ExcelWorksheet.Cells(RowIndex + 1, ExcelWorksheet.Columns.Count).End(Excel.XlDirection.xlToLeft).Column - 1
+                Log_Condition = Log_Condition + 1
+
+            End If
+
+            If ((Log_Condition > 1) And ((Log_Condition Mod 5) = 1)) Then
+
+                'Repeat The Test Spec For this new sets of condition
+
+                With ExcelWorksheet
+                    .Range(.Cells(2, 2), .Cells(RowIndex - 2, 6)).Copy(.Cells(2, Log_Condition + 1))
+                End With
+            End If
+
+            ColumnIndex = 1 + Log_Condition
+
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Format(Now, "yyyy/MM/dd HH:mm:ss")
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 1
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = Log_Condition.ToString()
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 1
+
+            'Auto Generated Comment
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Performance Point"
+
+
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
+            RowIndex += 2
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Value = "Values"
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).Font.Bold = True
+            ExcelWorksheet.Cells(RowIndex, ColumnIndex).HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter
+
+            Return True
+        End Function
+
+        Private Sub ShowOutputFile()
+
+            Dim FileName As String = GetOutputFilename()
+            Dim DetailsForm As CEL.Forms.DisplayFile = Nothing
+
+            Try
+                If CELProject.EngineFamily = "PT6T" Then
+                    PerfFileName = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + UserInputs.EngineSerialNumberPort + "-" + UserInputs.EngineSerialNumberSTBD + "\" + UserInputs.WorkOrder + "\Perf\" + "Performance " + Format(Now, "yyyy-MM-dd HH'h'mm'm'ss's'") + ".txt"
+                Else
+                    PerfFileName = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + UserInputs.EngineSerialNumber + "\" + UserInputs.WorkOrder + "\Perf\" + "Performance " + Format(Now, "yyyy-MM-dd HH'h'mm'm'ss's'") + ".txt"
+                End If
+
+                If (System.IO.File.Exists(PerfFileName)) Then
+                    System.IO.File.Delete(PerfFileName)
+                End If
+
+                System.IO.File.Copy(FileName, PerfFileName)
+
+                DetailsForm = New CEL.Forms.DisplayFile(FileName)
+
+                DetailsForm.MinimizeBox = False
+                DetailsForm.MaximizeBox = False
+                DetailsForm.Text = FileName
+                DetailsForm.StartPosition = FormStartPosition.Manual
+                DetailsForm.Location = New Point(3040, 0)
+                DetailsForm.Height = 1080
+                DetailsForm.ShowDialog()
+            Catch e As Exception
+                MsgBox(e.ToString(), MsgBoxStyle.OkOnly Or MsgBoxStyle.Critical,
+                    FileName)
+            Finally
+                If (Not (DetailsForm Is Nothing)) Then
+                    DetailsForm.Dispose()
+                End If
+            End Try
+        End Sub
+
+        Private Sub OnBTN_CAPTURE_CONDITION(sender As IChannel, newVal As Value)
+            Try
+
+                If (CELProject.IsTrue(newVal) And CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value)) Then
+
+                    'PWC83020 does not support the -6, -6A and -6B engines. They are too Old. Performance is done manually by using the OHM
+                    If CELProject.EngineModel = "PT6A-6" Or CELProject.EngineModel = "PT6A-6A" Or CELProject.EngineModel = "PT6A-6B" Then
+                        clsTopMostMessageBox.Show("Initialize_Perf():" & vbCr &
+                                                  "PWC83020 does not support this engine model." & vbCr &
+                                                  "Performance has to be done manually by using the OHM.",
+                                                  "PWC83020 Warning",
+                                                  MessageBoxButtons.OK,
+                                                  MessageBoxIcon.Information)
+                        sender.Value = Values.False
+                        Exit Sub
+                    End If
+
+                    ' Find condition number in channel name
+                    Dim iCondition As Integer = Regex.Replace(sender.Name.ToString, "[^0-9]", String.Empty)
+
+                    'Predefined Error message for PUTVALUE in the Dll
+                    Dim msg As String = "PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at "
+
+                    Dim dInlet As New Dictionary(Of String, String)()
+                    Dim dEgt As New Dictionary(Of String, String)()
+                    Dim MaxNumberOfTt7Probes As Integer = 16
+                    Dim iError As Integer
+
+                    'Pour indexer les probes de temperature lors du passage à la DLL
+                    Dim i As Short = 1
+                    Dim j As Short = 1
+
+                    ' Set condition number
+                    pwc83020.SetCondition(iCondition)
+
+
+                    ' Refresh before pushing data to the DLL
+                    CELProject.LogPerfSynch.UpdateValues()
+
+                    If Not (FlowmeterCtrl Is Nothing) Then
+                        FlowmeterCtrl.ComputeFlow(True) 'Met également à jour les données du Flowmeter
+                    End If
+
+                    'PT6A-68 needs correction factors if it is being run on a 1P Moment rig. It is so the PWC program can process it.
+                    'The Log_perf values will be overwritten with the corrected values here
+                    If CELProject.EngineModel = "PT6A-68" AndAlso UserInputs.BedType = "1P Moment Rig" Then
+
+                        LOG_PERF_DYNO_TORQUE_LBSFT.Value = New KineticaRT.Values.Double _
+                            ((PWC83020_DYNO_TORQUE_CORRECTION_GAIN.Value.ToDouble() * LOG_PERF_DYNO_TORQUE_LBSFT.Value.ToDouble()) + PWC83020_DYNO_TORQUE_CORRECTION_BIAS.Value.ToDouble())
+
+                        LOG_PERF_T_T5_DEGF.Value = New KineticaRT.Values.Double _
+                            ((PWC83020_T5_CORRECTION_GAIN.Value.ToDouble() * LOG_PERF_T_T5_DEGF.Value.ToDouble()) + PWC83020_T5_CORRECTION_BIAS.Value.ToDouble())
+
+                        LOG_PERF_WF1_PPH.Value = New KineticaRT.Values.Double _
+                            ((PWC83020_WF_CORRECTION_GAIN.Value.ToDouble() * LOG_PERF_WF1_PPH.Value.ToDouble()) + PWC83020_WF_CORRECTION_BIAS.Value.ToDouble())
+
+                        LOG_PERF_WF2_PPH.Value = New KineticaRT.Values.Double _
+                            ((PWC83020_WF_CORRECTION_GAIN.Value.ToDouble() * LOG_PERF_WF2_PPH.Value.ToDouble()) + PWC83020_WF_CORRECTION_BIAS.Value.ToDouble())
+
+                        For index As Integer = 0 To (NumberOfTt7Probes - 1)
+                            If Not (LOG_PERF_T_T7_DEGF(index).Value.ToString = "NaN") Then
+                                LOG_PERF_T_T7_DEGF(index).Value = New KineticaRT.Values.Double _
+                            ((PWC83020_T7_CORRECTION_GAIN.Value.ToDouble() * LOG_PERF_T_T7_DEGF(index).Value.ToDouble()) + PWC83020_T7_CORRECTION_BIAS.Value.ToDouble())
+                            End If
+
+                        Next
+                    End If
+
+                    ' Not used options
+                    pwc83020.PutValue("TDF_FLAME_TUBE", "N", "1")
+                    pwc83020.PutValue("A27_EXHAUST_STUBS", "N", "1")
+                    Select Case CELProject.EngineModel
+                        Case "PT6B-36A", "PT6B-36B"
+                            pwc83020.PutValue("ITT_STEP", "0", "1") ' Only for B-36A/B
+                            pwc83020.PutValue("T5A_ARINC", "0", "1") ' Only for B-36A/B
+                        Case Else
+                            pwc83020.PutValue("ITT_STEP", "00000", "1")
+                            pwc83020.PutValue("T5A_ARINC", "-10001.00000", "1")
+                    End Select
+
+                    ' Side : not used for PT6C
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A"
+                            pwc83020.PutValue("SIDE", "", "1")
+                        Case "PT6T"
+                            If PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.True Then
+                                pwc83020.PutValue("SIDE", "L", "1")
+                            ElseIf PERF_ENGINE_SIDE_STBD_CHKBOX.Value = Values.True Then
+                                pwc83020.PutValue("SIDE", "R", "1")
+                            End If
+                    End Select
+
+                    ' Exhaust Stub : only for PT6C
+                    If CELProject.EngineFamily = "PT6C" Then
+                        If pwc83020.PutValue("PWC70009_EXHAUST_STUB", UserInputs.ExhaustStub.ToString, "1") = False Then
+                            MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at PWC70009_EXHAUST_STUB")
+                        End If
+                    ElseIf CELProject.EngineFamily = "PT6T" Then
+                        If pwc83020.PutValue("PWC70009_EXHAUST_STUB", " ", "1") = False Then
+                            MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at PWC70009_EXHAUST_STUB")
+                        End If
+                    End If
+
+                    'Serial number must be specified each time because of PT6T where the side can change.
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A", "PT6C"
+                            pwc83020.SetEngine(UserInputs.EngineSerialNumber)
+                        Case "PT6T"
+                            If PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.True Then
+                                pwc83020.SetEngine(UserInputs.EngineSerialNumberPort)
+                            Else
+                                pwc83020.SetEngine(UserInputs.EngineSerialNumberSTBD)
+                            End If
+                    End Select
+
+                    ' Test Cell name (optional, 8 characters max)
+                    If pwc83020.PutValue("CELL", Left(CELProject.Project.Description, 8), "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "CELL", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' Work charge code (optional, 8 characters max)
+                    If pwc83020.PutValue("WORK", UserInputs.WorkOrder, "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "WORK", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' Work charge code (optional, default zero)
+                    If UserInputs.TSO <> 0 Then
+                        If pwc83020.PutValue("TSO", UserInputs.TSO, "1") = False Then
+                            clsTopMostMessageBox.Show(msg + "TSO", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        End If
+                    End If
+
+                    ' Work charge code (optional, default zero)
+                    If UserInputs.TBO <> 0 Then
+                        If pwc83020.PutValue("TBO", UserInputs.TBO, "1") = False Then
+                            clsTopMostMessageBox.Show(msg + "TBO", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        End If
+                    End If
+
+                    ' Test Date (optional)
+                    If pwc83020.PutValue("DATE", System.DateTime.Now.ToString("yyyy/MM/dd"), "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "DATE", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' Test Time (optional)
+                    If pwc83020.PutValue("TIME", System.DateTime.Now.ToString("HH:mm:ss"), "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "TIME", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' Test Type
+                    If pwc83020.PutValue("TEST_TYPE", UserInputs.TestType, "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "TEST_TYPE", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' P&WC Performance DLL needs SG_Base which is SG at 60F (la DLL utilise un SG corrigé a 60 DegF)
+                    ' SG_BASE = SG + 0.000428 * (T_SAMPLE(F)-60)
+                    '
+                    ' If the test cell already correct Wf for Sg and Tsg :
+                    ' SG = SGBase and TFuel = TMeasured
+                    '
+                    ' Note : Pour plus d'informations, voir dans OneNote la section "Information Moteur"
+
+
+                    ' TSG ' Provient du MassFlowMeter                   
+                    If pwc83020.PutValue("TSG", LOG_PERF_T_FUEL_AVG_DEGF.Value.ToString(), "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "TSG", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' SG : TODO AAA: Revoir l'affectation du SG...
+                    If pwc83020.PutValue("SG", LOG_PERF_SAMPLE_SG_FUEL.Value.ToString(), "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "SG", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' SGBase : Idem dans ce cas au SG tel que expliqué plus haut
+                    If pwc83020.PutValue("SG_BASE", LOG_PERF_SAMPLE_SG_FUEL.Value.ToString(), "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "SG_BASE", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' LHV
+                    If pwc83020.PutValue("LHV", UserInputs.LHV, "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "LHV", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' Baro
+                    If pwc83020.PutValue("BARO", LOG_PERF_P_BARO_INHGA.Value.ToString(), "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "BARO", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A", "PT6C"
+                            ' WF1 
+                            If pwc83020.PutValue("WF1", LOG_PERF_WF_AVG_PPH.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "WF1", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+
+                            ' WF2 
+                            If pwc83020.PutValue("WF2", LOG_PERF_WF_AVG_PPH.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "WF2", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+                        Case "PT6T"
+                            If PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.True Then
+                                ' WF1 
+                                If pwc83020.PutValue("WF1", LOG_PERF_WF2_PPH.Value.ToString(), "1") = False Then
+                                    clsTopMostMessageBox.Show(msg + "WF1", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                End If
+
+                                ' WF2 
+                                If pwc83020.PutValue("WF2", LOG_PERF_WF2_PPH.Value.ToString(), "1") = False Then
+                                    clsTopMostMessageBox.Show(msg + "WF2", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                End If
+                            Else
+                                ' WF1 
+                                If pwc83020.PutValue("WF1", LOG_PERF_WF1_PPH.Value.ToString(), "1") = False Then
+                                    clsTopMostMessageBox.Show(msg + "WF1", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                End If
+
+                                ' WF2 
+                                If pwc83020.PutValue("WF2", LOG_PERF_WF1_PPH.Value.ToString(), "1") = False Then
+                                    clsTopMostMessageBox.Show(msg + "WF2", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                End If
+                            End If
+                    End Select
+
+                    ' TF1 
+                    If pwc83020.PutValue("TF1", LOG_PERF_T_FUEL_AVG_DEGF.Value.ToString(), "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "TF1", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' TF2
+                    If pwc83020.PutValue("TF2", LOG_PERF_T_FUEL_AVG_DEGF.Value.ToString(), "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "TF2", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A"
+                            'Dyno Torque
+                            If pwc83020.PutValue("DYNO_TQ", LOG_PERF_DYNO_TORQUE_LBSFT.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "DYNO_TQ", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+
+                            ' Engine Torque
+                            Select Case CELProject.EngineModel
+                                Case "PT6A-68", "PT6A-68C"
+                                    'Source: Arinc (%)
+                                    If pwc83020.PutValue("ENG_TQ", LOG_PERF_PMU_Q_PCT.Value.ToString(), "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "ENG_TQ", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                                Case "PT6A-68B"
+                                    'Source: Arinc (lbsft)
+                                    If pwc83020.PutValue("ENG_TQ", LOG_PERF_PMU_Q_PROP_LBSFT.Value.ToString(), "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "ENG_TQ", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                                Case Else
+                                    'Source: Pressure Sensor (inhg)
+                                    If pwc83020.PutValue("ENG_TQ", LOG_PERF_ENG_TORQUE_PTQ_INHGD.Value.ToString(), "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "ENG_TQ", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                            End Select
+
+                            ' P3 
+                            If pwc83020.PutValue("P3", LOG_PERF_P_PS3_INHGG.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "P3", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+                            ' NG 
+                            If pwc83020.PutValue("NG", LOG_PERF_NG_RPM.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "NG", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+                            ' NF
+                            If pwc83020.PutValue("NF", LOG_PERF_NF_RPM.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "NF", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+                            ' P1000 
+                            ' Si le BARO est pris dans la control room, il faut avoir BARO-PSN = P1000
+                            ' Note : PSN = Pression statique = P1000 = Inlet Pressure
+                            If pwc83020.PutValue("P1000", LOG_PERF_P_BARO_INHGA.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "P1000", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+                        Case "PT6C"
+                            ' Dyno Torque
+                            If pwc83020.PutValue("DYNO_TQ", LOG_PERF_TORQUE_METER_TORQUE_LBSFT.Value.ToString, "1") = False Then
+                                MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at DYNO_TQ")
+                            End If
+                            ' Engine Torque
+                            If pwc83020.PutValue("ENG_TQ", LOG_PERF_TORQUE_QEEC_LBSFT.Value.ToString, "1") = False Then
+                                MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at ENG_TQ")
+                            End If
+                            ' P3 
+                            If pwc83020.PutValue("P3", LOG_PERF_P_PS3_PSIA.Value.ToString, "1") = False Then
+                                MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at P3")
+                            End If
+                            ' NG 
+                            If pwc83020.PutValue("NG", LOG_PERF_NG_NGC_RPM.Value.ToString, "1") = False Then
+                                MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at NG")
+                            End If
+                            ' NF
+                            If pwc83020.PutValue("NF", LOG_PERF_NPT_NPTD_RPM.Value.ToString, "1") = False Then
+                                MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at NF")
+                            End If
+                            ' P1000
+                            ' Using Wash Ring as per Francis Boyte PWC
+                            If pwc83020.PutValue("P1000", LOG_PERF_P_INLET_INHGA.Value.ToString, "1") = False Then
+                                MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at P1000")
+                            End If
+                        Case "PT6T"
+                            'Dyno Torque
+                            If pwc83020.PutValue("DYNO_TQ", LOG_PERF_DYNO_TORQUE_LBSFT.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "DYNO_TQ", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+                            'P10000
+                            If pwc83020.PutValue("P1000", LOG_PERF_P_BARO_INHGA.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "P1000", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+                            'PORT / 'STBD
+                            If PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.True Then
+                                'Source: Pressure Sensor (inhg) converted to lbs-ft
+                                If pwc83020.PutValue("ENG_TQ", LOG_PERF_ENGINE_TORQUE_P_LBSFT.Value.ToString(), "1") = False Then
+                                    clsTopMostMessageBox.Show(msg + "ENG_TQ", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                End If
+                                'P3
+                                If pwc83020.PutValue("P3", LOG_PERF_P_PS3_P_INHGA.Value.ToString, "1") = False Then
+                                    MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at P3")
+                                End If
+                                ' NG 
+                                If pwc83020.PutValue("NG", LOG_PERF_NG_P_RPM.Value.ToString, "1") = False Then
+                                    MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at NG")
+                                End If
+                                ' NF
+                                If pwc83020.PutValue("NF", LOG_PERF_NF_P_RPM.Value.ToString, "1") = False Then
+                                    MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at NF")
+                                End If
+                            Else
+                                'Source: Pressure Sensor (inhg) converted to lbs-ft
+                                If pwc83020.PutValue("ENG_TQ", LOG_PERF_ENGINE_TORQUE_S_LBSFT.Value.ToString(), "1") = False Then
+                                    clsTopMostMessageBox.Show(msg + "ENG_TQ", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                End If
+                                'P3
+                                If pwc83020.PutValue("P3", LOG_PERF_P_PS3_S_INHGA.Value.ToString, "1") = False Then
+                                    MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at P3")
+                                End If
+                                ' NG 
+                                If pwc83020.PutValue("NG", LOG_PERF_NG_S_RPM.Value.ToString, "1") = False Then
+                                    MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at NG")
+                                End If
+                                ' NF
+                                If pwc83020.PutValue("NF", LOG_PERF_NF_S_RPM.Value.ToString, "1") = False Then
+                                    MessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on PUTVALUE function failed at NF")
+                                End If
+                            End If
+                    End Select
+
+                    ' T5A (ITT)
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A"
+                            Select Case CELProject.EngineModel
+                                Case "PT6A-6", "PT6A-6A", "PT6A-6B"
+                                    If pwc83020.PutValue("T5A", LOG_PERF_T_T4_DEGF.Value.ToString(), "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "T5A", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                                Case Else
+                                    If pwc83020.PutValue("T5A", LOG_PERF_T_T5_DEGF.Value.ToString(), "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "T5A", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                            End Select
+                        Case "PT6C"
+                            If pwc83020.PutValue("T5A", LOG_PERF_T_T5_DEGF.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "T5A", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+                        Case "PT6T"
+                            If PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.True Then
+                                If pwc83020.PutValue("T5A", LOG_PERF_T_T5_P_DEGF.Value.ToString(), "1") = False Then
+                                    clsTopMostMessageBox.Show(msg + "T5A", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                End If
+                            Else
+                                If pwc83020.PutValue("T5A", LOG_PERF_T_T5_S_DEGF.Value.ToString(), "1") = False Then
+                                    clsTopMostMessageBox.Show(msg + "T5A", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                End If
+                            End If
+                    End Select
+
+                    ' T5A_ARINC (ITT)
+                    Select Case CELProject.EngineModel
+                        Case "PT6A-68B", "PT6A-68C"
+                            If pwc83020.PutValue("T5A_ARINC", LOG_PERF_PMU_ITT_DEGF.Value.ToString(), "1") = False Then
+                                clsTopMostMessageBox.Show(msg + "T5A_ARINC", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            End If
+                    End Select
+
+                    ' Vane Area 1
+                    If pwc83020.PutValue("VANE_AREA1", UserInputs.VaneArea1.ToString(), "1") = False Then
+                        Console.WriteLine("  ERROR: PUTVALUE function failed at VANE_AREA1")
+                    End If
+
+                    ' Vane Area 2
+                    If pwc83020.PutValue("VANE_AREA2", UserInputs.VaneArea2.ToString(), "1") = False Then
+                        Console.WriteLine("  ERROR: PUTVALUE function failed at VANE_AREA2")
+                    End If
+
+                    ' Inlet Temperatures 
+                    '
+                    ' Use Dictionary from System.Collections.Generic. This will allow to create/use 
+                    ' dynamic variables.
+                    If CELProject.EngineFamily = "PT6T" Then
+                        If PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.True Then
+                            For index As Integer = 0 To NumberOfTt1Probes - 1
+                                dInlet.Add("LOG_PERF_T_T1P_" + (index + 1).ToString + "_DEGF", LOG_PERF_T_T1P_DEGF(index).Value.ToString)
+                            Next
+                        Else
+                            For index As Integer = 0 To NumberOfTt1Probes - 1
+                                dInlet.Add("LOG_PERF_T_T1S_" + (index + 1).ToString + "_DEGF", LOG_PERF_T_T1S_DEGF(index).Value.ToString)
+                            Next
+                        End If
+                    Else
+                        For index As Integer = 0 To NumberOfTt1Probes - 1
+                            dInlet.Add("LOG_PERF_T_T1_" + (index + 1).ToString + "_DEGF", LOG_PERF_T_T1_DEGF(index).Value.ToString)
+                        Next
+                    End If
+
+
+                    ' On récupère les T1 Input Conditions du dictionnaire pour les passer à la DLL en
+                    ' lui spécifiant le cIndex i
+                    For Each kvp As KeyValuePair(Of String, String) In dInlet
+                        If pwc83020.PutValue("T1", kvp.Value.ToString(), i.ToString()) = False Then
+                            clsTopMostMessageBox.Show(msg + "index " & i & " of T1", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        End If
+                        i += 1
+                    Next kvp
+
+                    ' Exhaust Temperatures
+                    ' Use Dictionary from System.Collections.Generic. This will allow to create/use 
+                    ' dynamic variables.
+
+                    'For index As Integer = 0 To NumberOfTt7Probes - 1
+                    '    dEgt.Add("LOG_PERF_T_T7_" + (index + 1).ToString + "_DEGF", LOG_PERF_T_T7_DEGF(index).Value.ToString)
+                    'Next
+
+                    ' On récupère les T7 Input Conditions du dictionnaire pour les passer à la DLL en
+                    ' lui spécifiant le cIndex j. Les index Imppairs dans la dll sont PORT et les index pairs sont STARBOARD
+
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A", "PT6C"
+
+                            'PORT
+                            If LOG_PERF_T_T7_DEGF(0).Value.ToString = "NaN" Then
+                                pwc83020.PutValue("T7", "-10001", "1")
+                            Else
+                                pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(0).Value.ToString, "1")
+                            End If
+
+                            If LOG_PERF_T_T7_DEGF(1).Value.ToString = "NaN" Then
+                                pwc83020.PutValue("T7", "-10001", "3")
+                            Else
+                                pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(1).Value.ToString, "3")
+                            End If
+
+                            If LOG_PERF_T_T7_DEGF(2).Value.ToString = "NaN" Then
+                                pwc83020.PutValue("T7", "-10001", "5")
+                            Else
+                                pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(2).Value.ToString, "5")
+                            End If
+
+                            If LOG_PERF_T_T7_DEGF(3).Value.ToString = "NaN" Then
+                                pwc83020.PutValue("T7", "-10001", "7")
+                            Else
+                                pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(3).Value.ToString, "7")
+                            End If
+
+                            'STARBOARD
+                            If LOG_PERF_T_T7_DEGF(4).Value.ToString = "NaN" Then
+                                pwc83020.PutValue("T7", "-10001", "2")
+                            Else
+                                pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(4).Value.ToString, "2")
+                            End If
+
+                            If LOG_PERF_T_T7_DEGF(5).Value.ToString = "NaN" Then
+                                pwc83020.PutValue("T7", "-10001", "4")
+                            Else
+                                pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(5).Value.ToString, "4")
+                            End If
+
+                            If LOG_PERF_T_T7_DEGF(6).Value.ToString = "NaN" Then
+                                pwc83020.PutValue("T7", "-10001", "6")
+                            Else
+                                pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(6).Value.ToString, "6")
+                            End If
+
+                            If LOG_PERF_T_T7_DEGF(7).Value.ToString = "NaN" Then
+                                pwc83020.PutValue("T7", "-10001", "8")
+                            Else
+                                pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(7).Value.ToString, "8")
+                            End If
+
+                            'For engines with 16 Probes
+                            If NumberOfTt7Probes > 8 Then
+
+                                'PORT
+                                If LOG_PERF_T_T7_DEGF(8).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "9")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(8).Value.ToString, "9")
+                                End If
+
+                                If LOG_PERF_T_T7_DEGF(9).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "11")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(9).Value.ToString, "11")
+                                End If
+                                If LOG_PERF_T_T7_DEGF(10).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "13")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(10).Value.ToString, "13")
+                                End If
+                                If LOG_PERF_T_T7_DEGF(11).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "15")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(11).Value.ToString, "15")
+                                End If
+
+                                'STARBOARD
+                                If LOG_PERF_T_T7_DEGF(12).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "10")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(12).Value.ToString, "10")
+                                End If
+
+                                If LOG_PERF_T_T7_DEGF(13).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "12")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(13).Value.ToString, "12")
+                                End If
+
+                                If LOG_PERF_T_T7_DEGF(14).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "14")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(14).Value.ToString, "14")
+                                End If
+
+                                If LOG_PERF_T_T7_DEGF(15).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "16")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7_DEGF(15).Value.ToString, "16")
+                                End If
+
+                            End If
+
+                        Case "PT6T"
+                            If PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.True Then
+
+                                If LOG_PERF_T_T7P_DEGF(0).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "1")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(0).Value.ToString, "1")
+                                End If
+
+                                If LOG_PERF_T_T7P_DEGF(1).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "3")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(1).Value.ToString, "3")
+                                End If
+
+                                If LOG_PERF_T_T7P_DEGF(2).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "5")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(2).Value.ToString, "5")
+                                End If
+
+                                If LOG_PERF_T_T7P_DEGF(3).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "7")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(3).Value.ToString, "7")
+                                End If
+
+                                If NumberOfTt7Probes > 4 Then
+
+                                    If LOG_PERF_T_T7P_DEGF(4).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "2")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(4).Value.ToString, "2")
+                                    End If
+
+                                    If LOG_PERF_T_T7P_DEGF(5).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "4")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(5).Value.ToString, "4")
+                                    End If
+
+                                    If LOG_PERF_T_T7P_DEGF(6).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "6")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(6).Value.ToString, "6")
+                                    End If
+
+                                    If LOG_PERF_T_T7P_DEGF(7).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "8")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(7).Value.ToString, "8")
+                                    End If
+
+                                End If
+
+                                'For engines with 16 Probes
+                                If NumberOfTt7Probes > 8 Then
+
+                                    'PORT
+                                    If LOG_PERF_T_T7P_DEGF(8).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "9")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(8).Value.ToString, "9")
+                                    End If
+
+                                    If LOG_PERF_T_T7P_DEGF(9).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "11")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(9).Value.ToString, "11")
+                                    End If
+                                    If LOG_PERF_T_T7P_DEGF(10).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "13")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(10).Value.ToString, "13")
+                                    End If
+                                    If LOG_PERF_T_T7P_DEGF(11).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "15")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(11).Value.ToString, "15")
+                                    End If
+
+                                    If LOG_PERF_T_T7P_DEGF(12).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "10")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(12).Value.ToString, "10")
+                                    End If
+
+                                    If LOG_PERF_T_T7P_DEGF(13).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "12")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(13).Value.ToString, "12")
+                                    End If
+
+                                    If LOG_PERF_T_T7P_DEGF(14).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "14")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(14).Value.ToString, "14")
+                                    End If
+
+                                    If LOG_PERF_T_T7P_DEGF(15).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "16")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7P_DEGF(15).Value.ToString, "16")
+                                    End If
+
+                                End If
+
+                            Else
+
+                                If LOG_PERF_T_T7S_DEGF(0).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "1")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(0).Value.ToString, "1")
+                                End If
+
+                                If LOG_PERF_T_T7S_DEGF(1).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "3")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(1).Value.ToString, "3")
+                                End If
+
+                                If LOG_PERF_T_T7S_DEGF(2).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "5")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(2).Value.ToString, "5")
+                                End If
+
+                                If LOG_PERF_T_T7S_DEGF(3).Value.ToString = "NaN" Then
+                                    pwc83020.PutValue("T7", "-10001", "7")
+                                Else
+                                    pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(3).Value.ToString, "7")
+                                End If
+
+                                If NumberOfTt7Probes > 4 Then
+
+                                    If LOG_PERF_T_T7S_DEGF(4).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "2")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(4).Value.ToString, "2")
+                                    End If
+
+                                    If LOG_PERF_T_T7S_DEGF(5).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "4")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(5).Value.ToString, "4")
+                                    End If
+
+                                    If LOG_PERF_T_T7S_DEGF(6).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "6")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(6).Value.ToString, "6")
+                                    End If
+
+                                    If LOG_PERF_T_T7S_DEGF(7).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "8")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(7).Value.ToString, "8")
+                                    End If
+
+                                End If
+
+                                'For engines with 16 Probes
+                                If NumberOfTt7Probes > 8 Then
+
+                                    'PORT
+                                    If LOG_PERF_T_T7S_DEGF(8).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "9")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(8).Value.ToString, "9")
+                                    End If
+
+                                    If LOG_PERF_T_T7S_DEGF(9).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "11")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(9).Value.ToString, "11")
+                                    End If
+                                    If LOG_PERF_T_T7S_DEGF(10).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "13")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(10).Value.ToString, "13")
+                                    End If
+                                    If LOG_PERF_T_T7S_DEGF(11).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "15")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(11).Value.ToString, "15")
+                                    End If
+
+                                    If LOG_PERF_T_T7S_DEGF(12).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "10")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(12).Value.ToString, "10")
+                                    End If
+
+                                    If LOG_PERF_T_T7S_DEGF(13).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "12")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(13).Value.ToString, "12")
+                                    End If
+
+                                    If LOG_PERF_T_T7S_DEGF(14).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "14")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(14).Value.ToString, "14")
+                                    End If
+
+                                    If LOG_PERF_T_T7S_DEGF(15).Value.ToString = "NaN" Then
+                                        pwc83020.PutValue("T7", "-10001", "16")
+                                    Else
+                                        pwc83020.PutValue("T7", LOG_PERF_T_T7S_DEGF(15).Value.ToString, "16")
+                                    End If
+
+                                End If
+
+                            End If
+
+                    End Select
+
+                    'If NumberOfTt7Probes <= CInt(MaxNumberOfTt7Probes / 2) Then
+                    '    For Each kvp As KeyValuePair(Of String, String) In dEgt
+                    '        If pwc83020.PutValue("T7", kvp.Value.ToString(), (2 * j - 1).ToString()) = False Then
+                    '            clsTopMostMessageBox.Show(msg + "index " & j & " of T7", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    '        End If
+                    '        j += 1
+                    '    Next kvp
+                    'Else
+                    '    For Each kvp As KeyValuePair(Of String, String) In dEgt
+                    '        If (pwc83020.PutValue("T7", kvp.Value.ToString(), j.ToString()) = False) And Not (kvp.Value.ToString() = "NaN") Then
+                    '            clsTopMostMessageBox.Show(msg + "index " & j & " of T7", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    '        End If
+                    '        j += 1
+                    '    Next kvp
+                    'End If
+
+
+                    ' Cold Harness Resistance
+                    If pwc83020.PutValue("CHRES", PERF_HEATING_RESISTANCE.Value.ToString, "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "CHRES", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' Remark Text
+                    If pwc83020.PutValue("REMARK", PERF_REMARK_TEXT.Value.ToString, "1") = False Then
+                        clsTopMostMessageBox.Show(msg + "REMARK", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' Trim Answer
+                    If PERF_TRIM_ANSWER_YES_CHKBOX.Value = Values.True Then
+                        If pwc83020.PutValue("TEMP_TRIM_ANSWER", "Y", "1") = False Then
+                            clsTopMostMessageBox.Show(msg + "TEMP_TRIM_ANSWER", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        End If
+                    ElseIf PERF_TRIM_ANSWER_NO_CHKBOX.Value = Values.True Then
+                        If pwc83020.PutValue("TEMP_TRIM_ANSWER", "N", "1") = False Then
+                            clsTopMostMessageBox.Show(msg + "TEMP_TRIM_ANSWER", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        End If
+                    End If
+
+                    ' T5 Trim for models with direct trim input
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A"
+                            Select Case CELProject.EngineModel
+                                Case "PT6A-6", "PT6A-6A", "PT6A-6B"
+                                    If pwc83020.PutValue("T5_TRIM", PERF_T4_TRIM_DEGF.Value.ToString, "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "T5_TRIM", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                                Case "PT6A-68B", "PT6A-68C"
+                                    If pwc83020.PutValue("DCU_TEMP_TRIM", PERF_T5_TRIM_DEGF.Value.ToString, "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "T5_TRIM", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                                Case Else
+                                    If pwc83020.PutValue("T5_TRIM", PERF_T5_TRIM_DEGF.Value.ToString, "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "T5_TRIM", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                            End Select
+
+                        Case "PT6T"
+                            If Left(CELProject.EngineModel, 6) <> "PT6T-6" Then
+                                If (PERF_T5_TRIM_DEGF.Value.ToString().Trim() <> "") Then
+                                    If pwc83020.PutValue("T5_TRIM", PERF_T5_TRIM_DEGF.Value.ToString, "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "T5_TRIM", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                                Else
+                                    If pwc83020.PutValue("T5_TRIM", "0", "1") = False Then
+                                        clsTopMostMessageBox.Show(msg + "T5_TRIM", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                    End If
+                                End If
+                            End If
+
+                    End Select
+
+                    ' SB1351 Check Box (LII_INDUCER_IMPELLOR) for PT6A-135 when S/N <= 92654 
+                    ' Note : S/N is normally a string !
+                    Select Case CELProject.EngineModel
+                        Case "PT6A-135"
+                            If UserInputs.EngineSerialNumber <= "92654" Then
+                                If pwc83020.PutValue("LII_INDUCER_IMPELLOR", "Y", "1") = False Then
+                                    clsTopMostMessageBox.Show(msg + "SB1351", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                                Else
+                                    clsTopMostMessageBox.Show("SB1351 has been set to YES", "", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                                End If
+                            End If
+                        Case Else
+                            pwc83020.PutValue("LII_INDUCER_IMPELLOR", "N", "1")
+                    End Select
+
+
+                    ' Process this condition (iError, iSave, iOutput)
+                    pwc83020.Process(iError, 1, 1)
+                    If iError <> 0 Then
+                        clsTopMostMessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION() ERROR on Process function", "", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
+
+                    ' Push information for Analysis
+
+                    ' This single is used to retrieve the results from summary file
+                    Dim result As Single
+
+                    i = iCondition - 1
+
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A", "PT6T"
+                            ' Show DYNO Torque from summary file and push it
+                            If CELProject.EngineModel = "PT6A-68" Or CELProject.EngineModel = "PT6A-68B" Or CELProject.EngineModel = "PT6A-68C" Then
+                                'Dyno torque for the PT6A-68/B/C models are saved under the "TORQ$OTH" column even though the PWC documentation states that "TORQ$OTH" is not used.
+                                pwc83020.GetResult("TORQ$OTH", result)
+                            Else
+                                pwc83020.GetResult("TORQ$DYN", result)
+                            End If
+                            TorqueDYNO(i) = result
+                            ' Show Engine Torque from summary file and push it
+                            pwc83020.GetResult("TORQ$TM", result)
+                            TorqueENG(i) = result
+                        Case "PT6C"
+                            ' Couldnt get proper Torque value from DLL for Engine Torque : using directly the value fed to the DLL
+                            TorqueDYNO(i) = CSng(LOG_PERF_TORQUE_METER_TORQUE_LBSFT.Value.ToDouble)
+                            TorqueENG(i) = CSng(LOG_PERF_TORQUE_QEEC_LBSFT.Value.ToDouble)
+                    End Select
+
+                    ' Show Dyno SHPN from summary file
+                    pwc83020.GetResult("SHPN$TM", result)
+
+                    ' Conditions for Rating Analysis will be selected on the basis of Engine SHP.
+                    '                   PERF_SHP_CONDITION(iCondition - 1).Value = New KineticaRT.Values.Double(result)
+                    PERF_SHP_CONDITION(iCondition - 1).Value = LOG_PERF_SHP_CORR_DYNO.Value
+                    ' Some Engines required the Data to be pushed for ploting
+                    PreparePlottingData(result)
+
+                    'Take Log Point
+                    CELProject.DoLogging(AddressOf UpdateCustomHeaderLogFile, False, CELProject.EngineModel, True)
+
+                    ShowOutputFile()
+
+                    sender.Value = Values.False
+
+                End If
+
+            Catch Ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnBTN_BOV_TEST(sender As IChannel, newVal As Value)
+            Try
+                If (CELProject.IsTrue(newVal) And CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value)) Then
+
+                    'PWC83020 does not support the -6, -6A and -6B engines. They are too Old. Performance is done manually by using the OHM
+                    If CELProject.EngineModel = "PT6A-6" Or CELProject.EngineModel = "PT6A-6A" Or CELProject.EngineModel = "PT6A-6B" Then
+                        clsTopMostMessageBox.Show("Initialize_Perf():" & vbCr &
+                                                  "PWC83020 does not support this engine model." & vbCr &
+                                                  "Performance has to be done manually by using the OHM.",
+                                                  "PWC83020 Warning",
+                                                  MessageBoxButtons.OK,
+                                                  MessageBoxIcon.Information)
+                        sender.Value = Values.False
+                        Exit Sub
+                    End If
+
+
+                    If sender.Name.ToString = PERF_BOV_TEST_PROCESS_BTN.Name.ToString Then
+
+                        Dim iOutput As Integer = 1
+                        Dim iError As Integer
+
+                        ' Si l'on ne met pas SetCondition à 20, le fichier de sortie ira écrasser
+                        ' le fichier d'une condition existant. Dans cette sequence, le
+                        ' fichier output #20 est réservé au BOV Check
+                        pwc83020.SetCondition(20)
+
+                        pwc83020.ProcessBovTest(iOutput, BovBaroPressure, BovPlenumPressure, BovP1000, BovT1, BovNg, BovClosingNg, iError)
+
+                        If iError = 0 Then 'Process completed successfully. Update on screen Display.
+                            PERF_BOV_TEST_CLOSING_NG_RPM.Value = New KineticaRT.Values.Double(BovClosingNg)
+                        End If
+
+
+                        ShowOutputFile()
+
+                    Else
+
+                        CELProject.LogPerfSynch.UpdateValues()
+
+
+                        Dim iBovIndex As Integer = Regex.Replace(sender.Name.ToString, "[^0-9]", String.Empty)
+
+                        BovBaroPressure(iBovIndex - 1) = LOG_PERF_P_BARO_INHGA.Value.ToDouble
+                        BovPlenumPressure(iBovIndex - 1) = LOG_PERF_P_PLENUM_INHG.Value.ToDouble
+                        BovP1000(iBovIndex - 1) = LOG_PERF_P_BARO_INHGA.Value.ToDouble
+                        BovT1(iBovIndex - 1) = LOG_PERF_T_T1_AVG_DEGF.Value.ToDouble
+                        BovNg(iBovIndex - 1) = LOG_PERF_NG_RPM.Value.ToDouble
+
+                        PERF_BOV_TEST_NG_RPM(iBovIndex - 1).Value = LOG_PERF_NG_RPM.Value
+                        PERF_BOV_TEST_P_BARO_INHGA(iBovIndex - 1).Value = LOG_PERF_P_BARO_INHGA.Value
+                        PERF_BOV_TEST_P_PLENUM_INHG(iBovIndex - 1).Value = LOG_PERF_P_PLENUM_INHG.Value
+                        PERF_BOV_TEST_T_T1_AVG_DEGF(iBovIndex - 1).Value = LOG_PERF_T_T1_AVG_DEGF.Value
+
+                    End If
+
+
+                    sender.Value = Values.False
+
+                End If
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnBTN_BOV_TEST()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub PreparePlottingData(result As Single)
+            Try
+                ' Retrieve T5A and T5D values from Summary file, and save the corrected Values.
+                ' PT6A-67 trim procedure need those values to be plotted in Deg Rankine.
+                If CELProject.EngineModel = "PT6A-67F" Then
+                    pwc83020.GetResult("T5AISA", result)
+                    T_T5A_DLL_OUTPUT_DEGR.Value = New KineticaRT.Values.Double(result)
+
+                    pwc83020.GetResult("T5MISA", result)
+                    T_T5D_DLL_OUTPUT_DEGR.Value = New KineticaRT.Values.Double(result)
+
+                End If
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : PreparePlottingData()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnTRIM_ANSWER(sender As IChannel, newVal As Value)
+            Try
+                ' Only one chkbox can be selected between PERF_TRIM_ANSWER_YES_CHKBOX and PERF_TRIM_ANSWER_NO_CHKBOX
+                If (sender Is PERF_TRIM_ANSWER_YES_CHKBOX) Then
+                    If CELProject.IsTrue(newVal) Then
+                        PERF_TRIM_ANSWER_NO_CHKBOX.Value = Values.False
+                    End If
+                End If
+
+                If (sender Is PERF_TRIM_ANSWER_NO_CHKBOX) Then
+                    If CELProject.IsTrue(newVal) Then
+                        PERF_TRIM_ANSWER_YES_CHKBOX.Value = Values.False
+                    End If
+                End If
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnTRIM_ANSWER()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnENGINE_SIDE_ANSWER(sender As IChannel, newVal As Value)
+
+            Dim ExistingConditions As Boolean = False
+
+            Try
+
+                For index As Integer = 0 To NumberOfConditions - 1
+                    If PERF_SHP_CONDITION(index).Value <> 0 Then
+                        ExistingConditions = True
+                        Exit For
+                    End If
+                Next
+
+                ' Only one chkbox can be selected between PERF_ENGINE_SIDE_PORT_CHKBOX and PERF_ENGINE_SIDE_STBD_CHKBOX
+                If (sender Is PERF_ENGINE_SIDE_PORT_CHKBOX) Then
+                    If CELProject.IsTrue(newVal) Then
+
+                        If ExistingConditions = True Then
+
+                            If DialogResult.Yes = MessageBox.Show("Are you sure you want to switch to PORT side and reset saved conditions ?", "CELDAS200", MessageBoxButtons.YesNo, MessageBoxIcon.Question) Then
+
+                                For index As Integer = 0 To NumberOfConditions - 1
+                                    PERF_SHP_CONDITION(index).Value = Values.Zero
+                                Next
+
+                                PERF_ENGINE_SIDE_STBD_CHKBOX.Value = Values.False
+                            Else
+                                PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.False
+                            End If
+
+                        Else
+                            PERF_ENGINE_SIDE_STBD_CHKBOX.Value = Values.False
+                        End If
+                    End If
+                End If
+
+                If (sender Is PERF_ENGINE_SIDE_STBD_CHKBOX) Then
+                    If CELProject.IsTrue(newVal) Then
+
+                        If ExistingConditions = True Then
+
+                            If DialogResult.Yes = MessageBox.Show("Are you sure you want to switch to STBD side and reset saved conditions ?", "CELDAS200", MessageBoxButtons.YesNo, MessageBoxIcon.Question) Then
+
+                                For index As Integer = 0 To NumberOfConditions - 1
+                                    PERF_SHP_CONDITION(index).Value = Values.Zero
+                                Next
+
+                                PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.False
+                            Else
+                                PERF_ENGINE_SIDE_STBD_CHKBOX.Value = Values.False
+                            End If
+
+                        Else
+                            PERF_ENGINE_SIDE_PORT_CHKBOX.Value = Values.False
+                        End If
+                    End If
+                End If
+
+            Catch ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnENGINE_SIDE_ANSWER()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnBTN_PROCESS_RATING_ANALYSIS(sender As IChannel, newVal As Value)
+            Try
+
+                If (CELProject.IsTrue(newVal) And CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value)) Then
+
+                    'PWC83020 does not support the -6, -6A and -6B engines. They are too Old. Performance is done manually by using the OHM
+                    If CELProject.EngineModel = "PT6A-6" Or CELProject.EngineModel = "PT6A-6A" Or CELProject.EngineModel = "PT6A-6B" Then
+                        clsTopMostMessageBox.Show("Initialize_Perf():" & vbCr &
+                                                  "PWC83020 does not support this engine model." & vbCr &
+                                                  "Performance has to be done manually by using the OHM.",
+                                                  "PWC83020 Warning",
+                                                  MessageBoxButtons.OK,
+                                                  MessageBoxIcon.Information)
+                        sender.Value = Values.False
+                        Exit Sub
+                    End If
+
+                    ' Set condition to 12 for unique output file
+                    ' 
+                    ' Si l'on ne met pas SetCondition à 12, le fichier de sortie ira écrasser
+                    ' le fichier d'une condition existant. Dans cette sequence, le
+                    ' fichier output #12 est réservé au Rating Analysis.
+                    pwc83020.SetCondition(12)
+
+
+                    ' Create an array with all used conditions and calculate total used condition
+                    Dim iCondsUsed(9) As Integer
+
+                    ' i est utilisée pour compter le nombre de conditions retenues, et pour pointer sur
+                    ' les index, dans le tableau de conditions qui sera passé au Rating Analysis 
+                    Dim i As Integer = 0
+
+                    ' Chaque condition dont le Engine SHP est <> 0 est considérée satisfaisante,
+                    ' alors, elle est sauvegardée et on incrémente le nombre de conditions retenues
+
+                    For index As Integer = 0 To NumberOfConditions - 1
+                        If PERF_SHP_CONDITION(index).Value <> 0 Then
+                            iCondsUsed(i) = index + 1
+                            i += 1
+                        End If
+                    Next
+
+
+                    ' Get Rating Data before Processing Rating Analysis
+
+                    '
+                    ' Les outputs de la fonction GetRatingData ne nous intéressent pas, on veut
+                    ' simplement processer le data via cette fonction pour qu'il soit accessible 
+                    ' pour la prochaine fonction ProcessRatingAnalysis.
+
+                    Dim iError As Integer
+                    Dim NumConds As Integer 'Output : number of conditions in the summary file
+
+                    Dim NumArr As Integer
+                    Dim iConds() As Integer
+                    Dim rSHPDyno() As Single
+                    Dim rSHPTm() As Single
+                    Dim rT5A() As Single
+                    Dim iTempTrimCode() As Integer
+
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A"
+                            NumArr = 10 'Size of next 4 parameter arrays, to avoid an overflow
+                            iConds = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} 'Tableau des conditions retenues par la fonction GetRatingData
+                            rSHPDyno = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+                            rSHPTm = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+                            rT5A = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+                            iTempTrimCode = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+                        Case "PT6C", "PT6T"
+                            NumArr = 5 'for PT6C, a maximum of 5 conditions must be used for rating analysis or the DLL crashes.
+                            iConds = {0, 0, 0, 0, 0}
+                            rSHPDyno = {0, 0, 0, 0, 0}
+                            rSHPTm = {0, 0, 0, 0, 0}
+                            rT5A = {0, 0, 0, 0, 0}
+                            iTempTrimCode = {0, 0, 0, 0, 0}
+                    End Select
+
+                    Try 'Pour récupérer l'exception en cas d'overflow dans la DLL. On n'a pas moyen de corriger le problème dans la DLL
+
+                        pwc83020.GetRatingData(NumConds, NumArr, iConds, rSHPDyno, rSHPTm, rT5A, iTempTrimCode, iError)
+
+                        If iError <> 0 Then
+                            clsTopMostMessageBox.Show("Get Rating Analysis function failed !", "Get Rating Analysis", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                        End If
+                    Catch Ex As Exception
+                        clsTopMostMessageBox.Show("PWC83020_Sequence : Get Rating Data Failed !" & vbCrLf & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                        Return
+                    End Try
+
+                    Dim EngineRatingAnalysisMaxPoints As Byte
+
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A"
+                            EngineRatingAnalysisMaxPoints = 10
+                        Case "PT6C", "PT6T"
+                            EngineRatingAnalysisMaxPoints = 5
+                    End Select
+
+                    If i <= EngineRatingAnalysisMaxPoints Then
+
+                        ' Execute Process Rating Analysis
+                        pwc83020.RatingAnalysis(1, i, iCondsUsed, iError)
+                        ' Error message
+                        If iError <> 0 Then
+                            clsTopMostMessageBox.Show("Process Rating Analysis function need more points", "Process Rating Analysis", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                        Else
+                            ShowOutputFile()
+                        End If
+
+                    Else
+                        CELDAS.NotifyIcon.ShowBalloonTip(30000, CELProject.TechnologyName, "Maximum number of points for Rating Analysis function is " & EngineRatingAnalysisMaxPoints.ToString, ToolTipIcon.Info)
+                    End If
+
+                    sender.Value = Values.False
+
+                End If
+
+            Catch Ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnBTN_PROCESS_RATING_ANALYSIS()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        ' Torque TRIM is only for (some) PT6C Engines and PT6A-68B/C.
+        Private Sub OnBTN_PROCESS_TORQUE_TRIM(sender As IChannel, newVal As Value)
+            Try
+
+                If (CELProject.IsTrue(newVal) And CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value)) Then
+
+                    'PWC83020 does not support the -6, -6A and -6B engines. They are too Old. Performance is done manually by using the OHM
+                    If CELProject.EngineModel = "PT6A-6" Or CELProject.EngineModel = "PT6A-6A" Or CELProject.EngineModel = "PT6A-6B" Then
+                        clsTopMostMessageBox.Show("Initialize_Perf():" & vbCr &
+                                                  "PWC83020 does not support this engine model." & vbCr &
+                                                  "Performance has to be done manually by using the OHM.",
+                                                  "PWC83020 Warning",
+                                                  MessageBoxButtons.OK,
+                                                  MessageBoxIcon.Information)
+                        sender.Value = Values.False
+                        Exit Sub
+                    End If
+
+                    If CELProject.EngineFamily = "PT6C" Or CELProject.EngineFamily = "PT6T" Or CELProject.EngineModel = "PT6A-68B" Or CELProject.EngineModel = "PT6A-68C" Then
+
+                        ' Set condition to 11 for unique output file
+                        ' 
+                        ' Si l'on ne met pas SetCondition à 11, le fichier de sortie ira écraser
+                        ' le fichier d'une condition existant. Dans cette séquence, le
+                        ' fichier output #11 est réservé au Torque Trim.
+                        pwc83020.SetCondition(11)
+
+                        ' Create arrays based on RTmAnalDyno and RTmAnalTm (Torque on capture BTN) 
+                        ' and total used condition
+                        Dim RTmAnalDyno(11) As Single
+                        Dim RTmAnalTm(11) As Single
+
+                        ' Est utilisée pour compter le nombre de conditions retenues, et pour pointer sur
+                        ' les index, dans le tableau de TORQUE qui sera passé au ProcessTorqueTrim
+                        Dim i As Integer = 0
+
+                        ' À une condition satisfaisante, on sauvegarde les valeurs de TORQUE (DYNO et ENG)
+                        ' pour cette condition dans un tableau et on incrémente le nombre de conditions ok
+                        For index As Integer = 0 To NumberOfConditions - 1
+                            If PERF_SHP_CONDITION(index).Value <> 0 Then
+                                RTmAnalDyno(i) = TorqueDYNO(index)
+                                RTmAnalTm(i) = TorqueENG(index)
+                                i += 1
+                            End If
+                        Next
+
+                        ' Execute Process Torque Trim function
+                        Dim MinPoints, iError As Integer
+
+                        Dim rDcuTrimGain As Single = PERF_DCU_TRIM_GAIN.Value.ToDouble ' Only for C-67C/D
+                        Dim rDcuTrimBias As Single = PERF_DCU_TRIM_BIAS.Value.ToDouble ' Only for C-67C/D
+
+                        pwc83020.ProcessTorqueTrim(1, RTmAnalDyno, RTmAnalTm, MinPoints, rDcuTrimGain, rDcuTrimBias, iError)
+
+                        ' Error message
+                        If iError <> 0 Then
+                            clsTopMostMessageBox.Show("Process Torque Trim function need minimum " + MinPoints.ToString + " points", "Process Torque Trim", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                        Else
+                            ShowOutputFile()
+                        End If
+
+                        sender.Value = Values.False
+
+                    Else
+                        clsTopMostMessageBox.Show("Process Torque Trim not Available for this Model ", "Process Torque Trim", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+
+                    End If
+                End If
+
+            Catch Ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnBTN_PROCESS_TORQUE_TRIM()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnBTN_CLEAR_CONDITION(sender As IChannel, newVal As Value)
+            Try
+
+                If (CELProject.IsTrue(newVal) And CELProject.IsFalse(CELProject.ARCHIVE_PLAY.Value)) Then
+
+                    ' Find condition number in channel name
+                    Dim iCondition As Integer = Regex.Replace(sender.Name.ToString, "[^0-9]", String.Empty)
+
+                    PERF_SHP_CONDITION(iCondition - 1).Value = Values.Zero
+
+                    sender.Value = Values.False
+                End If
+
+            Catch Ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnBTN_CAPTURE_CONDITION()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionInitialized(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionInitialized(newStatus)
+
+                If CELProject.HierarchyType = CELDAS.eHierarchyType.Slave Then
+
+                    Select Case CELProject.EngineFamily
+
+                        Case "PT6A", "PT6C", "PT6T"
+
+                            'Client Initialization
+                            Dim endpointAddress As New EndpointAddress(Configuration.CreateServerUriString())
+                            Dim binding As System.ServiceModel.Channels.Binding = Configuration.CreateBinding()
+                            Dim factory As New ChannelFactory(Of IPwc83020)(binding, endpointAddress)
+                            pwc83020 = factory.CreateChannel()
+
+                            If CELProject.Project.Number = 14085 Then
+                                UserInputs = New UserInput14085
+                            ElseIf CELProject.Project.Number = 14086 Then
+                                UserInputs = New UserInput14086
+                            ElseIf CELProject.Project.Number = 17631 Then
+                                UserInputs = New UserInput17631
+                            End If
+                            UserInputs.MapUserInputsParameters(CELProject)
+                            Init_Engine_Channels()
+                            If Initialize_Perf() = False Then
+                                Perf_Status_Close = True
+                                clsTopMostMessageBox.Show("PWC83020_Sequence : OnTestSessionInitialized()" & vbCr &
+                                                          "PWC Performance Initialization Failed.",
+                                                          "PWC83020",
+                                                          MessageBoxButtons.OK,
+                                                          MessageBoxIcon.Information)
+                            Else
+                                Perf_Status_Close = False
+                            End If
+
+                            'CreateLogFile() Ajouter Creation du Log generique
+
+                            Initialize()
+
+                    End Select
+
+                End If
+            Catch Ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnTestSessionInitialized()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionOpened(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionOpened(newStatus)
+
+            Catch ex As Exception
+
+                clsTopMostMessageBox.Show("PWC83020_Sequence.OnTestSessionOpened: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionRunning(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionRunning(newStatus)
+                If CELProject.HierarchyType = CELDAS.eHierarchyType.Slave Then
+
+                    Select Case CELProject.Project.Number
+                        Case 14086, 17631
+                            FlowmeterCtrl = New FlowmeterController(Me)
+                    End Select
+
+                    Select Case CELProject.EngineFamily
+                        Case "PT6A", "PT6C", "PT6T"
+                            If Perf_Status_Close Then
+                                clsTopMostMessageBox.Show("PWC83020_Sequence : OnTestSessionRunning()" & vbCr &
+                                                          "PWC Performance is not running",
+                                                          "PWC83020",
+                                                          MessageBoxButtons.OK,
+                                                          MessageBoxIcon.Information)
+                            End If
+                            CreateHandler()
+                    End Select
+
+                End If
+            Catch Ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnTestSessionRunning()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionClosing(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionClosing(newStatus)
+                If CELProject.HierarchyType = CELDAS.eHierarchyType.Slave Then
+
+                    Select Case CELProject.EngineFamily
+
+                        Case "PT6A", "PT6C", "PT6T"
+
+                            DeleteHandler()
+
+                            If Not (FlowmeterCtrl Is Nothing) Then
+                                FlowmeterCtrl.Dispose()
+                            End If
+
+                    End Select
+                End If
+            Catch Ex As Exception
+                clsTopMostMessageBox.Show("PWC83020_Sequence : OnTestSessionClosing()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+
+        '*************
+        ' Client      
+        '*************
+        Private pwc83020 As IPwc83020
+
+        '*************
+        '* Channels  *
+        '*************
+
+        Private NumberOfConditions As Integer = 10
+        ' Capture condition button
+        Private PERF_CAPTURE_CONDITION_BTN(NumberOfConditions - 1) As IBooleanChannel
+
+        ' Clear condition button
+        Private PERF_CLEAR_CONDITION_BTN(NumberOfConditions - 1) As IBooleanChannel
+
+        ' Output condition
+        Private PERF_SHP_CONDITION(NumberOfConditions - 1) As INumericChannel
+
+        Private LOG_PERF_SHP_CORR_DYNO As INumericChannel
+
+        ' Process performance button
+        Private PERF_PROCESS_TORQUE_TRIM_BTN As IBooleanChannel
+        Private PERF_PROCESS_RATING_ANALYSIS_BTN As IBooleanChannel
+
+        'BOV Test
+        Private NumberOfBovTestPoints As Integer = 3
+        Private PERF_BOV_TEST_CAPTURE_BTN(NumberOfBovTestPoints - 1) As IBooleanChannel
+        Private PERF_BOV_TEST_PROCESS_BTN As IBooleanChannel
+        Private BovBaroPressure(NumberOfBovTestPoints - 1) As Single
+        Private BovPlenumPressure(NumberOfBovTestPoints - 1) As Single
+        Private BovP1000(NumberOfBovTestPoints - 1) As Single
+        Private BovT1(NumberOfBovTestPoints - 1) As Single
+        Private BovNg(NumberOfBovTestPoints - 1) As Single
+        Private BovClosingNg As Single 'DLL Output - BOV Closing Normalised Speed
+        Private PERF_BOV_TEST_CLOSING_NG_RPM As INumericChannel
+        Private PERF_BOV_TEST_NG_RPM(NumberOfBovTestPoints - 1) As INumericChannel
+        Private PERF_BOV_TEST_P_BARO_INHGA(NumberOfBovTestPoints - 1) As INumericChannel
+        Private PERF_BOV_TEST_P_PLENUM_INHG(NumberOfBovTestPoints - 1) As INumericChannel
+        Private PERF_BOV_TEST_T_T1_AVG_DEGF(NumberOfBovTestPoints - 1) As INumericChannel
+
+        ' Performance channel
+        Private LOG_PERF_SAMPLE_SG_FUEL As INumericChannel
+        Private LOG_PERF_P_BARO_INHGA As INumericChannel
+        Private LOG_PERF_P_PLENUM_INHG As INumericChannel
+        Private LOG_PERF_T_T1_AVG_DEGF As INumericChannel
+        Private LOG_PERF_WF1_PPH As INumericChannel
+        Private LOG_PERF_WF2_PPH As INumericChannel
+        Private LOG_PERF_WF_AVG_PPH As INumericChannel
+        Private LOG_PERF_T_FUEL_AVG_DEGF As INumericChannel
+        Private LOG_PERF_DYNO_TORQUE_LBSFT As INumericChannel
+        Private LOG_PERF_ENG_TORQUE_PTQ_INHGD As INumericChannel
+        Private LOG_PERF_P_INLET_INHGA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_PS3_PSIA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_NG_NGC_RPM As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_NPT_NPTD_RPM As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_T_T4_DEGF As INumericChannel
+        Private LOG_PERF_T_T5_DEGF As INumericChannel
+        Private LOG_PERF_PMU_ITT_DEGF As INumericChannel
+        Private LOG_PERF_TORQUE_METER_TORQUE_LBSFT As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_TORQUE_QEEC_LBSFT As KineticaRT.Channels.INumericChannel
+        Private PERF_DCU_TRIM_GAIN As INumericChannel
+        Private PERF_DCU_TRIM_BIAS As INumericChannel
+        Private LOG_PERF_P_PS3_INHGG As INumericChannel
+        Private LOG_PERF_NG_RPM As INumericChannel
+        Private LOG_PERF_NF_RPM As INumericChannel
+        Private LOG_PERF_NPT_RPM As KineticaRT.Channels.INumericChannel
+
+        'Performance channels for PT6T
+
+        Private LOG_PERF_ENGINE_TORQUE_P_LBSFT As INumericChannel
+        Private LOG_PERF_ENGINE_TORQUE_S_LBSFT As INumericChannel
+        Private LOG_PERF_P_PS3_P_INHGA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_P_PS3_S_INHGA As KineticaRT.Channels.INumericChannel
+        Private LOG_PERF_T_T5_P_DEGF As INumericChannel
+        Private LOG_PERF_T_T5_S_DEGF As INumericChannel
+        Private LOG_PERF_NG_P_RPM As INumericChannel
+        Private LOG_PERF_NF_P_RPM As INumericChannel
+        Private LOG_PERF_NG_S_RPM As INumericChannel
+        Private LOG_PERF_NF_S_RPM As INumericChannel
+
+        'Performance channels for PT6A-68/C
+        Private LOG_PERF_PMU_Q_PCT As INumericChannel
+
+        'Performance channels for PT6A-68B
+        Private LOG_PERF_PMU_Q_PROP_LBSFT As INumericChannel
+
+        ' Channels for Corrected T5A and T5D ploting for PTA-67F
+        Private T_T5A_DLL_OUTPUT_DEGR As INumericChannel
+        Private T_T5D_DLL_OUTPUT_DEGR As INumericChannel
+
+        ' T1 
+        Private NumberOfTt1Probes As Integer
+        Private LOG_PERF_T_T1_DEGF() As INumericChannel
+        Private LOG_PERF_T_T1P_DEGF() As INumericChannel
+        Private LOG_PERF_T_T1S_DEGF() As INumericChannel
+
+        ' T7
+        Private NumberOfTt7Probes As Integer
+        Private LOG_PERF_T_T7_DEGF() As INumericChannel
+        Private LOG_PERF_T_T7P_DEGF() As INumericChannel
+        Private LOG_PERF_T_T7S_DEGF() As INumericChannel
+
+        ' Performance input
+        Private PERF_HEATING_RESISTANCE As INumericChannel
+        Private PERF_T4_TRIM_DEGF As INumericChannel
+        Private PERF_T5_TRIM_DEGF As INumericChannel
+        Private PERF_REMARK_TEXT As ITextChannel
+        Private PERF_TRIM_ANSWER_NO_CHKBOX As IBooleanChannel
+        Private PERF_TRIM_ANSWER_YES_CHKBOX As IBooleanChannel
+        Private PERF_ENGINE_SIDE_PORT_CHKBOX As IBooleanChannel
+        Private PERF_ENGINE_SIDE_STBD_CHKBOX As IBooleanChannel
+
+        ' 1P Moment Correction Factors
+        Private PWC83020_DYNO_TORQUE_CORRECTION_GAIN As INumericChannel
+        Private PWC83020_DYNO_TORQUE_CORRECTION_BIAS As INumericChannel
+        Private PWC83020_T7_CORRECTION_GAIN As INumericChannel
+        Private PWC83020_T7_CORRECTION_BIAS As INumericChannel
+        Private PWC83020_T5_CORRECTION_GAIN As INumericChannel
+        Private PWC83020_T5_CORRECTION_BIAS As INumericChannel
+        Private PWC83020_WF_CORRECTION_GAIN As INumericChannel
+        Private PWC83020_WF_CORRECTION_BIAS As INumericChannel
+
+        '********
+        '* Misc *
+        '********
+
+        Private Perf_Status_Close As Boolean = False
+        Private PerfFileName As String
+        Private TTrim_Dyno_Torque(11) As Double
+        Private TTrim_Engine_Torque(11) As Double
+        Private TestStep_List As System.Windows.Forms.ComboBox
+        Private UnitValuesPT6A(,) As String = {
+            {"TSG", "F"}, {"BARO", "IN.HGA"}, {"LHV", "BTU/LB"}, {"P3", "IN.HGG"}, {"P1000", "IN.HGA"},
+            {"PPLENUM", "IN.HGA"}, {"WF1", "LB/H"}, {"TF1", "F"}, {"T5A", "F"}, {"ENG", "IN.HGD"},
+            {"DYNO", "LBF-FT"}, {"T1", "F"}, {"T7", "F"}, {"T5TRIM", "F"}, {"T5AARINC", "F"}
+        }
+        Private UnitValuesPT6C(,) As String = {
+            {"TSG", "F"}, {"BARO", "IN.HGA"}, {"LHV", "BTU/LB"}, {"P3", "PSIA"}, {"P1000", "IN.HGA"},
+            {"PPLENUM", "PSIA"}, {"WF1", "LB/H"}, {"TF1", "F"}, {"T5A", "F"}, {"T5AARINC", "F"},
+            {"ENG", "LBF-FT"}, {"DYNO", "LBF-FT"}, {"T1", "F"}, {"T7", "F"}, {"T5TRIM", "F"}
+        }
+        Private UnitValuesPT6T(,) As String = {
+            {"TSG", "F"}, {"BARO", "IN.HGA"}, {"LHV", "BTU/LB"}, {"P3", "IN.HGA"}, {"P1000", "IN.HGA"},
+            {"PPLENUM", "PSIA"}, {"WF1", "LB/H"}, {"TF1", "F"}, {"T5A", "F"}, {"T5AARINC", "F"},
+            {"ENG", "LBF-FT"}, {"DYNO", "LBF-FT"}, {"T1", "F"}, {"T7", "F"}, {"T5TRIM", "F"}
+        }
+        Private TorqueDYNO(9) As Single
+        Private TorqueENG(9) As Single
+
+
+        '***************
+        '* Controllers *
+        '***************
+        Private FlowmeterCtrl As FlowmeterController = Nothing
+
+        Private UserInputs As UserInputBase
+
+        ' La Classe de base UserInputBase est abstraite. Les paramètres récurrents sont déclarés ici, mais les
+        '  paramètres spéficiques sont repportés dans la classe dérivée, selon le projet ou le
+        '  modèle de moteur.  
+        Public MustInherit Class UserInputBase
+
+            Public EngineSerialNumber As String = ""
+            Public EngineSerialNumberPort As String = ""
+            Public EngineSerialNumberSTBD As String = ""
+            Public WorkOrder As String = ""
+            Public PartNumber As String = ""
+            Public LHV As String = ""
+            Public OilType As String = ""
+            Public FuelType As String = ""
+            Public CustomerName As String = ""
+            Public ManualRevDate As String = ""
+            Public VaneArea1 As String = ""
+            Public VaneArea2 As String = ""
+            Public TSO As String = ""
+            Public TBO As String = ""
+            Public TSG As String = ""
+            Public TFuel As String = ""
+            Public SG As String = ""
+            Public ServiceBulletin1 As String = ""
+            Public ServiceBulletin2 As String = ""
+
+            Public TestType As String = ""
+            Public BedType As String = ""
+            Public BuildSpec As String = ""
+            Public ExhaustStub As String = ""
+            Public OperatorName As String = ""
+            Public InspectorName As String = ""
+            Public ObserverName As String = ""
+            Public SupervisorName As String = ""
+
+            ' Allow friend access to the empty constructor.
+            Friend Sub New()
+
+            End Sub
+
+            ' La routine doit être définie dans la classe enfant
+            Public MustOverride Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+        End Class
+
+
+        Public Class UserInput14085 : Inherits UserInputBase
+
+            Public Overrides Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+                EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+                PartNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+                LHV = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+                SG = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+                TFuel = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+                OilType = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+                FuelType = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+                CustomerName = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+                TSO = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+                TBO = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+                VaneArea1 = CELProject.Test_Mgr_UUT_Answer(11).Value.ToString()
+                VaneArea2 = CELProject.Test_Mgr_UUT_Answer(12).Value.ToString()
+
+                TestType = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+                BuildSpec = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+                ExhaustStub = CELProject.Test_Mgr_UUT_Choice(2).Value.ToString()
+                OperatorName = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+                ObserverName = CELProject.Test_Mgr_UUT_Choice(5).Value.ToString()
+                SupervisorName = CELProject.Test_Mgr_UUT_Choice(6).Value.ToString()
+
+            End Sub
+
+        End Class
+
+
+        Public Class UserInput14086 : Inherits UserInputBase
+
+
+            ' Récupère les informations du userInputs 
+            Public Overrides Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+                EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+                PartNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+                LHV = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+                OilType = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+                FuelType = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+                CustomerName = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+                TSO = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+                TBO = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+
+                VaneArea1 = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+                VaneArea2 = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+
+                BuildSpec = CELProject.Test_Mgr_UUT_PwBuildSpecification.Value.ToString()
+
+                TestType = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+                BedType = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+
+                OperatorName = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+                InspectorName = CELProject.Test_Mgr_UUT_Choice(5).Value.ToString()
+
+                ServiceBulletin1 = CELProject.Test_Mgr_UUT_PwServiceBulletin(0).Value.ToString()
+                ServiceBulletin2 = CELProject.Test_Mgr_UUT_PwServiceBulletin(1).Value.ToString()
+
+
+            End Sub
+
+        End Class
+
+        Public Class UserInput17631 : Inherits UserInputBase
+
+
+            ' Récupère les informations du userInputs 
+            Public Overrides Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+                If CELProject.EngineFamily = "PT6A" Then
+                    EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                Else
+                    Dim EngineSerialNumbers() As String = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString.Split("-")
+                    EngineSerialNumberPort = EngineSerialNumbers(0)
+                    EngineSerialNumberSTBD = EngineSerialNumbers(1)
+                End If
+
+                WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+                PartNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+                LHV = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+                SG = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+                TFuel = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+                OilType = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+                FuelType = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+                CustomerName = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+                TSO = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+                TBO = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+                VaneArea1 = CELProject.Test_Mgr_UUT_Answer(11).Value.ToString()
+                VaneArea2 = CELProject.Test_Mgr_UUT_Answer(12).Value.ToString()
+
+                BuildSpec = CELProject.Test_Mgr_UUT_PwBuildSpecification.Value.ToString()
+
+                TestType = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+                BedType = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+
+                OperatorName = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+                InspectorName = CELProject.Test_Mgr_UUT_Choice(5).Value.ToString()
+
+                ServiceBulletin1 = CELProject.Test_Mgr_UUT_PwServiceBulletin(0).Value.ToString()
+                ServiceBulletin2 = CELProject.Test_Mgr_UUT_PwServiceBulletin(1).Value.ToString()
+
+
+            End Sub
+
+        End Class
+
+    End Class
+End Namespace

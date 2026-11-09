@@ -1,0 +1,615 @@
+Imports System
+Imports System.Collections
+Imports System.Reflection
+Imports System.Text
+Imports System.Threading
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Windows.Forms
+Imports KineticaRT
+Imports KineticaRT.Sequence
+Imports KineticaRT.Values
+Imports KineticaRT.Controls.Frame
+'Imports Excel
+Imports Microsoft.Office.Interop
+Imports System.Data 
+Imports System.Data.OleDb 
+Imports Microsoft.VisualBasic
+
+Imports System.Runtime.InteropServices 'Used for DllImport
+Imports System.Security.Permissions 'Used in DllImport
+Imports System.Security 'Used in DllImport
+Imports CEL.HMI
+
+
+Namespace StudioDemonstration
+
+    <System.Security.Permissions.PermissionSet(System.Security.Permissions.SecurityAction.Assert, Unrestricted:=True)> _
+    Public Class ATAR_09C_Sequence
+        Inherits CEL.KineticaRT.Sequence.Sequence
+        Implements IEngineSequence
+
+
+        Private CELProject As CELDAS = CELDAS.Instance()
+
+
+
+        '********************************************************************
+        '* Variable Declaration *********************************************
+        '********************************************************************		
+
+        '      Public WINDOW_NAME() As String = {"Welcome_Screen", _
+        '      "ATAR_09C_Screen", _
+        '      "Throttle_Calib", _
+        '"Archiving"}
+
+
+        '      Public WINDOW_NAME() As String = {"Welcome_Screen", _
+        '"Test_Password", _
+        '"UserInputs", _
+        '"Calibration", _
+        '"Calibration_Input_Data", _
+        '"Archiving"}
+
+        '#Region "Enum Declaration"
+        'Private Enum eFlowMass
+        '    LbByMin
+        '    KgByMin
+        '    KgBySec
+        'End Enum
+        'Private Enum eLength
+        '    Inch
+        '    Centimeter
+        'End Enum
+        'Private Enum ePressure
+        '    PSI
+        '    Kilopascal
+        '    InchesOfMercury
+        '    InchesH20
+        'End Enum
+        'Private Enum eTemperature
+        '    Celsius
+        '    Fahrenheit
+        'End Enum
+        'Private Enum eTest_Mgr_Cmd
+        '    Open = 1
+        '    Load = 2
+        '    Initialize = 3
+        '    Run = 4
+        '    Close = 5
+        '    Idle = -99
+        'End Enum
+        'Private Enum eTest_Mgr_Status
+        '    Opening = 1
+        '    Opened = 2
+        '    Loading = 3
+        '    Loaded = 4
+        '    Initializing = 5
+        '    Initialized = 6
+        '    Running = 7
+        '    Closing = 8
+        '    Closed = 9
+        '    Idling = -999
+        'End Enum
+
+
+        '#End Region
+
+
+
+
+        '********************************************************************
+        '* Public Methods ***************************************************
+        '********************************************************************
+#Region "Connect / Disconnect"
+        '***********
+        '* Connect *
+        '***********
+        Public Overloads Overrides Sub Connect()
+            Try
+                If Me.Connected = False Then
+                    MyBase.Connect()
+
+                    'PROJECT_NUMBER = System.Configuration.ConfigurationSettings.AppSettings("ProjectNo")
+
+
+                    'Verify the connection to the channels
+                    If Init_Channels() = False Then
+                        MessageBox.Show(Me.GetType.FullName + ".Connect() - missing channels")
+                        Return
+                    End If
+
+                    'TODO: Transférer dans open_test
+                    PROJECT_NB.Value = New KineticaRT.Values.Text(CELProject.Project.Number)
+
+                    'TODO retirer le OnTest_MNgr_Status
+                    'AddHandler Test_Mgr_Status.ValueChanged, AddressOf OnTest_Mgr_Status
+
+
+                    Me.Connected = True
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: ATAR_09C_Sequence: Connect()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+                Me.Connected = False
+            End Try
+        End Sub
+
+        '**************
+        '* Disconnect *
+        '**************
+        Public Overloads Overrides Sub Disconnect()
+            Try
+                If Me.Connected Then
+                    'RemoveHandler Test_Mgr_Status.ValueChanged, AddressOf OnTest_Mgr_Status
+
+                    MyBase.Disconnect()
+                    Me.Connected = False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: ATAR_09C_Sequence: Disconnect()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+            End Try
+        End Sub
+
+#End Region
+
+
+        '*************************
+        '* OnTestSessionIdling() *
+        '*************************
+        Protected Overrides Sub OnTestSessionIdling(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+
+                MyBase.OnTestSessionIdling(newStatus)
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionIdling: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+        '******************************
+        '* OnTestSessionInitialized() *
+        '******************************
+        Protected Overrides Sub OnTestSessionInitialized(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                Me.EngineModel = CELProject.Test_Mgr_UUT_Model.Value.ToString().Replace(" ", "_")
+
+
+                MyBase.OnTestSessionInitialized(newStatus)
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionInitialized: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+
+
+        '**************************
+        '* OnTestSessionRunning() *
+        '**************************
+        Protected Overrides Sub OnTestSessionRunning(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+
+                Select Case EngineModel
+                    'Not For "DAS CALIBRATION"
+                    Case "ATAR_09C"
+
+                        'Me.EngineWindow(0).BeginInvoke(New MethodInvoker(AddressOf Me.Init_Controls))
+                        CELProject.EngineWindowCollection.Item(0).EngineWindow.BeginInvoke(New MethodInvoker(AddressOf Me.Init_Controls))
+
+                        If (Init_Engine_Channels()) Then
+                            If (Init_Engine_Channels_Value()) Then
+                                AddHandlers()
+                                'CELProject.Open_HMI(Test_Mgr_UUT_Model.Value.ToString())
+                            End If
+                        End If
+
+                End Select
+
+                MyBase.OnTestSessionRunning(newStatus)
+
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionRunning: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+
+        End Sub
+        '**************************
+        '* OnTestSessionClosing() *
+        '**************************
+        Protected Overrides Sub OnTestSessionClosing(ByVal newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+
+                Select Case EngineModel
+                    Case "ATAR_09C"
+                        Init_Engine_Channels_Value() 'Reinit variables before we quit
+                        RemoveHandlers()
+                End Select
+
+                MyBase.OnTestSessionClosing(newStatus)
+                'Restore default Culture Info
+                System.Threading.Thread.CurrentThread.CurrentCulture = OldCultureInfo
+            Catch ex As Exception
+                MessageBox.Show("OnTestSessionClosing: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            End Try
+        End Sub
+        '********************************
+        '* Initialize_Engine_Controls() *
+        '********************************
+        Private Function Init_Controls() As Boolean Implements IEngineSequence.Init_Controls
+
+
+            Try
+
+                Select Case CELProject.Test_Mgr_UUT_Model.Value.ToString()
+
+                    Case "ATAR 09C"
+
+                End Select
+
+            Catch ex As Exception
+
+            End Try
+            Return True
+        End Function
+        Private Function AddHandlers() As Boolean Implements IEngineSequence.AddHandlers
+
+            AddHandler CELProject.CLOSE_TEST_BTN.ValueChanged, AddressOf OnClose_Test
+            AddHandler CLOSE_SPARES_BUTTON.ValueChanged, AddressOf OnClose_Spares_Button
+            AddHandler CLOSE_RIGGING_BUTTON.ValueChanged, AddressOf OnClose_Rigging_Button
+            AddHandler SPARES_BUTTON.ValueChanged, AddressOf OnSpares_Button
+
+        End Function
+        Private Function RemoveHandlers() As Boolean Implements IEngineSequence.RemoveHandlers
+
+            RemoveHandler CELProject.CLOSE_TEST_BTN.ValueChanged, AddressOf OnClose_Test
+            RemoveHandler CLOSE_SPARES_BUTTON.ValueChanged, AddressOf OnClose_Spares_Button
+            RemoveHandler CLOSE_RIGGING_BUTTON.ValueChanged, AddressOf OnClose_Rigging_Button
+            RemoveHandler SPARES_BUTTON.ValueChanged, AddressOf OnSpares_Button
+
+        End Function
+
+
+        '*******************
+        '* ActivateForm	   *
+        '*******************
+        'Public Sub ActivateForm(ByVal FormName As String, ByVal OwnerName As String, ByVal Activate As Boolean)
+        '    Try
+        '        Dim i, j As Integer
+
+        '        If (Activate = True) Then
+        '            For i = 0 To WINDOW_NAME.GetUpperBound(0)
+        '                If WINDOW_NAME(i) = FormName Then
+        '                    If OwnerName <> "" Then
+        '                        EngineWindow(i).FormBorderStyle = FormBorderStyle.FixedSingle
+        '                        EngineWindow(i).Refresh()
+
+        '                        For j = 0 To WINDOW_NAME.GetUpperBound(0)
+        '                            If WINDOW_NAME(j) = OwnerName Then
+        '                                EngineWindow(i).Owner = EngineWindow(j)
+
+        '                                Exit For
+        '                            End If
+        '                        Next
+        '                    End If
+
+        '                    EngineWindow(i).Visible = True
+        '                    EngineWindow(i).Activate()
+        '                    Exit For
+        '                End If
+
+        '                If (i - 1) = WINDOW_NAME.GetUpperBound(0) Then
+        '                    MessageBox.Show("ERROR: " & FormName & " Window could not be found.", "CELDAS™ 200", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        '                End If
+        '            Next
+        '        Else 'Deactivate
+        '            For i = 0 To WINDOW_NAME.GetUpperBound(0)
+        '                If WINDOW_NAME(i) = FormName Then
+        '                    EngineWindow(i).Visible = False
+        '                    Exit For
+        '                End If
+
+        '                If (i - 1) = WINDOW_NAME.GetUpperBound(0) Then
+        '                    MessageBox.Show("ERROR: " & FormName & " Window could not be found.", "CELDAS™ 200", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        '                End If
+        '            Next
+        '        End If
+
+        '    Catch Ex As Exception
+        '        MessageBox.Show("UNEXPECTED ERROR: ATAR_09C_Sequence: ActivateForm()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+        '    End Try
+        'End Sub
+
+        '********************************************************************
+        '* Private Methods **************************************************
+        '********************************************************************
+      
+        '**************************
+        '* Init_Channels()        *
+        '**************************
+        Private Function Init_Channels() As Boolean Implements IEngineSequence.Init_Channels
+            Try
+                'Dim i As Integer
+                Dim Return_Value As New ArrayList()
+
+                Return_Value.Clear()
+
+                'Return_Value.Add(MyBase.InitializeChannel(ProjectNb, "ProjectNb")) 'TODO: Atar Renommé ProjectNb pour PROJECT_NB revoir le test session qui utilisait ce channel
+                'TODO: Transférer dans Open_Test pour les éléments communs
+                Return_Value.Add(MyBase.InitializeChannel(PROJECT_NB, "PROJECT_NB")) 'TODO: Atar Renommé ProjectNb pour PROJECT_NB revoir le test session qui utilisait ce channel
+
+                'Initialise Channels
+                'Return_Value.Add(MyBase.InitializeChannel(Close_Test, "Close_Test"))
+                'Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_Cmd, "Test_Mgr_Cmd"))
+                'Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_Status, "Test_Mgr_Status"))
+                'For i = 0 To Test_Mgr_UUT_Answer.GetUpperBound(0) - 1
+                '    Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Answer(i), "Test_Mgr_UUT_Answer" + (i + 1).ToString()))
+                'Next
+                'For i = 0 To Test_Mgr_UUT_Calib_Constant.GetUpperBound(0) - 1 '#v1.01# ft 2006/09/12 used to calculate Bleed air (WB)
+                '    Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Calib_Constant(i), "Test_Mgr_UUT_Calib_Constant" + (i + 1).ToString()))
+                'Next
+                'For i = 0 To Test_Mgr_UUT_Choice.GetUpperBound(0) - 1
+                '    Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Choice(i), "Test_Mgr_UUT_Choice" + (i + 1).ToString()))
+                'Next
+                'Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Model, "Test_Mgr_UUT_Model"))
+                'For i = 0 To Test_Mgr_UUT_Option.GetUpperBound(0) - 1
+                '    Return_Value.Add(MyBase.InitializeChannel(Test_Mgr_UUT_Option(i), "Test_Mgr_UUT_Option" + (i + 1).ToString()))
+                'Next
+
+                'Initialise Object
+                'For i = 0 To WINDOW_NAME.GetUpperBound(0)
+                '    Return_Value.Add(MyBase.InitializeObject(EngineWindow(i), WINDOW_NAME(i)))
+                'Next
+                'CELProject.InitializeEngineWindows()
+
+                If Return_Value.Contains(False) Then
+                    Return False
+                Else
+                    Return True
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: ATAR_09C_Sequence: Init_Channels()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+            End Try
+        End Function
+
+
+        '**************************
+        '* Init_Engine_Channels() *
+        '**************************
+        Private Function Init_Engine_Channels() As Boolean Implements IEngineSequence.Init_Engine_Channels
+            Try
+                'Dim i				As Integer
+                Dim Return_Value As New ArrayList()
+
+                Return_Value.Clear()
+
+
+                If CELProject.Test_Mgr_UUT_Model.Value.ToString() = "ATAR 09C" Then
+
+
+                    Return_Value.Add(MyBase.InitializeObject(Master_Engine_Window, CELProject.Test_Mgr_UUT_Model.Value.ToString().Replace("-", "_").Replace(" ", "_") + "_Screen"))
+                    Master_Engine_Window.WindowState = FormWindowState.Normal
+                    Master_Engine_Window.Left = 0
+                    Master_Engine_Window.Top = 0
+                    Master_Engine_Window.ClientSize = New System.Drawing.Size(2560, 959)
+
+                    Return_Value.Add(MyBase.InitializeChannel(CLOSE_SPARES_BUTTON, "CLOSE_SPARES_BUTTON"))
+                    Return_Value.Add(MyBase.InitializeChannel(CLOSE_RIGGING_BUTTON, "CLOSE_RIGGING_BUTTON"))
+                    Return_Value.Add(MyBase.InitializeChannel(SPARES_BUTTON, "SPARES_BUTTON"))
+                    Return_Value.Add(MyBase.InitializeChannel(Galil_MinSlope, "Galil_MinSlope"))
+
+                    'Return_Value.Add(MyBase.InitializeObject(Control_Frame, Test_Mgr_UUT_Model.Value.ToString() + "_Screen.GenericButtonFrame"))
+                    Return_Value.Add(MyBase.InitializeObject(Control_Frame, Me.EngineModel + "_Screen.GenericButtonFrame"))
+
+                    btnArchive = Control_Frame.FindObject("Archive_Button")
+                    If btnArchive Is Nothing Then
+                        MessageBox.Show("Initialize_Object - Archive_Button Is Nothing")
+                        Return_Value.Add(False)
+                    Else
+                        Return_Value.Add(True)
+                    End If
+
+                End If
+
+
+                Init_Engine_Channels = Not Return_Value.Contains(False)
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: ATAR_09C_Sequence: Init_Engine_Channels()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+            End Try
+        End Function
+
+
+        '****************************
+        '* OnClose_Spares_Button()  *
+        '****************************
+        Private Sub OnClose_Spares_Button(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (CELProject.IsTrue(newVal)) Then
+                    CELProject.ActivateForm("Spares_Screen", CELProject.Test_Mgr_UUT_Model.Value.ToString() + "_Screen", False, False)
+                End If
+
+                CLOSE_SPARES_BUTTON.Value = KineticaRT.Values.Values.False
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: OpenTest: OnClose_Spares_Button()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+            End Try
+        End Sub
+
+        '****************************
+        '* OnClose_Rigging_Button()  *
+        '****************************
+        Private Sub OnClose_Rigging_Button(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (CELProject.IsTrue(newVal)) Then
+                    CELProject.ActivateForm("Throttle_Calib", CELProject.Test_Mgr_UUT_Model.Value.ToString() + "_Screen", False, False)
+                End If
+
+                CLOSE_RIGGING_BUTTON.Value = KineticaRT.Values.Values.False
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: OpenTest: OnClose_Rigging_Button()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+            End Try
+        End Sub
+
+        '********************************
+        '* Init_Engine_Channels_Value() *
+        '********************************
+        Private Function Init_Engine_Channels_Value() As Boolean Implements IEngineSequence.Init_Engine_Channels_Value
+            Init_Engine_Channels_Value = False
+            Try
+
+                'TODO:
+                'Minimun slope for rigging
+                'Dim MinSlopeRig As String = reader.Item("MinSlopeRig").ToString()
+                'Galil_MinSlope.Value = New KineticaRT.Values.Double(CDbl(MinSlopeRig))
+
+                Init_Engine_Channels_Value = True
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: ATAR_09C_Sequence: Init_Engine_Channels_Value()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+            End Try
+        End Function
+
+        '********************
+        '* OnCloseTest()    *
+        '********************					
+        Private Sub OnClose_Test(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                If (CELProject.IsTrue(newVal)) Then
+                    CELProject.Test_Mgr_Cmd.Value = New KineticaRT.Values.Text(CELDAS.eTest_Mgr_Cmd.Close)
+
+                    sender.Value = KineticaRT.Values.Values.False
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: OpenTest: OnClose_Test()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+            End Try
+        End Sub
+
+
+        '************************
+        '* OnSpares_Button()    *
+        '************************
+        Private Sub OnSpares_Button(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+            Try
+                'Dim i As Integer
+
+                If (CELProject.IsTrue(newVal)) Then
+                    'TODO: Ici valider si ca marche
+                    CELProject.ActivateForm("Spares_Screen", CELProject.Test_Mgr_UUT_Model.Value.ToString() + "_Screen", True, False)
+
+                    'For i = 0 To WINDOW_NAME.GetUpperBound(0)
+                    '    If WINDOW_NAME(i) = "Spares_Screen" Then
+                    '        EngineWindow(i).Visible = True
+                    '        EngineWindow(i).TopMost = True
+
+                    '        Exit For
+                    '    End If
+                    'Next
+                End If
+
+                SPARES_BUTTON.Value = KineticaRT.Values.Values.False
+
+            Catch Ex As Exception
+                MessageBox.Show("UNEXPECTED ERROR: OpenTest: OnSpares_Button()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+            End Try
+        End Sub
+
+
+        'TODO: important de retirer cet méthode OnTest_Mgr_Status et la remplacer par le standard
+
+        '***********************
+        '* OnTest_Mgr_Status() *
+        '***********************
+        'Private Sub OnTest_Mgr_Status(ByVal sender As KineticaRT.Channels.IChannel, ByVal newVal As KineticaRT.Values.Value)
+        '    Try
+
+        '        SyncLock Me
+        '            Select Case newVal.ToString()
+        '                Case eTest_Mgr_Status.Initialized
+        '                    'Change the Culture Info  BUG with Thread Excel Application
+#If EXCEL_CULTUREINFO_ISSUE Then
+        '                    System.Threading.Thread.CurrentThread.CurrentCulture = New System.Globalization.CultureInfo("en-US")
+#End If
+        '                Case eTest_Mgr_Status.Running
+
+
+        '                    'thread.Sleep(1000)
+
+        '                    If Test_Mgr_UUT_Model.Value.ToString() = "ATAR 09C" Then
+        '                        Init_Engine_Channels()
+        '                        Init_Engine_Channels_Value()
+        '                    End If
+
+
+        '                Case eTest_Mgr_Status.Closing, eTest_Mgr_Status.Closed
+        '                    If Test_Mgr_UUT_Model.Value.ToString() = "ATAR 09C" Then
+
+        '                        Init_Engine_Channels_Value() 'Reinit variables before we quit
+
+
+        '                    End If
+
+        '                    'Restore default Culture Info
+        '                    System.Threading.Thread.CurrentThread.CurrentCulture = OldCultureInfo
+
+
+        '                Case eTest_Mgr_Status.Idling
+
+        '            End Select
+        '        End SyncLock
+
+        '    Catch Ex As Exception
+        '        MessageBox.Show("UNEXPECTED ERROR: ATAR_09C_Sequence: OnTest_Mgr_Status()" & vbCrLf & vbCrLf & "Error message: " & vbCrLf & Ex.ToString())
+        '    End Try
+        'End Sub
+
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+
+        '*******************
+        '* Engine Channels *
+        '*******************
+        Private CLOSE_SPARES_BUTTON As KineticaRT.Channels.BooleanChannel
+        Private CLOSE_RIGGING_BUTTON As KineticaRT.Channels.BooleanChannel
+        Private SPARES_BUTTON As KineticaRT.Channels.BooleanChannel
+        Private Galil_MinSlope As KineticaRT.Servers.OpcClient.Item
+
+
+
+        '*********************
+        '* Standard Channels *
+        '*********************
+        'Private Close_Test As KineticaRT.Channels.BooleanChannel
+        'Private Test_Mgr_Cmd As KineticaRT.Servers.OpcClient.Item
+        'Private Test_Mgr_Status As KineticaRT.Servers.OpcClient.Item
+        'Private Test_Mgr_UUT_Answer(12) As KineticaRT.Logic.Channels.TextLink
+        'Private Test_Mgr_UUT_Choice(4) As KineticaRT.Logic.Channels.TextLink
+        'Private Test_Mgr_UUT_Calib_Constant(2) As KineticaRT.Servers.OpcClient.Item
+        ''Private Test_Mgr_UUT_Model As KineticaRT.Logic.Channels.TextLink
+        'Private Test_Mgr_UUT_Model As CEL.KineticaRT.Servers.Logger.TextLink  'TEST TEST a cause d'un bug de transfert de la valeur entre master et slave
+        'Private Test_Mgr_UUT_Option(16) As KineticaRT.Logic.Channels.TextLink
+
+
+        '*********************
+        '* Forms and Control *
+        '*********************
+        Private btnArchive As KineticaRT.Studio.Controls.Button
+        Private Control_Frame As KineticaRT.Controls.Control
+        'Public EngineWindow(30) As System.Windows.Forms.Form
+        Private Master_Engine_Window As KineticaRT.Studio.Window
+
+        '********
+        '* Misc *
+        '********
+        Private OldCultureInfo As System.Globalization.CultureInfo = System.Threading.Thread.CurrentThread.CurrentCulture
+        Private PROJECT_NB As KineticaRT.Channels.TextChannel
+        Public EngineModel As String = ""
+
+
+    End Class
+End Namespace

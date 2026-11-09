@@ -1,0 +1,3 @@
+<Window BackColor="Black" Font="Microsoft Sans Serif, 8.25pt" ForeColor="SteelBlue" RightToLeft="0" AllowDrop="true" TabIndex="0" BorderColor="LightSteelBlue" BorderStyle="1" BorderWidth="0.1" Name="tab" Shape="0" ToolTipText="" UpdateSpeed="1" HorizontalGrid.Size="8" HorizontalGrid.Spacing="2" VerticalGrid.Size="8" VerticalGrid.Spacing="2" TitleEnabled="false" Title="PT6A Main Screen" WindowState="0" Left="2" Top="1" Width="3840" Height="1048" CurrentPanelIndex="0">
+  <Panel File="PT6A\PT6A_Slave_Panel.dll" Text="Perf" />
+</Window>

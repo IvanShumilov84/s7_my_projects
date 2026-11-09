@@ -1,0 +1,23 @@
+2023/03/15 09:08:28.138 C:\My Projects\17865 S7\CELDAS 200\HMI\PrjMaster_HMI.exe: Initialise
+2023/03/15 09:08:40.729 Connect: EVENT_ARCHIVE.RecordChannel: Channel not found-True
+2023/03/15 09:08:40.729 Connect: EVENT_ARCHIVE.PlayChannel: Channel not found-False
+2023/03/15 09:08:40.729 Connect: EVENT_ARCHIVE.PauseChannel: Channel not found-False
+2023/03/15 09:08:40.729 Connect: EVENT_ARCHIVE.StepChannel: Channel not found-False
+2023/03/15 09:08:40.729 Connect: EVENT_ARCHIVE.StopChannel: Channel not found-False
+2023/03/15 09:09:01.411 FtpClient: Connected to 192.168.2.200
+2023/03/15 09:09:01.771 FtpClient: Connected to 192.168.2.200
+2023/03/15 09:10:03.043 FtpClient: Connected to 192.168.2.200
+2023/03/15 09:10:03.103 FtpClient: Closing connection to 192.168.2.200
+Too many closing brackets:)
+Too many closing brackets:)
+2023/03/15 09:10:26.992 Connect: EVENT_ARCHIVE.RecordChannel: Channel not found-True
+2023/03/15 09:10:26.992 Connect: EVENT_ARCHIVE.PlayChannel: Channel not found-False
+2023/03/15 09:10:26.992 Connect: EVENT_ARCHIVE.PauseChannel: Channel not found-False
+2023/03/15 09:10:26.992 Connect: EVENT_ARCHIVE.StepChannel: Channel not found-False
+2023/03/15 09:10:26.992 Connect: EVENT_ARCHIVE.StopChannel: Channel not found-False
+2023/03/15 09:10:27.055 EVENT_ARCHIVE: CsvFile - WriteThread Start.
+2023/03/15 09:10:27.055 EVENT_ARCHIVE: Trigger
+2023/03/15 09:20:39.930 EVENT_ARCHIVE: CsvFile - WriteThread Abort.
+2023/03/15 09:20:39.930 EVENT_ARCHIVE: CsvFile - WriteThread Stop.
+2023/03/15 09:20:39.930 EVENT_ARCHIVE: CsvFile - Close writer.
+2023/03/15 09:20:57.020 C:\My Projects\17865 S7\CELDAS 200\HMI\PrjMaster_HMI.exe: Close

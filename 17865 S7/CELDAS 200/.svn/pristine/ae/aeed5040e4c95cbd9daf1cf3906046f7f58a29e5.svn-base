@@ -1,0 +1,2172 @@
+<SOAP-ENV:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:clr="http://schemas.microsoft.com/soap/encoding/clr/1.0" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<SOAP-ENV:Body>
+<a1:ChannelCollection id="ref-1" xmlns:a1="http://schemas.microsoft.com/clr/nsassem/KineticaRT/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Enabled>true</Enabled>
+<AlternateNames xsi:type="xsd:anyType" xsi:null="1"/>
+<CLA_CALIBRATION_DONE href="#ref-6"/>
+<CLA_CALIBRATION_DONE_OLD href="#ref-7"/>
+<CLA_CLOSE_THROTTLE_CALIB_BTN href="#ref-8"/>
+<CLA_COMPUTE_BTN href="#ref-9"/>
+<CLA_COMPUTE_BTN_ENB href="#ref-10"/>
+<CLA_COMPUTE_DONE href="#ref-11"/>
+<CLA_ENGAGE_BTN href="#ref-12"/>
+<CLA_ENGAGE_BTN_ENB href="#ref-13"/>
+<CLA_ENGINE_PROTECTION href="#ref-14"/>
+<CLA_ENGINE_PROTECTION_ANGLE href="#ref-15"/>
+<CLA_ENGINE_PROTECTION_ON href="#ref-16"/>
+<CLA_IDLE_POS_DEG href="#ref-17"/>
+<CLA_IDLE_POS_DONE href="#ref-18"/>
+<CLA_IDLE_POS_ENABLED href="#ref-19"/>
+<CLA_IDLE_POS_MSG href="#ref-20"/>
+<CLA_LEVER_ANGLE_READING href="#ref-21"/>
+<CLA_LEVER_ANGLE_RIG href="#ref-22"/>
+<CLA_LEVER_ANGLE_RUN href="#ref-23"/>
+<CLA_LEVER_POS href="#ref-24"/>
+<CLA_LEVER_POS_OLD href="#ref-25"/>
+<CLA_MAX_POS_DONE href="#ref-26"/>
+<CLA_MAX_RIG_POS href="#ref-27"/>
+<CLA_MAX_STOP_POS_DEG href="#ref-28"/>
+<CLA_MAX_STOP_POS_DONE href="#ref-29"/>
+<CLA_MAX_STOP_POS_ENABLED href="#ref-30"/>
+<CLA_MAX_STOP_POS_MSG href="#ref-31"/>
+<CLA_MIN_POS_DONE href="#ref-32"/>
+<CLA_MIN_RIG_POS href="#ref-33"/>
+<CLA_MIN_STOP_POS_DEG href="#ref-34"/>
+<CLA_MIN_STOP_POS_DONE href="#ref-35"/>
+<CLA_MIN_STOP_POS_ENABLED href="#ref-36"/>
+<CLA_MIN_STOP_POS_MSG href="#ref-37"/>
+<CLA_RESET_BTN href="#ref-38"/>
+<CLA_RIG_MESSAGE href="#ref-39"/>
+<CLA_RIG_MESSAGE_NEXT1 href="#ref-40"/>
+<CLA_RIG_MESSAGE_NEXT2 href="#ref-41"/>
+<CLA_RIG_MESSAGE_NEXT3 href="#ref-42"/>
+<CLA_RIG_WARNING href="#ref-43"/>
+<CLA_RIGGING_DONE href="#ref-44"/>
+<CLA_RIGGING_NOT_DONE href="#ref-45"/>
+<CLA_SAVE_BTN href="#ref-46"/>
+<CLA_SERVO_READING href="#ref-47"/>
+<CLA_STORE_IDLE_ANGLE_BTN href="#ref-48"/>
+<CLA_STORE_IDLE_ANGLE_BTN_ENB href="#ref-49"/>
+<CLA_STORE_IDLE_ANGLE_STATUS href="#ref-50"/>
+<CLA_STORE_MAX_ANGLE_BTN href="#ref-51"/>
+<CLA_STORE_MAX_ANGLE_BTN_ENB href="#ref-52"/>
+<CLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM1 href="#ref-53"/>
+<CLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM2 href="#ref-54"/>
+<CLA_STORE_MAX_STOP_ANGLE_BTN href="#ref-55"/>
+<CLA_STORE_MAX_STOP_ANGLE_BTN_ENB href="#ref-56"/>
+<CLA_STORE_MAX_STOP_ANGLE_STATUS href="#ref-57"/>
+<CLA_STORE_MIN_ANGLE_BTN href="#ref-58"/>
+<CLA_STORE_MIN_ANGLE_BTN_ENB href="#ref-59"/>
+<CLA_STORE_MIN_STOP_ANGLE_BTN href="#ref-60"/>
+<CLA_STORE_MIN_STOP_ANGLE_BTN_ENB href="#ref-61"/>
+<CLA_STORE_MIN_STOP_ANGLE_STATUS href="#ref-62"/>
+<CLOSE_RVDT_RESOLVER_CONFIG_WINDOW_BTN href="#ref-63"/>
+<CLP_CAPTURE_RVDT_MAX_BTN href="#ref-64"/>
+<CLP_CAPTURE_RVDT_MIN_BTN href="#ref-65"/>
+<CLP_COMPUTE_RVDT_BTN href="#ref-66"/>
+<CLP_RESOLVER_ANGLE0 href="#ref-67"/>
+<CLP_RESOLVER_ANGLE1 href="#ref-68"/>
+<CLP_RESOLVER_LEVER0 href="#ref-69"/>
+<CLP_RESOLVER_LEVER1 href="#ref-70"/>
+<CLP_RESOLVER_TRANSFORMER_RATIO href="#ref-71"/>
+<CLP_RVDT_E1_MAX_VDC href="#ref-72"/>
+<CLP_RVDT_E1_MIN_VDC href="#ref-73"/>
+<CLP_RVDT_E1Y0_VDC href="#ref-74"/>
+<CLP_RVDT_E1Y1_VDC href="#ref-75"/>
+<CLP_RVDT_E2_MAX_VDC href="#ref-76"/>
+<CLP_RVDT_E2_MIN_VDC href="#ref-77"/>
+<CLP_RVDT_E2Y0_VDC href="#ref-78"/>
+<CLP_RVDT_E2Y1_VDC href="#ref-79"/>
+<CLP_SEND_BTN href="#ref-80"/>
+<EEC_POWER href="#ref-81"/>
+<PLA_CALIBRATION_DONE href="#ref-82"/>
+<PLA_CALIBRATION_DONE_OLD href="#ref-83"/>
+<PLA_CAPTURE_RVDT_MAX_BTN href="#ref-84"/>
+<PLA_CAPTURE_RVDT_MIN_BTN href="#ref-85"/>
+<PLA_CLOSE_THROTTLE_CALIB_BTN href="#ref-86"/>
+<PLA_COMPUTE_BTN href="#ref-87"/>
+<PLA_COMPUTE_BTN_ENB href="#ref-88"/>
+<PLA_COMPUTE_BTN_OLD href="#ref-89"/>
+<PLA_COMPUTE_DONE href="#ref-90"/>
+<PLA_COMPUTE_DONE_OLD href="#ref-91"/>
+<PLA_COMPUTE_RVDT_BTN href="#ref-92"/>
+<PLA_ENGAGE_BTN href="#ref-93"/>
+<PLA_ENGAGE_BTN_ENB href="#ref-94"/>
+<PLA_ENGAGE_BTN_OLD href="#ref-95"/>
+<PLA_ENGINE_PROTECTION href="#ref-96"/>
+<PLA_ENGINE_PROTECTION_ANGLE href="#ref-97"/>
+<PLA_ENGINE_PROTECTION_ON href="#ref-98"/>
+<PLA_FLIGHT_SIM_MAX_POS_COUNT href="#ref-99"/>
+<PLA_FLIGHT_SIM_MAX_POS_DEG href="#ref-100"/>
+<PLA_FLIGHT_SIM_MAX_POS_DONE href="#ref-101"/>
+<PLA_FLIGHT_SIM_MAX_POS_ENABLED href="#ref-102"/>
+<PLA_FLIGHT_SIM_MAX_POS_MSG href="#ref-103"/>
+<PLA_FLIGHT_SIM_MIN_POS_COUNT href="#ref-104"/>
+<PLA_FLIGHT_SIM_MIN_POS_DEG href="#ref-105"/>
+<PLA_FLIGHT_SIM_MIN_POS_DONE href="#ref-106"/>
+<PLA_FLIGHT_SIM_MIN_POS_ENABLED href="#ref-107"/>
+<PLA_FLIGHT_SIM_MIN_POS_MSG href="#ref-108"/>
+<PLA_IDLE_POS_DEG href="#ref-109"/>
+<PLA_IDLE_POS_DONE href="#ref-110"/>
+<PLA_IDLE_POS_ENABLED href="#ref-111"/>
+<PLA_IDLE_POS_MSG href="#ref-112"/>
+<PLA_LEVER_ANGLE_READING href="#ref-113"/>
+<PLA_LEVER_ANGLE_RIG href="#ref-114"/>
+<PLA_LEVER_ANGLE_RUN href="#ref-115"/>
+<PLA_LEVER_POS href="#ref-116"/>
+<PLA_LEVER_POS_OLD href="#ref-117"/>
+<PLA_MAX_POS_DONE href="#ref-118"/>
+<PLA_MAX_POS_DONE_OLD href="#ref-119"/>
+<PLA_MAX_RIG_POS href="#ref-120"/>
+<PLA_MAX_RIG_POS_OLD href="#ref-121"/>
+<PLA_MAX_STOP_POS_DEG href="#ref-122"/>
+<PLA_MAX_STOP_POS_DONE href="#ref-123"/>
+<PLA_MAX_STOP_POS_DONE_OLD href="#ref-124"/>
+<PLA_MAX_STOP_POS_ENABLED href="#ref-125"/>
+<PLA_MAX_STOP_POS_ENABLED_OLD href="#ref-126"/>
+<PLA_MAX_STOP_POS_MSG href="#ref-127"/>
+<PLA_MIN_POS_DONE href="#ref-128"/>
+<PLA_MIN_POS_DONE_OLD href="#ref-129"/>
+<PLA_MIN_RIG_POS href="#ref-130"/>
+<PLA_MIN_RIG_POS_OLD href="#ref-131"/>
+<PLA_MIN_STOP_POS_DEG href="#ref-132"/>
+<PLA_MIN_STOP_POS_DONE href="#ref-133"/>
+<PLA_MIN_STOP_POS_DONE_OLD href="#ref-134"/>
+<PLA_MIN_STOP_POS_ENABLED href="#ref-135"/>
+<PLA_MIN_STOP_POS_ENABLED_OLD href="#ref-136"/>
+<PLA_MIN_STOP_POS_MSG href="#ref-137"/>
+<PLA_RESET_BTN href="#ref-138"/>
+<PLA_RESET_BTN_OLD href="#ref-139"/>
+<PLA_RESOLVER_ANGLE0 href="#ref-140"/>
+<PLA_RESOLVER_ANGLE1 href="#ref-141"/>
+<PLA_RESOLVER_LEVER0 href="#ref-142"/>
+<PLA_RESOLVER_LEVER1 href="#ref-143"/>
+<PLA_RESOLVER_TRANSFORMER_RATIO href="#ref-144"/>
+<PLA_RIG_MESSAGE href="#ref-145"/>
+<PLA_RIG_MESSAGE_NEXT1 href="#ref-146"/>
+<PLA_RIG_MESSAGE_NEXT2 href="#ref-147"/>
+<PLA_RIG_MESSAGE_NEXT3 href="#ref-148"/>
+<PLA_RIG_WARNING href="#ref-149"/>
+<PLA_RIGGING_DONE href="#ref-150"/>
+<PLA_RIGGING_DONE_OLD href="#ref-151"/>
+<PLA_RIGGING_NOT_DONE href="#ref-152"/>
+<PLA_RVDT_E1_MAX_VDC href="#ref-153"/>
+<PLA_RVDT_E1_MIN_VDC href="#ref-154"/>
+<PLA_RVDT_E1Y0_VDC href="#ref-155"/>
+<PLA_RVDT_E1Y1_VDC href="#ref-156"/>
+<PLA_RVDT_E2_MAX_VDC href="#ref-157"/>
+<PLA_RVDT_E2_MIN_VDC href="#ref-158"/>
+<PLA_RVDT_E2Y0_VDC href="#ref-159"/>
+<PLA_RVDT_E2Y1_VDC href="#ref-160"/>
+<PLA_SAVE_BTN href="#ref-161"/>
+<PLA_SAVE_BTN_ENB href="#ref-162"/>
+<PLA_SEND_BTN href="#ref-163"/>
+<PLA_SERVO_ANGLE_READING href="#ref-164"/>
+<PLA_SERVO_READING href="#ref-165"/>
+<PLA_SERVO_READING_OLD href="#ref-166"/>
+<PLA_SET_SM_PARAM href="#ref-167"/>
+<PLA_STORE_FLIGHT_SIM_MAX_ANGLE_BTN href="#ref-168"/>
+<PLA_STORE_FLIGHT_SIM_MAX_ANGLE_BTN_ENB href="#ref-169"/>
+<PLA_STORE_FLIGHT_SIM_MAX_ANGLE_STATUS href="#ref-170"/>
+<PLA_STORE_FLIGHT_SIM_MIN_ANGLE_BTN href="#ref-171"/>
+<PLA_STORE_FLIGHT_SIM_MIN_ANGLE_BTN_ENB href="#ref-172"/>
+<PLA_STORE_FLIGHT_SIM_MIN_ANGLE_STATUS href="#ref-173"/>
+<PLA_STORE_IDLE_ANGLE_BTN href="#ref-174"/>
+<PLA_STORE_IDLE_ANGLE_BTN_ENB href="#ref-175"/>
+<PLA_STORE_IDLE_ANGLE_STATUS href="#ref-176"/>
+<PLA_STORE_MAX_ANGLE_BTN href="#ref-177"/>
+<PLA_STORE_MAX_ANGLE_BTN_ENB href="#ref-178"/>
+<PLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM1 href="#ref-179"/>
+<PLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM2 href="#ref-180"/>
+<PLA_STORE_MAX_ANGLE_BTN_OLD href="#ref-181"/>
+<PLA_STORE_MAX_STOP_ANGLE_BTN href="#ref-182"/>
+<PLA_STORE_MAX_STOP_ANGLE_BTN_ENB href="#ref-183"/>
+<PLA_STORE_MAX_STOP_ANGLE_BTN_OLD href="#ref-184"/>
+<PLA_STORE_MAX_STOP_ANGLE_STATUS href="#ref-185"/>
+<PLA_STORE_MIN_ANGLE_BTN href="#ref-186"/>
+<PLA_STORE_MIN_ANGLE_BTN_ENB href="#ref-187"/>
+<PLA_STORE_MIN_ANGLE_BTN_OLD href="#ref-188"/>
+<PLA_STORE_MIN_STOP_ANGLE_BTN href="#ref-189"/>
+<PLA_STORE_MIN_STOP_ANGLE_BTN_ENB href="#ref-190"/>
+<PLA_STORE_MIN_STOP_ANGLE_BTN_OLD href="#ref-191"/>
+<PLA_STORE_MIN_STOP_ANGLE_STATUS href="#ref-192"/>
+<RIG_MSG_01 href="#ref-193"/>
+<RIG_MSG_02 href="#ref-194"/>
+<RIG_MSG_03 href="#ref-195"/>
+<RIG_MSG_04 href="#ref-196"/>
+<RIG_MSG_05 href="#ref-197"/>
+<RIG_MSG_06 href="#ref-198"/>
+<RIG_MSG_07 href="#ref-199"/>
+<RIG_MSG_08 href="#ref-200"/>
+<RIG_MSG_09 href="#ref-201"/>
+<RIG_MSG_10 href="#ref-202"/>
+<RIG_MSG_11 href="#ref-203"/>
+<RIGGING_DONE href="#ref-204"/>
+<RVDT_RESOLVER_SAVE_BTN href="#ref-205"/>
+<THROTTLE_INSTANCE href="#ref-206"/>
+<USER_AUTO_RIGGING href="#ref-207"/>
+<USER_EEC_POWER href="#ref-208"/>
+<CRIO_CONNECTED href="#ref-209"/>
+</a1:ChannelCollection>
+<a3:BooleanChannel id="ref-209" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1090">CRIO_CONNECTED</Name>
+<Description id="ref-1091">Calibration Done</Description>
+<ToolTip id="ref-1092"></ToolTip>
+<TrueText id="ref-1093">True</TrueText>
+<FalseText id="ref-1094">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-6" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1089">CLA_CALIBRATION_DONE</Name>
+<Description id="ref-210">Calibration Done</Description>
+<ToolTip id="ref-211"></ToolTip>
+<TrueText id="ref-212">True</TrueText>
+<FalseText id="ref-213">False</FalseText>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-7" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-214">CLA_CALIBRATION_DONE_OLD</Name>
+<Description id="ref-215">Calibration Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-216">True</TrueText>
+<FalseText id="ref-217">False</FalseText>
+<Group id="ref-218">Group_Fast</Group>
+<ItemID id="ref-219">dacn1.dacn1_sm1720_iomgr.gov_calib_done</ItemID>
+</a4:BooleanItem>
+<a3:BooleanChannel id="ref-8" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-220">CLA_CLOSE_THROTTLE_CALIB_BTN</Name>
+<Description id="ref-221">Close</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-222">True</TrueText>
+<FalseText id="ref-223">False</FalseText>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-9" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-224">CLA_COMPUTE_BTN</Name>
+<Description id="ref-225">Compute</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-226">True</TrueText>
+<FalseText id="ref-227">False</FalseText>
+<Group id="ref-228">Group_Fast</Group>
+<ItemID id="ref-229">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.user_rig.compute_demand</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-10" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-230">CLA_COMPUTE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-231">True</TrueText>
+<FalseText id="ref-232">False</FalseText>
+<Text id="ref-233">CLA_MIN_POS_DONE  And CLA_MAX_POS_DONE And CLA_ENGAGE_BTN = False And CLA_COMPUTE_DONE = False</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-11" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-234">CLA_COMPUTE_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-235">True</TrueText>
+<FalseText id="ref-236">False</FalseText>
+<Group id="ref-237">Group_Fast</Group>
+<ItemID id="ref-238">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.compute_status</ItemID>
+</a4:BooleanItem>
+<a4:BooleanItem id="ref-12" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-239">CLA_ENGAGE_BTN</Name>
+<Description id="ref-240">Engage</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-241">True</TrueText>
+<FalseText id="ref-242">False</FalseText>
+<Group id="ref-243">Group_Fast</Group>
+<ItemID id="ref-244">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.user_rig.engage_demand</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-13" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-245">CLA_ENGAGE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-246">True</TrueText>
+<FalseText id="ref-247">False</FalseText>
+<Text id="ref-248">Not(CLA_MIN_POS_DONE = True And CLA_MAX_POS_DONE = True ) And CLA_MAX_RIG_POS &#62; 0</Text>
+</a5:BooleanExpression>
+<a6:NumericExpression id="ref-14" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-249">CLA_ENGINE_PROTECTION</Name>
+<Description id="ref-250">Return to Idle Position On Trips</Description>
+<ToolTip id="ref-251">Return to Idle Position On Overtemp, Overtorque and Overspeed</ToolTip>
+<Text id="ref-252">If( CLA_ENGINE_PROTECTION_ON, CLA_ENGINE_PROTECTION_ANGLE, &#34;NOT ARMED&#34;)</Text>
+<Units id="ref-253">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-254">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a4:Item id="ref-15" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-255">CLA_ENGINE_PROTECTION_ANGLE</Name>
+<Description id="ref-256">Return to Idle Position</Description>
+<ToolTip id="ref-257">Return to Idle Position</ToolTip>
+<Units id="ref-258">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-259">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-260">Group_Fast</Group>
+<ItemID id="ref-261">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.estop_angle</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-16" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-262">CLA_ENGINE_PROTECTION_ON</Name>
+<Description id="ref-263">Protection On</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-264">True</TrueText>
+<FalseText id="ref-265">False</FalseText>
+<Group id="ref-266">Group_Fast</Group>
+<ItemID id="ref-267">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.estop_enable</ItemID>
+</a4:BooleanItem>
+<a4:Item id="ref-17" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-268">CLA_IDLE_POS_DEG</Name>
+<Description id="ref-269">Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-270">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-271">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-272">Group_Fast</Group>
+<ItemID id="ref-273">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.idle_point.position_degree</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-18" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-274">CLA_IDLE_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-275">True</TrueText>
+<FalseText id="ref-276">False</FalseText>
+<Group id="ref-277">Group_Fast</Group>
+<ItemID id="ref-278">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.idle_point.capture_done</ItemID>
+</a4:BooleanItem>
+<a4:BooleanItem id="ref-19" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-279">CLA_IDLE_POS_ENABLED</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-280">True</TrueText>
+<FalseText id="ref-281">False</FalseText>
+<Group id="ref-282">Group_Fast</Group>
+<ItemID id="ref-283">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.idle_point.enabled</ItemID>
+</a4:BooleanItem>
+<a6:NumericExpression id="ref-20" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-284">CLA_IDLE_POS_MSG</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-285">If(CLA_IDLE_POS_ENABLED, &#34;ENABLED&#34; , &#34;DISABLED&#34; )</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-286">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-21" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-287">CLA_LEVER_ANGLE_READING</Name>
+<Description id="ref-288">Lever Angle Reading</Description>
+<ToolTip href="#ref-211"/>
+<Text id="ref-289">If(CLA_COMPUTE_DONE , If( CLA_CALIBRATION_DONE, CLA_LEVER_ANGLE_RUN, CLA_LEVER_ANGLE_RIG ),  &#34;N/A&#34;)</Text>
+<Units id="ref-290"> °</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-291">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a4:Item id="ref-22" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-292">CLA_LEVER_ANGLE_RIG</Name>
+<Description id="ref-293">Lever Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-294"> °</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-295">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-296">Group_Fast</Group>
+<ItemID id="ref-297">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.lever_angle_demand</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-23" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-298">CLA_LEVER_ANGLE_RUN</Name>
+<Description id="ref-299">Lever Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-300"> °</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-301">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-302">Group_Fast</Group>
+<ItemID id="ref-303">dacn1.dacn1_sm1720_iomgr.gov_throttle_demand.lever_angle_demand</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a3:NumericChannel id="ref-24" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-304">CLA_LEVER_POS</Name>
+<Description id="ref-305">Lever Reading</Description>
+<ToolTip id="ref-306">Lever Reading</ToolTip>
+<Units id="ref-307">%</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-308">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+</a3:NumericChannel>
+<a4:Item id="ref-25" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-309">CLA_LEVER_POS_OLD</Name>
+<Description id="ref-310">Throttle Reading</Description>
+<ToolTip id="ref-311">Throttle Reading</ToolTip>
+<Units id="ref-312">%</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-313">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-314">Group_Fast</Group>
+<ItemID id="ref-315">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.lever_pcnt</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a3:BooleanChannel id="ref-26" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-316">CLA_MAX_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-317">True</TrueText>
+<FalseText id="ref-318">False</FalseText>
+</a3:BooleanChannel>
+<a4:Item id="ref-27" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-319">CLA_MAX_RIG_POS</Name>
+<Description id="ref-320">Max Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-321">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-322">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-323">Group_Fast</Group>
+<ItemID id="ref-324">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.user_rig.max_rig_pos</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-28" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-325">CLA_MAX_STOP_POS_DEG</Name>
+<Description id="ref-326">Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-327">°</Units>
+<Min>0</Min>
+<Max>130</Max>
+<Format id="ref-328">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-329">Group_Fast</Group>
+<ItemID id="ref-330">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.max_stop_point.position_degree</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-29" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-331">CLA_MAX_STOP_POS_DONE</Name>
+<Description id="ref-332">Min Pos Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-333">True</TrueText>
+<FalseText id="ref-334">False</FalseText>
+<Group id="ref-335">Group_Fast</Group>
+<ItemID id="ref-336">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.max_stop_point.capture_done</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-30" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-337">CLA_MAX_STOP_POS_ENABLED</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-317"/>
+<FalseText href="#ref-318"/>
+<Text id="ref-338">Not CLA_MAX_STOP_POS_DONE</Text>
+</a5:BooleanExpression>
+<a6:NumericExpression id="ref-31" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-339">CLA_MAX_STOP_POS_MSG</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-340">If(CLA_MAX_STOP_POS_ENABLED, &#34;ENABLED&#34; , &#34;DISABLED&#34; )</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-341">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a3:BooleanChannel id="ref-32" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-342">CLA_MIN_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-317"/>
+<FalseText href="#ref-318"/>
+</a3:BooleanChannel>
+<a4:Item id="ref-33" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-343">CLA_MIN_RIG_POS</Name>
+<Description id="ref-344">Min Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-345">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-346">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-347">Group_Fast</Group>
+<ItemID id="ref-348">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.user_rig.min_rig_pos</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-34" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-349">CLA_MIN_STOP_POS_DEG</Name>
+<Description id="ref-350">Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-351">°</Units>
+<Min>-15</Min>
+<Max>100</Max>
+<Format id="ref-352">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-353">Group_Fast</Group>
+<ItemID id="ref-354">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.min_stop_point.position_degree</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-35" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-355">CLA_MIN_STOP_POS_DONE</Name>
+<Description id="ref-356">Min Pos Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-357">True</TrueText>
+<FalseText id="ref-358">False</FalseText>
+<Group id="ref-359">Group_Fast</Group>
+<ItemID id="ref-360">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.min_stop_point.capture_done</ItemID>
+</a4:BooleanItem>
+<a4:BooleanItem id="ref-36" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-361">CLA_MIN_STOP_POS_ENABLED</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-362">True</TrueText>
+<FalseText id="ref-363">False</FalseText>
+<Group id="ref-364">Group_Fast</Group>
+<ItemID id="ref-365">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.min_stop_point.enabled</ItemID>
+</a4:BooleanItem>
+<a6:NumericExpression id="ref-37" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-366">CLA_MIN_STOP_POS_MSG</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-367">If(CLA_MIN_STOP_POS_ENABLED, &#34;ENABLED&#34; , &#34;DISABLED&#34; )</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-368">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a4:BooleanItem id="ref-38" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-369">CLA_RESET_BTN</Name>
+<Description id="ref-370">Reset</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-371">True</TrueText>
+<FalseText id="ref-372">False</FalseText>
+<Group id="ref-373">Group_Fast</Group>
+<ItemID id="ref-374">dacn1.dacn1_sm1720_iomgr.gov_reset_rigging</ItemID>
+</a4:BooleanItem>
+<a6:NumericExpression id="ref-39" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-375">CLA_RIG_MESSAGE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-376">If(OPC_AUTOCAL_STATUS=True,RIG_MSG_01,If(CLA_MAX_RIG_POS=0,RIG_MSG_02,If(CLA_MIN_POS_DONE=False,RIG_MSG_03,If(CLA_MAX_POS_DONE=False,RIG_MSG_04,CLA_RIG_MESSAGE_NEXT1))))</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-377">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-40" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-378">CLA_RIG_MESSAGE_NEXT1</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-379">If(CLA_COMPUTE_DONE=False,RIG_MSG_05,If(CLA_MIN_STOP_POS_DONE=False,RIG_MSG_06,CLA_RIG_MESSAGE_NEXT2))</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-380">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-41" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-381">CLA_RIG_MESSAGE_NEXT2</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-382">If(TM_UUT_Model = &#34;XXXX&#34; ,RIG_MSG_07,If(CLA_MAX_STOP_POS_DONE=False,RIG_MSG_08,If(CLA_IDLE_POS_DONE=False,RIG_MSG_11,CLA_RIG_MESSAGE_NEXT3)))</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-383">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-42" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-384">CLA_RIG_MESSAGE_NEXT3</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-385">If(CLA_RIGGING_DONE=True,RIG_MSG_10,&#34;CLOSE WINDOW&#34;)</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-386">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-43" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-387">CLA_RIG_WARNING</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-388">If(CLA_COMPUTE_DONE=True,&#34;WARNING! NOW SERVO MOTOR IS MOVING IF THROTTLE MOVING&#34;,If(CLA_ENGAGE_BTN=True,&#34;WARNING! SERVO MOTOR IS MOVING (ACTIVED)&#34;,&#34;SERVO MOTOR IS DISABLED&#34;))</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-389">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a4:BooleanItem id="ref-44" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-390">CLA_RIGGING_DONE</Name>
+<Description id="ref-391">Rigging Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-392">True</TrueText>
+<FalseText id="ref-393">False</FalseText>
+<Group id="ref-394">Group_Fast</Group>
+<ItemID id="ref-395">dacn1.dacn1_sm1720_iomgr.GOV_calib_done</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-45" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-396">CLA_RIGGING_NOT_DONE</Name>
+<Description id="ref-397">Rigging Not Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-222"/>
+<FalseText href="#ref-223"/>
+<Text id="ref-398">Not CLA_RIGGING_DONE</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-46" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-399">CLA_SAVE_BTN</Name>
+<Description id="ref-400">Save</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-401">True</TrueText>
+<FalseText id="ref-402">False</FalseText>
+<Group id="ref-403">Group_Fast</Group>
+<ItemID id="ref-404">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.user_rig.close_demand</ItemID>
+</a4:BooleanItem>
+<a4:Item id="ref-47" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-405">CLA_SERVO_READING</Name>
+<Description id="ref-406">Motor Reading</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-407"> count</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-408">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-409">Group_Fast</Group>
+<ItemID id="ref-410">dacn1.dacn1_sm1720_iomgr.gov_position</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-48" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-411">CLA_STORE_IDLE_ANGLE_BTN</Name>
+<Description id="ref-412">Store Idle Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-413">True</TrueText>
+<FalseText id="ref-414">False</FalseText>
+<Group id="ref-415">Group_Fast</Group>
+<ItemID id="ref-416">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.idle_point.store_value</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-49" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-417">CLA_STORE_IDLE_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-418">True</TrueText>
+<FalseText id="ref-419">False</FalseText>
+<Text id="ref-420">CLA_COMPUTE_DONE And CLA_MAX_STOP_POS_DONE And CLA_MIN_STOP_POS_DONE And CLA_IDLE_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-50" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-421">CLA_STORE_IDLE_ANGLE_STATUS</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-422">True</TrueText>
+<FalseText id="ref-423">False</FalseText>
+<Text id="ref-424">CLA_IDLE_POS_DONE And CLA_IDLE_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-51" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-425">CLA_STORE_MAX_ANGLE_BTN</Name>
+<Description id="ref-426">Store Max Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-427">True</TrueText>
+<FalseText id="ref-428">False</FalseText>
+<Group id="ref-429">Group_Fast</Group>
+<ItemID id="ref-430">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.user_rig.store_max_angle</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-52" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-431">CLA_STORE_MAX_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-432">True</TrueText>
+<FalseText id="ref-433">False</FalseText>
+<Text id="ref-434">CLA_MIN_POS_DONE And CLA_MAX_RIG_POS &#62; 40 And CLA_MAX_POS_DONE = False And CLA_ENGAGE_BTN = False And (CLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM1 Or CLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM2)</Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-53" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-435">CLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM1</Name>
+<Description id="ref-436">Peut etre utilise pour specifier un angle particulier pour un moteur et s assurer que le throttle semble etre dans la bonne position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-437">True</TrueText>
+<FalseText id="ref-438">False</FalseText>
+<Text id="ref-439">If((CLA_MAX_RIG_POS &#62; 40) And (CLA_LEVER_POS &#62; 30) And (CLA_LEVER_POS &#60; 250), True, False ) </Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-54" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-440">CLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM2</Name>
+<Description id="ref-441">Peut etre utilise pour specifier un angle particulier pour un moteur et s assurer que le throttle semble etre dans la bonne position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-442">True</TrueText>
+<FalseText id="ref-443">False</FalseText>
+<Text id="ref-444">If((CLA_MAX_RIG_POS &#62; 70) And (CLA_LEVER_POS &#62; 30) And (CLA_LEVER_POS &#60; 250), True, False ) </Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-55" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-445">CLA_STORE_MAX_STOP_ANGLE_BTN</Name>
+<Description id="ref-446">Store Max Stop Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-447">True</TrueText>
+<FalseText id="ref-448">False</FalseText>
+<Group id="ref-449">Group_Fast</Group>
+<ItemID id="ref-450">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.max_stop_point.store_value</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-56" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-451">CLA_STORE_MAX_STOP_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-452">True</TrueText>
+<FalseText id="ref-453">False</FalseText>
+<Text id="ref-454">CLA_COMPUTE_DONE And CLA_LEVER_ANGLE_READING &#62; CLA_MAX_RIG_POS</Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-57" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-455">CLA_STORE_MAX_STOP_ANGLE_STATUS</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-456">True</TrueText>
+<FalseText id="ref-457">False</FalseText>
+<Text id="ref-458">CLA_MAX_STOP_POS_DONE And CLA_MAX_STOP_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-58" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-459">CLA_STORE_MIN_ANGLE_BTN</Name>
+<Description id="ref-460">Store Min Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-461">True</TrueText>
+<FalseText id="ref-462">False</FalseText>
+<Group id="ref-463">Group_Fast</Group>
+<ItemID id="ref-464">dacn1.dacn1_sm1720_iomgr.rig_gov_throttle.user_rig.store_min_angle</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-59" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-465">CLA_STORE_MIN_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-466">True</TrueText>
+<FalseText id="ref-467">False</FalseText>
+<Text id="ref-468">CLA_MIN_POS_DONE = False And CLA_MIN_RIG_POS &#60; 50  And CLA_LEVER_POS &#60; 50 And CLA_ENGAGE_BTN = False</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-60" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-469">CLA_STORE_MIN_STOP_ANGLE_BTN</Name>
+<Description id="ref-470">Store Min Stop Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-471">True</TrueText>
+<FalseText id="ref-472">False</FalseText>
+<Group id="ref-473">Group_Fast</Group>
+<ItemID id="ref-474">dacn1.dacn1_sm1720_iomgr.gov_throttle_info.min_stop_point.store_value</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-61" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-475">CLA_STORE_MIN_STOP_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-476">True</TrueText>
+<FalseText id="ref-477">False</FalseText>
+<Text id="ref-478">CLA_COMPUTE_DONE And CLA_LEVER_ANGLE_READING &#60; CLA_MIN_RIG_POS</Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-62" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-479">CLA_STORE_MIN_STOP_ANGLE_STATUS</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-480">True</TrueText>
+<FalseText id="ref-481">False</FalseText>
+<Text id="ref-482">CLA_MIN_STOP_POS_DONE And CLA_MIN_STOP_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a3:BooleanChannel id="ref-63" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-483">CLOSE_RVDT_RESOLVER_CONFIG_WINDOW_BTN</Name>
+<Description id="ref-484">Close</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-485">True</TrueText>
+<FalseText id="ref-486">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-64" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-487">CLP_CAPTURE_RVDT_MAX_BTN</Name>
+<Description id="ref-488">Capture MAX</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-489">True</TrueText>
+<FalseText id="ref-490">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-65" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-491">CLP_CAPTURE_RVDT_MIN_BTN</Name>
+<Description id="ref-492">Capture MIN</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-493">True</TrueText>
+<FalseText id="ref-494">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-66" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-495">CLP_COMPUTE_RVDT_BTN</Name>
+<Description id="ref-496">Compute</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-497">True</TrueText>
+<FalseText id="ref-498">False</FalseText>
+</a3:BooleanChannel>
+<a3:NumericChannel id="ref-67" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-499">CLP_RESOLVER_ANGLE0</Name>
+<Description id="ref-500">ANGLE 0</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-501">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-502">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-68" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-503">CLP_RESOLVER_ANGLE1</Name>
+<Description id="ref-504">ANGLE 1</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-505">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-506">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-69" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-507">CLP_RESOLVER_LEVER0</Name>
+<Description id="ref-508">LEVER 0</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-509">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-510">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-70" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-511">CLP_RESOLVER_LEVER1</Name>
+<Description id="ref-512">LEVER 1</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-513">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-514">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-71" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-515">CLP_RESOLVER_TRANSFORMER_RATIO</Name>
+<Description id="ref-516">RATIO</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-517">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-518">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-72" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-519">CLP_RVDT_E1_MAX_VDC</Name>
+<Description id="ref-520">E1 at MAX</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-521">VDC</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-522">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-73" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-523">CLP_RVDT_E1_MIN_VDC</Name>
+<Description id="ref-524">E1 at MIN</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-525">VDC</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-526">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-74" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-527">CLP_RVDT_E1Y0_VDC</Name>
+<Description id="ref-528">E1Y0</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-529">VDC</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-530">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-75" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-531">CLP_RVDT_E1Y1_VDC</Name>
+<Description id="ref-532">E1Y1</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-533">VDC</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-534">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-76" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-535">CLP_RVDT_E2_MAX_VDC</Name>
+<Description id="ref-536">E2 at MAX</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-537">VDC</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-538">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-77" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-539">CLP_RVDT_E2_MIN_VDC</Name>
+<Description id="ref-540">E2 at MIN</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-541">VDC</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-542">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-78" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-543">CLP_RVDT_E2Y0_VDC</Name>
+<Description id="ref-544">E2Y0</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-545">VDC</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-546">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-79" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-547">CLP_RVDT_E2Y1_VDC</Name>
+<Description id="ref-548">E2Y1</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-549">VDC</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-550">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:BooleanChannel id="ref-80" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-551">CLP_SEND_BTN</Name>
+<Description id="ref-552">Send</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-553">True</TrueText>
+<FalseText id="ref-554">False</FalseText>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-81" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-555">EEC_POWER</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-556">True</TrueText>
+<FalseText id="ref-557">False</FalseText>
+<Group id="ref-558">Group_Fast</Group>
+<ItemID id="ref-559">dacn1.dacn1_uut_controller.ecs_pt6a_68.eec_power</ItemID>
+</a4:BooleanItem>
+<a3:BooleanChannel id="ref-82" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-560">PLA_CALIBRATION_DONE</Name>
+<Description id="ref-561">Calibration Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-83" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-562">PLA_CALIBRATION_DONE_OLD</Name>
+<Description id="ref-563">Calibration Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-564">True</TrueText>
+<FalseText id="ref-565">False</FalseText>
+<Group id="ref-566">Group_Fast</Group>
+<ItemID id="ref-567">dacn1.dacn1_sm1720_iomgr.fcu_calib_done</ItemID>
+</a4:BooleanItem>
+<a3:BooleanChannel id="ref-84" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-568">PLA_CAPTURE_RVDT_MAX_BTN</Name>
+<Description id="ref-569">Capture MAX</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-570">True</TrueText>
+<FalseText id="ref-571">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-85" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-572">PLA_CAPTURE_RVDT_MIN_BTN</Name>
+<Description id="ref-573">Capture MIN</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-574">True</TrueText>
+<FalseText id="ref-575">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-86" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-576">PLA_CLOSE_THROTTLE_CALIB_BTN</Name>
+<Description id="ref-577">Close</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-578">True</TrueText>
+<FalseText id="ref-579">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-87" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-580">PLA_COMPUTE_BTN</Name>
+<Description id="ref-581">Compute</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a5:BooleanExpression id="ref-88" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-582">PLA_COMPUTE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-583">True</TrueText>
+<FalseText id="ref-584">False</FalseText>
+<Text id="ref-585">PLA_MIN_POS_DONE  And PLA_MAX_POS_DONE And PLA_ENGAGE_BTN = False And PLA_COMPUTE_DONE = False</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-89" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-586">PLA_COMPUTE_BTN_OLD</Name>
+<Description id="ref-587">Compute</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-588">True</TrueText>
+<FalseText id="ref-589">False</FalseText>
+<Group id="ref-590">Group_Fast</Group>
+<ItemID id="ref-591">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.user_rig.compute_demand</ItemID>
+</a4:BooleanItem>
+<a3:BooleanChannel id="ref-90" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-592">PLA_COMPUTE_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-91" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-593">PLA_COMPUTE_DONE_OLD</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-594">True</TrueText>
+<FalseText id="ref-595">False</FalseText>
+<Group id="ref-596">Group_Fast</Group>
+<ItemID id="ref-597">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.compute_status</ItemID>
+</a4:BooleanItem>
+<a3:BooleanChannel id="ref-92" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-598">PLA_COMPUTE_RVDT_BTN</Name>
+<Description id="ref-599">Compute</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-600">True</TrueText>
+<FalseText id="ref-601">False</FalseText>
+</a3:BooleanChannel>
+<a3:BooleanChannel id="ref-93" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-602">PLA_ENGAGE_BTN</Name>
+<Description id="ref-603">Engage</Description>
+<ToolTip id="ref-604">Engage Servo Motor</ToolTip>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a5:BooleanExpression id="ref-94" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-605">PLA_ENGAGE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-606">True</TrueText>
+<FalseText id="ref-607">False</FalseText>
+<Text id="ref-608">Not(PLA_MIN_POS_DONE = True And PLA_MAX_POS_DONE = True ) And PLA_MAX_RIG_POS &#62; 0</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-95" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-609">PLA_ENGAGE_BTN_OLD</Name>
+<Description id="ref-610">Engage</Description>
+<ToolTip id="ref-611">Engage servo motor</ToolTip>
+<TrueText id="ref-612">True</TrueText>
+<FalseText id="ref-613">False</FalseText>
+<Group id="ref-614">Group_Fast</Group>
+<ItemID id="ref-615">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.user_rig.engage_demand</ItemID>
+</a4:BooleanItem>
+<a6:NumericExpression id="ref-96" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-616">PLA_ENGINE_PROTECTION</Name>
+<Description id="ref-617">Return to Idle Position On Trips</Description>
+<ToolTip id="ref-618">Return to Idle Position On Overtemp, Overtorque and Overspeed</ToolTip>
+<Text id="ref-619">If( PLA_ENGINE_PROTECTION_ON, PLA_ENGINE_PROTECTION_ANGLE, &#34;NOT ARMED&#34;)</Text>
+<Units id="ref-620">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-621">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a4:Item id="ref-97" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-622">PLA_ENGINE_PROTECTION_ANGLE</Name>
+<Description id="ref-623">Return to Idle Position</Description>
+<ToolTip id="ref-624">Return to Idle Position</ToolTip>
+<Units id="ref-625">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-626">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-627">Group_Fast</Group>
+<ItemID id="ref-628">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.estop_angle</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-98" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-629">PLA_ENGINE_PROTECTION_ON</Name>
+<Description id="ref-630">Protection On</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-631">True</TrueText>
+<FalseText id="ref-632">False</FalseText>
+<Group id="ref-633">Group_Fast</Group>
+<ItemID id="ref-634">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.estop_enable</ItemID>
+</a4:BooleanItem>
+<a4:Item id="ref-99" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-635">PLA_FLIGHT_SIM_MAX_POS_COUNT</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Units id="ref-636">Count</Units>
+<Min>0</Min>
+<Max>130</Max>
+<Format id="ref-637">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-638">Group_Fast</Group>
+<ItemID id="ref-639">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_max_point.position_in_count</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-100" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-640">PLA_FLIGHT_SIM_MAX_POS_DEG</Name>
+<Description id="ref-641">Count</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-642">°</Units>
+<Min>0</Min>
+<Max>130</Max>
+<Format id="ref-643">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-644">Group_Fast</Group>
+<ItemID id="ref-645">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_max_point.position_degree</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-101" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-646">PLA_FLIGHT_SIM_MAX_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-647">True</TrueText>
+<FalseText id="ref-648">False</FalseText>
+<Group id="ref-649">Group_Fast</Group>
+<ItemID id="ref-650">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_max_point.capture_done</ItemID>
+</a4:BooleanItem>
+<a4:BooleanItem id="ref-102" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-651">PLA_FLIGHT_SIM_MAX_POS_ENABLED</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-652">True</TrueText>
+<FalseText id="ref-653">False</FalseText>
+<Group id="ref-654">Group_Fast</Group>
+<ItemID id="ref-655">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_max_point.enabled</ItemID>
+</a4:BooleanItem>
+<a6:NumericExpression id="ref-103" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-656">PLA_FLIGHT_SIM_MAX_POS_MSG</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-657">If(PLA_FLIGHT_SIM_MAX_POS_ENABLED, &#34;ENABLED&#34; , &#34;DISABLED&#34; )</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-658">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a4:Item id="ref-104" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-659">PLA_FLIGHT_SIM_MIN_POS_COUNT</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Units id="ref-660">Count</Units>
+<Min>-15</Min>
+<Max>100</Max>
+<Format id="ref-661">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-662">Group_Fast</Group>
+<ItemID id="ref-663">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_min_point.position_in_count</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-105" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-664">PLA_FLIGHT_SIM_MIN_POS_DEG</Name>
+<Description id="ref-665">Count</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-666">°</Units>
+<Min>-15</Min>
+<Max>100</Max>
+<Format id="ref-667">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-668">Group_Fast</Group>
+<ItemID id="ref-669">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_min_point.position_degree</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-106" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-670">PLA_FLIGHT_SIM_MIN_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-671">True</TrueText>
+<FalseText id="ref-672">False</FalseText>
+<Group id="ref-673">Group_Fast</Group>
+<ItemID id="ref-674">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_min_point.capture_done</ItemID>
+</a4:BooleanItem>
+<a4:BooleanItem id="ref-107" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-675">PLA_FLIGHT_SIM_MIN_POS_ENABLED</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-676">True</TrueText>
+<FalseText id="ref-677">False</FalseText>
+<Group id="ref-678">Group_Fast</Group>
+<ItemID id="ref-679">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_min_point.enabled</ItemID>
+</a4:BooleanItem>
+<a6:NumericExpression id="ref-108" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-680">PLA_FLIGHT_SIM_MIN_POS_MSG</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-681">If(PLA_FLIGHT_SIM_MIN_POS_ENABLED, &#34;ENABLED&#34; , &#34;DISABLED&#34; )</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-682">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a4:Item id="ref-109" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-683">PLA_IDLE_POS_DEG</Name>
+<Description id="ref-684">Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-685">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-686">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-687">Group_Fast</Group>
+<ItemID id="ref-688">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.idle_point.position_degree</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-110" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-689">PLA_IDLE_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-690">True</TrueText>
+<FalseText id="ref-691">False</FalseText>
+<Group id="ref-692">Group_Fast</Group>
+<ItemID id="ref-693">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.idle_point.capture_done</ItemID>
+</a4:BooleanItem>
+<a4:BooleanItem id="ref-111" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-694">PLA_IDLE_POS_ENABLED</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-695">True</TrueText>
+<FalseText id="ref-696">False</FalseText>
+<Group id="ref-697">Group_Fast</Group>
+<ItemID id="ref-698">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.idle_point.enabled</ItemID>
+</a4:BooleanItem>
+<a6:NumericExpression id="ref-112" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-699">PLA_IDLE_POS_MSG</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-700">If(PLA_IDLE_POS_ENABLED, &#34;ENABLED&#34; , &#34;DISABLED&#34; )</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-701">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-113" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-702">PLA_LEVER_ANGLE_READING</Name>
+<Description id="ref-703">Lever Angle Reading</Description>
+<ToolTip href="#ref-211"/>
+<Text id="ref-704">If(PLA_COMPUTE_DONE , If( PLA_CALIBRATION_DONE, PLA_LEVER_ANGLE_RUN, PLA_LEVER_ANGLE_RIG ),  &#34;N/A&#34;)</Text>
+<Units id="ref-705"> °</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-706">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a4:Item id="ref-114" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-707">PLA_LEVER_ANGLE_RIG</Name>
+<Description id="ref-708">Lever Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-709"> °</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-710">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-711">Group_Fast</Group>
+<ItemID id="ref-712">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.lever_angle_demand</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-115" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-713">PLA_LEVER_ANGLE_RUN</Name>
+<Description id="ref-714">Lever Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-715"> °</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-716">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-717">Group_Fast</Group>
+<ItemID id="ref-718">dacn1.dacn1_sm1720_iomgr.fcu_throttle_demand.lever_angle_demand</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a3:NumericChannel id="ref-116" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-719">PLA_LEVER_POS</Name>
+<Description id="ref-720">Lever Reading</Description>
+<ToolTip id="ref-721">Lever Reading</ToolTip>
+<Units id="ref-722">%</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-723">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+</a3:NumericChannel>
+<a4:Item id="ref-117" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-724">PLA_LEVER_POS_OLD</Name>
+<Description id="ref-725">Throttle Reading</Description>
+<ToolTip id="ref-726">Throttle Reading</ToolTip>
+<Units id="ref-727">%</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-728">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-729">Group_Fast</Group>
+<ItemID id="ref-730">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.lever_pcnt</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a3:BooleanChannel id="ref-118" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-731">PLA_MAX_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-119" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-732">PLA_MAX_POS_DONE_OLD</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-733">True</TrueText>
+<FalseText id="ref-734">False</FalseText>
+<Group id="ref-735">Group_Fast</Group>
+<ItemID id="ref-736">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.max_pos_done</ItemID>
+</a4:BooleanItem>
+<a3:NumericChannel id="ref-120" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-737">PLA_MAX_RIG_POS</Name>
+<Description id="ref-738">Max Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-739">°</Units>
+<Min>0</Min>
+<Max>130</Max>
+<Format id="ref-740">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+</a3:NumericChannel>
+<a4:Item id="ref-121" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-741">PLA_MAX_RIG_POS_OLD</Name>
+<Description id="ref-742">Max Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-743">°</Units>
+<Min>0</Min>
+<Max>130</Max>
+<Format id="ref-744">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-745">Group_Fast</Group>
+<ItemID id="ref-746">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.user_rig.max_rig_pos</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-122" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-747">PLA_MAX_STOP_POS_DEG</Name>
+<Description id="ref-748">Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-749">°</Units>
+<Min>0</Min>
+<Max>130</Max>
+<Format id="ref-750">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-751">Group_Fast</Group>
+<ItemID id="ref-752">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.max_stop_point.position_degree</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a3:BooleanChannel id="ref-123" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-753">PLA_MAX_STOP_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-754">True</TrueText>
+<FalseText id="ref-755">False</FalseText>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-124" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-756">PLA_MAX_STOP_POS_DONE_OLD</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-757">True</TrueText>
+<FalseText id="ref-758">False</FalseText>
+<Group id="ref-759">Group_Fast</Group>
+<ItemID id="ref-760">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.max_stop_point.capture_done</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-125" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-761">PLA_MAX_STOP_POS_ENABLED</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-762">True</TrueText>
+<FalseText id="ref-763">False</FalseText>
+<Text id="ref-764">True</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-126" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-765">PLA_MAX_STOP_POS_ENABLED_OLD</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-766">True</TrueText>
+<FalseText id="ref-767">False</FalseText>
+<Group id="ref-768">Group_Fast</Group>
+<ItemID id="ref-769">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.max_stop_point.enabled</ItemID>
+</a4:BooleanItem>
+<a6:NumericExpression id="ref-127" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-770">PLA_MAX_STOP_POS_MSG</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-771">If(PLA_MAX_STOP_POS_ENABLED, &#34;ENABLED&#34; , &#34;DISABLED&#34; )</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-772">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a3:BooleanChannel id="ref-128" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-773">PLA_MIN_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-129" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-774">PLA_MIN_POS_DONE_OLD</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-775">True</TrueText>
+<FalseText id="ref-776">False</FalseText>
+<Group id="ref-777">Group_Fast</Group>
+<ItemID id="ref-778">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.min_pos_done</ItemID>
+</a4:BooleanItem>
+<a3:NumericChannel id="ref-130" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-779">PLA_MIN_RIG_POS</Name>
+<Description id="ref-780">Min Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-781">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-782">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+</a3:NumericChannel>
+<a4:Item id="ref-131" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-783">PLA_MIN_RIG_POS_OLD</Name>
+<Description id="ref-784">Min Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-785">°</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-786">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-787">Group_Fast</Group>
+<ItemID id="ref-788">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.user_rig.min_rig_pos</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:Item id="ref-132" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-789">PLA_MIN_STOP_POS_DEG</Name>
+<Description id="ref-790">Angle</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-791">°</Units>
+<Min>-15</Min>
+<Max>100</Max>
+<Format id="ref-792">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+<Group id="ref-793">Group_Fast</Group>
+<ItemID id="ref-794">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.min_stop_point.position_degree</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a3:BooleanChannel id="ref-133" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-795">PLA_MIN_STOP_POS_DONE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-796">True</TrueText>
+<FalseText id="ref-797">False</FalseText>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-134" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-798">PLA_MIN_STOP_POS_DONE_OLD</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-799">True</TrueText>
+<FalseText id="ref-800">False</FalseText>
+<Group id="ref-801">Group_Fast</Group>
+<ItemID id="ref-802">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.min_stop_point.capture_done</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-135" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-803">PLA_MIN_STOP_POS_ENABLED</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-804">True</TrueText>
+<FalseText id="ref-805">False</FalseText>
+<Text id="ref-806">True</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-136" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-807">PLA_MIN_STOP_POS_ENABLED_OLD</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-808">True</TrueText>
+<FalseText id="ref-809">False</FalseText>
+<Group id="ref-810">Group_Fast</Group>
+<ItemID id="ref-811">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.min_stop_point.enabled</ItemID>
+</a4:BooleanItem>
+<a6:NumericExpression id="ref-137" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-812">PLA_MIN_STOP_POS_MSG</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-813">If(PLA_MIN_STOP_POS_ENABLED, &#34;ENABLED&#34; , &#34;DISABLED&#34; )</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-814">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a3:BooleanChannel id="ref-138" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-815">PLA_RESET_BTN</Name>
+<Description id="ref-816">Reset Rigging</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-139" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-817">PLA_RESET_BTN_OLD</Name>
+<Description id="ref-818">Reset Rigging</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-588"/>
+<FalseText href="#ref-589"/>
+<Group id="ref-819">Group_Fast</Group>
+<ItemID id="ref-820">dacn1.dacn1_sm1720_iomgr.fcu_reset_rigging</ItemID>
+</a4:BooleanItem>
+<a3:NumericChannel id="ref-140" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-821">PLA_RESOLVER_ANGLE0</Name>
+<Description id="ref-822">ANGLE 0</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-823">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-824">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-141" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-825">PLA_RESOLVER_ANGLE1</Name>
+<Description id="ref-826">ANGLE 1</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-827">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-828">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-142" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-829">PLA_RESOLVER_LEVER0</Name>
+<Description id="ref-830">LEVER 0</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-831">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-832">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-143" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-833">PLA_RESOLVER_LEVER1</Name>
+<Description id="ref-834">LEVER 1</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-835">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-836">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-144" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-837">PLA_RESOLVER_TRANSFORMER_RATIO</Name>
+<Description id="ref-838">RATIO</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-839">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-840">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a6:NumericExpression id="ref-145" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-841">PLA_RIG_MESSAGE</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-842">If(OPC_AUTOCAL_STATUS=False,RIG_MSG_01,If(PLA_MAX_RIG_POS=0,RIG_MSG_02,If(PLA_MIN_POS_DONE=False,RIG_MSG_03,If(PLA_MAX_POS_DONE=False,RIG_MSG_04,PLA_RIG_MESSAGE_NEXT1))))</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-843">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-146" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-844">PLA_RIG_MESSAGE_NEXT1</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-845">If(PLA_COMPUTE_DONE=False,RIG_MSG_05,If(PLA_MIN_STOP_POS_DONE=False,RIG_MSG_06,PLA_RIG_MESSAGE_NEXT2))</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-846">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-147" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-847">PLA_RIG_MESSAGE_NEXT2</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-848">If(TM_UUT_Model = &#34;XXXX&#34; ,RIG_MSG_07,If(PLA_MAX_STOP_POS_DONE=False,RIG_MSG_08,If(PLA_IDLE_POS_DONE=False,RIG_MSG_11,PLA_RIG_MESSAGE_NEXT3)))</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-849">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-148" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-850">PLA_RIG_MESSAGE_NEXT3</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-851">If(PLA_RIGGING_DONE=True,RIG_MSG_10,&#34;CLOSE WINDOW&#34;)</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-852">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-149" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-853">PLA_RIG_WARNING</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-854">If(PLA_COMPUTE_DONE=True,&#34;WARNING! NOW SERVO MOTOR IS MOVING IF THROTTLE MOVING&#34;,If(PLA_ENGAGE_BTN=True,&#34;WARNING! SERVO MOTOR IS MOVING (ACTIVED)&#34;,&#34;SERVO MOTOR IS DISABLED&#34;))</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-855">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a3:BooleanChannel id="ref-150" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-856">PLA_RIGGING_DONE</Name>
+<Description id="ref-857">Rigging Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a4:BooleanItem id="ref-151" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-858">PLA_RIGGING_DONE_OLD</Name>
+<Description id="ref-859">Rigging Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-588"/>
+<FalseText href="#ref-589"/>
+<Group id="ref-860">Group_Fast</Group>
+<ItemID id="ref-861">dacn1.dacn1_sm1720_iomgr.FCU_calib_done</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-152" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-862">PLA_RIGGING_NOT_DONE</Name>
+<Description id="ref-863">Rigging Not Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-864">True</TrueText>
+<FalseText id="ref-865">False</FalseText>
+<Text id="ref-866">Not PLA_RIGGING_DONE</Text>
+</a5:BooleanExpression>
+<a3:NumericChannel id="ref-153" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-867">PLA_RVDT_E1_MAX_VDC</Name>
+<Description id="ref-868">E1 at MAX</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-869">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-870">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-154" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-871">PLA_RVDT_E1_MIN_VDC</Name>
+<Description id="ref-872">E1 at MIN</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-873">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-874">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-155" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-875">PLA_RVDT_E1Y0_VDC</Name>
+<Description id="ref-876">E1Y0</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-877">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-878">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-156" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-879">PLA_RVDT_E1Y1_VDC</Name>
+<Description id="ref-880">E1Y1</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-881">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-882">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-157" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-883">PLA_RVDT_E2_MAX_VDC</Name>
+<Description id="ref-884">E2 at MAX</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-885">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-886">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-158" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-887">PLA_RVDT_E2_MIN_VDC</Name>
+<Description id="ref-888">E2 at MIN</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-889">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-890">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-159" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-891">PLA_RVDT_E2Y0_VDC</Name>
+<Description id="ref-892">E2Y0</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-893">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-894">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-160" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-895">PLA_RVDT_E2Y1_VDC</Name>
+<Description id="ref-896">E2Y1</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-897">VDC</Units>
+<Min>-100</Min>
+<Max>100</Max>
+<Format id="ref-898">F4</Format>
+<DecimalDigits>4</DecimalDigits>
+</a3:NumericChannel>
+<a4:BooleanItem id="ref-161" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-899">PLA_SAVE_BTN</Name>
+<Description id="ref-900">Save</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-588"/>
+<FalseText href="#ref-589"/>
+<Group id="ref-901">Group_Fast</Group>
+<ItemID id="ref-902">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.user_rig.close_demand</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-162" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-903">PLA_SAVE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-904">True</TrueText>
+<FalseText id="ref-905">False</FalseText>
+<Text id="ref-906">PLA_IDLE_POS_DONE And PLA_FLIGHT_SIM_MIN_POS_DONE And PLA_FLIGHT_SIM_MAX_POS_DONE</Text>
+</a5:BooleanExpression>
+<a3:BooleanChannel id="ref-163" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-907">PLA_SEND_BTN</Name>
+<Description id="ref-908">Send</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-909">True</TrueText>
+<FalseText id="ref-910">False</FalseText>
+</a3:BooleanChannel>
+<a3:NumericChannel id="ref-164" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-911">PLA_SERVO_ANGLE_READING</Name>
+<Description id="ref-912">Servo Angle Reading</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-913">°</Units>
+<Min>0</Min>
+<Max>180</Max>
+<Format id="ref-914">N</Format>
+<DecimalDigits>2</DecimalDigits>
+</a3:NumericChannel>
+<a3:NumericChannel id="ref-165" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-915">PLA_SERVO_READING</Name>
+<Description id="ref-916">Servo Reading</Description>
+<ToolTip href="#ref-211"/>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-917">N</Format>
+<DecimalDigits>2</DecimalDigits>
+</a3:NumericChannel>
+<a4:Item id="ref-166" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-918">PLA_SERVO_READING_OLD</Name>
+<Description id="ref-919">Motor Reading</Description>
+<ToolTip href="#ref-211"/>
+<Units id="ref-920"> count</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-921">F0</Format>
+<DecimalDigits>0</DecimalDigits>
+<Group id="ref-922">Group_Fast</Group>
+<ItemID id="ref-923">dacn1.dacn1_sm1720_iomgr.fcu_position</ItemID>
+<Scale>1</Scale>
+<Offset>0</Offset>
+</a4:Item>
+<a4:BooleanItem id="ref-167" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-924">PLA_SET_SM_PARAM</Name>
+<Description id="ref-925">Program SM</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-926">True</TrueText>
+<FalseText id="ref-927">False</FalseText>
+<Group id="ref-928">Group_Fast</Group>
+<ItemID id="ref-929">dacn1.dacn1_sm1720_iomgr.fcu_set_sm_parameters</ItemID>
+</a4:BooleanItem>
+<a4:BooleanItem id="ref-168" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-930">PLA_STORE_FLIGHT_SIM_MAX_ANGLE_BTN</Name>
+<Description id="ref-931">Store Max Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-932">True</TrueText>
+<FalseText id="ref-933">False</FalseText>
+<Group id="ref-934">Group_Fast</Group>
+<ItemID id="ref-935">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_max_point.store_value</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-169" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-936">PLA_STORE_FLIGHT_SIM_MAX_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-937">True</TrueText>
+<FalseText id="ref-938">False</FalseText>
+<Text id="ref-939">PLA_MIN_STOP_POS_DONE And PLA_MAX_STOP_POS_DONE</Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-170" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-940">PLA_STORE_FLIGHT_SIM_MAX_ANGLE_STATUS</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-941">True</TrueText>
+<FalseText id="ref-942">False</FalseText>
+<Text id="ref-943">PLA_FLIGHT_SIM_MAX_POS_DONE And PLA_FLIGHT_SIM_MAX_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-171" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-944">PLA_STORE_FLIGHT_SIM_MIN_ANGLE_BTN</Name>
+<Description id="ref-945">Store Min Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-946">True</TrueText>
+<FalseText id="ref-947">False</FalseText>
+<Group id="ref-948">Group_Fast</Group>
+<ItemID id="ref-949">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.flightsim_min_point.store_value</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-172" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-950">PLA_STORE_FLIGHT_SIM_MIN_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-951">True</TrueText>
+<FalseText id="ref-952">False</FalseText>
+<Text id="ref-953">PLA_MIN_STOP_POS_DONE And PLA_MAX_STOP_POS_DONE</Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-173" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-954">PLA_STORE_FLIGHT_SIM_MIN_ANGLE_STATUS</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-955">True</TrueText>
+<FalseText id="ref-956">False</FalseText>
+<Text id="ref-957">PLA_FLIGHT_SIM_MIN_POS_DONE And PLA_FLIGHT_SIM_MIN_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-174" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-958">PLA_STORE_IDLE_ANGLE_BTN</Name>
+<Description id="ref-959">Store Idle Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-960">True</TrueText>
+<FalseText id="ref-961">False</FalseText>
+<Group id="ref-962">Group_Fast</Group>
+<ItemID id="ref-963">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.idle_point.store_value</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-175" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-964">PLA_STORE_IDLE_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-965">True</TrueText>
+<FalseText id="ref-966">False</FalseText>
+<Text id="ref-967">PLA_COMPUTE_DONE And PLA_MAX_STOP_POS_DONE And PLA_MIN_STOP_POS_DONE And PLA_IDLE_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-176" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-968">PLA_STORE_IDLE_ANGLE_STATUS</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-969">True</TrueText>
+<FalseText id="ref-970">False</FalseText>
+<Text id="ref-971">PLA_IDLE_POS_DONE And PLA_IDLE_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a3:BooleanChannel id="ref-177" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-972">PLA_STORE_MAX_ANGLE_BTN</Name>
+<Description id="ref-973">Store Max Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a5:BooleanExpression id="ref-178" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-974">PLA_STORE_MAX_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-975">True</TrueText>
+<FalseText id="ref-976">False</FalseText>
+<Text id="ref-977">PLA_MIN_POS_DONE And PLA_MAX_RIG_POS&#62; 70 And PLA_MAX_POS_DONE = False And PLA_ENGAGE_BTN = False And (PLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM1 Or PLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM2)</Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-179" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-978">PLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM1</Name>
+<Description id="ref-979">Peut etre utilise pour specifier un angle particulier pour un moteur et s assurer que le throttle semble etre dans la bonne position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-980">True</TrueText>
+<FalseText id="ref-981">False</FalseText>
+<Text id="ref-982">If((PLA_MAX_RIG_POS &#62; 70) And (PLA_LEVER_POS &#62; 25) And (PLA_LEVER_POS &#60; 250), True, False ) </Text>
+</a5:BooleanExpression>
+<a5:BooleanExpression id="ref-180" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-983">PLA_STORE_MAX_ANGLE_BTN_ENB_CUSTOM2</Name>
+<Description id="ref-984">Peut etre utilise pour specifier un angle particulier pour un moteur et s assurer que le throttle semble etre dans la bonne position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-985">True</TrueText>
+<FalseText id="ref-986">False</FalseText>
+<Text id="ref-987">If((PLA_MAX_RIG_POS = 130) And (PLA_LEVER_POS &#62; 100) And (PLA_LEVER_POS &#60; 250), True, False ) </Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-181" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-988">PLA_STORE_MAX_ANGLE_BTN_OLD</Name>
+<Description id="ref-989">Store Max Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-588"/>
+<FalseText href="#ref-589"/>
+<Group id="ref-990">Group_Fast</Group>
+<ItemID id="ref-991">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.user_rig.store_max_angle</ItemID>
+</a4:BooleanItem>
+<a3:BooleanChannel id="ref-182" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-992">PLA_STORE_MAX_STOP_ANGLE_BTN</Name>
+<Description id="ref-993">Store Max Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-994">True</TrueText>
+<FalseText id="ref-995">False</FalseText>
+</a3:BooleanChannel>
+<a5:BooleanExpression id="ref-183" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-996">PLA_STORE_MAX_STOP_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-997">True</TrueText>
+<FalseText id="ref-998">False</FalseText>
+<Text id="ref-999">PLA_COMPUTE_DONE And PLA_SERVO_ANGLE_READING &#62; PLA_MAX_RIG_POS And PLA_MAX_STOP_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-184" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1000">PLA_STORE_MAX_STOP_ANGLE_BTN_OLD</Name>
+<Description id="ref-1001">Store Max Stop Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-1002">True</TrueText>
+<FalseText id="ref-1003">False</FalseText>
+<Group id="ref-1004">Group_Fast</Group>
+<ItemID id="ref-1005">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.max_stop_point.store_value</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-185" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1006">PLA_STORE_MAX_STOP_ANGLE_STATUS</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-1007">True</TrueText>
+<FalseText id="ref-1008">False</FalseText>
+<Text id="ref-1009">PLA_MAX_STOP_POS_DONE And PLA_MAX_STOP_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a3:BooleanChannel id="ref-186" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1010">PLA_STORE_MIN_ANGLE_BTN</Name>
+<Description id="ref-1011">Store Min Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-212"/>
+<FalseText href="#ref-213"/>
+</a3:BooleanChannel>
+<a5:BooleanExpression id="ref-187" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1012">PLA_STORE_MIN_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-1013">True</TrueText>
+<FalseText id="ref-1014">False</FalseText>
+<Text id="ref-1015">PLA_MIN_POS_DONE = False And PLA_MIN_RIG_POS &#60; 50  And PLA_LEVER_POS &#60; 50 And PLA_ENGAGE_BTN = False</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-188" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1016">PLA_STORE_MIN_ANGLE_BTN_OLD</Name>
+<Description id="ref-1017">Store Min Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-588"/>
+<FalseText href="#ref-589"/>
+<Group id="ref-1018">Group_Fast</Group>
+<ItemID id="ref-1019">dacn1.dacn1_sm1720_iomgr.rig_fcu_throttle.user_rig.store_min_angle</ItemID>
+</a4:BooleanItem>
+<a3:BooleanChannel id="ref-189" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1020">PLA_STORE_MIN_STOP_ANGLE_BTN</Name>
+<Description id="ref-1021">Store Min Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-1022">True</TrueText>
+<FalseText id="ref-1023">False</FalseText>
+</a3:BooleanChannel>
+<a5:BooleanExpression id="ref-190" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1024">PLA_STORE_MIN_STOP_ANGLE_BTN_ENB</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-1025">True</TrueText>
+<FalseText id="ref-1026">False</FalseText>
+<Text id="ref-1027">PLA_COMPUTE_DONE And PLA_SERVO_ANGLE_READING &#60; PLA_MIN_RIG_POS And PLA_MIN_STOP_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a4:BooleanItem id="ref-191" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1028">PLA_STORE_MIN_STOP_ANGLE_BTN_OLD</Name>
+<Description id="ref-1029">Store Min Stop Position</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-1030">True</TrueText>
+<FalseText id="ref-1031">False</FalseText>
+<Group id="ref-1032">Group_Fast</Group>
+<ItemID id="ref-1033">dacn1.dacn1_sm1720_iomgr.fcu_throttle_info.min_stop_point.store_value</ItemID>
+</a4:BooleanItem>
+<a5:BooleanExpression id="ref-192" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1034">PLA_STORE_MIN_STOP_ANGLE_STATUS</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-1035">True</TrueText>
+<FalseText id="ref-1036">False</FalseText>
+<Text id="ref-1037">PLA_MIN_STOP_POS_DONE And PLA_MIN_STOP_POS_ENABLED</Text>
+</a5:BooleanExpression>
+<a6:NumericExpression id="ref-193" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1038">RIG_MSG_01</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1039">&#34;PLEASE WAIT UNTIL CALIBRATION HAS BEEN DONE BEFORE DOING RIGGING&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1040">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-194" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1041">RIG_MSG_02</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1042">&#34;PLEASE SET FCU MINMUM AND MAXIMUM ANGLE&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1043">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-195" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1044">RIG_MSG_03</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1045">&#34;SET YOUR 0 POSITION ON FCU EVEN IF THE FCU POSITION IS ALREADY AT 0. USE DISENGAGED/ENGAED BUTTON&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1046">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-196" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1047">RIG_MSG_04</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1048">&#34;SET YOUR MAXIMUM POSITION ON FCU BY USING DISENGAGED/ENGAGED BUTTON&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1049">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-197" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1050">RIG_MSG_05</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1051">&#34;PLEASE PRESS COMPUTE BUTTON&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1052">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-198" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1053">RIG_MSG_06</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1054">&#34;SET MINIMUM STOP POSITION. (IF THROTTLE GOES LOWER TO THIS POSITION, SERVO MOTOR WILL STOP MOVING AT THIS POSITION)&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1055">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-199" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1056">RIG_MSG_07</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1057">&#34;FOR ENGINE F100 YOU HAVE TO SET THE ABINHIBIT STOP POSITION. (WHEN ABHINIBIT IS ACTIVATED ON HMO SCREEN, SERVO MOTOR WILL STOP TO THAT POSITION)&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1058">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-200" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1059">RIG_MSG_08</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1060">&#34;SET THE MAXIMUM STOP POSITION. (IF THROTTLE GOES HIGHER TO THIS POSITION, SERVO MOTOR WILL STOP MOVING AT THIS POSITION)&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1061">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-201" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1062">RIG_MSG_09</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1063">&#34;ERROR LIMIT HAS BEEN GENERATED DURING RIGGING PROCEDURE.  PLEASE CLOSE TEST ET REOPEN THE ENGINE SESSION&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1064">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-202" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1065">RIG_MSG_10</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1066">&#34;THE RIGGING PROCEDURE HAS NOW BEEN COMPLETED&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1067">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a6:NumericExpression id="ref-203" xmlns:a6="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Expressions/KineticaRT.Logic.Expressions%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1068">RIG_MSG_11</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<Text id="ref-1069">&#34;SET THE IDLE POSITION.&#34;</Text>
+<Units href="#ref-211"/>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1070">G</Format>
+<DecimalDigits>2</DecimalDigits>
+</a6:NumericExpression>
+<a5:BooleanExpression id="ref-204" xmlns:a5="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Logic.Channels/KineticaRT.Logic.Channels%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1071">RIGGING_DONE</Name>
+<Description id="ref-1072">Rigging Done</Description>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-222"/>
+<FalseText href="#ref-223"/>
+<Text id="ref-1073">PLA_RIGGING_DONE And CLA_RIGGING_DONE</Text>
+</a5:BooleanExpression>
+<a3:BooleanChannel id="ref-205" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1074">RVDT_RESOLVER_SAVE_BTN</Name>
+<Description id="ref-1075">Save</Description>
+<ToolTip href="#ref-211"/>
+<TrueText id="ref-1076">True</TrueText>
+<FalseText id="ref-1077">False</FalseText>
+</a3:BooleanChannel>
+<a3:NumericChannel id="ref-206" xmlns:a3="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Channels/KineticaRT%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1078">THROTTLE_INSTANCE</Name>
+<Description id="ref-1079">Lever Reading</Description>
+<ToolTip id="ref-1080">Lever Reading</ToolTip>
+<Units id="ref-1081">%</Units>
+<Min>0</Min>
+<Max>100</Max>
+<Format id="ref-1082">F2</Format>
+<DecimalDigits>2</DecimalDigits>
+</a3:NumericChannel>
+<a4:BooleanItem id="ref-207" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1083">USER_AUTO_RIGGING</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-556"/>
+<FalseText href="#ref-557"/>
+<Group id="ref-1084">Group_Fast</Group>
+<ItemID id="ref-1085">dacn1.dacn1_uut_controller.ecs_pt6a_68.user_auto_rigging</ItemID>
+</a4:BooleanItem>
+<a4:BooleanItem id="ref-208" xmlns:a4="http://schemas.microsoft.com/clr/nsassem/KineticaRT.Servers.OpcClient/KineticaRT.Servers.OpcClient%2C%20Version%3D1.2.0.0%2C%20Culture%3Dneutral%2C%20PublicKeyToken%3D2e0c8c468356d1c8">
+<Name id="ref-1086">USER_EEC_POWER</Name>
+<Description href="#ref-211"/>
+<ToolTip href="#ref-211"/>
+<TrueText href="#ref-556"/>
+<FalseText href="#ref-557"/>
+<Group id="ref-1087">Group_Fast</Group>
+<ItemID id="ref-1088">dacn1.dacn1_uut_controller.ecs_pt6a_68.user_eec_power</ItemID>
+</a4:BooleanItem>
+</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

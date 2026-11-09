@@ -1,0 +1,273 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>KineticaRT.Studio.Controls.Button</name>
+    </assembly>
+    <members>
+        <member name="T:KineticaRT.Studio.Controls.Button">
+            <summary>
+            KineticaRT Studio Button control.
+            Displays a boolean Value from a source channel,
+            together with an optional description
+            </summary>
+        </member>
+        <member name="T:KineticaRT.Studio.Controls.Button.TextSources">
+            <summary>
+            Enumeration of possible sources of button text
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.TextSources.Custom">
+            <summary>
+            Custom text
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.TextSources.Description">
+            <summary>
+            Source channel Description property
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.TextSources.TrueText">
+            <summary>
+            Source Channel ToolTip property
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.TextSources.None">
+            <summary>
+            No text
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.TextSources.CurrentStateText">
+            <summary>
+            Source Value TrueText/FalseText property matching the current state
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.TextSources.FutureStateText">
+            <summary>
+            Source Value TrueText/FalseText property not matching the current state
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="T:KineticaRT.Studio.Controls.Button.AlternateColorMode">
+            <summary>
+            Specifies how/when to use the AlternateColor property.
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.AlternateColorMode.No">
+            <summary>
+            Do not use the AlternateColor
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.AlternateColorMode.Yes">
+            <summary>
+            Use the AlternateColor
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.Button.AlternateColorMode.Auto">
+            <summary>
+            Use the AlternateColor when the Value Property / source channel is set to true.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.#ctor">
+            <summary>
+            Initialises a new instance of the Button class
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify 
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.Name">
+            <summary>
+            Gets or sets the name of the control.
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.GradientEnabled">
+            <summary>
+            Gets or sets whether the Title bar is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.LinearGradientMode">
+            <summary>
+            Gets or sets the Color at the left hand side of the title bar
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.SourceChannel">
+            <summary>
+            Gets or sets the Source channel to which this object is connected
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.InputEnabledSource">
+            <summary>
+            Gets or sets the name of the object to be the Button's InputEnabled Source
+            </summary>
+            <remarks>If this is set to a valid channel then it overrides the value of InputEnabled.</remarks>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.TimeDelayIntervalSource">
+            <summary>
+            Gets or sets the name of the object to be the Button's TimedDelayInterval Source
+            </summary>
+            <remarks>If this is set to a valid channel then it overrides the value of TimedDelayInterval.</remarks>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.CustomDescription">
+            <summary>
+            Gets or sets a Custom Description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.DescriptionSource">
+            <summary>
+            Gets or sets where to get the Description from
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.ButtonColor">
+            <summary>
+            Gets or Sets the Color of the button
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.ButtonAlternateColor">
+            <summary>
+            Gets or Sets the alternate Color of the button
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.ButtonGradientLeftColor">
+            <summary>
+            Gets or Sets the Color of the button
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.ButtonGradientRightColor">
+            <summary>
+            Gets or Sets the Color of the button
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.ButtonGradientAlternateLeftColor">
+            <summary>
+            Gets or Sets the alternate Color of the button
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.ButtonGradientAlternateRightColor">
+            <summary>
+            Gets or Sets the alternate Color of the button
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.ButtonAlternateTextColor">
+            <summary>
+            Gets or Sets the alternate Color of the button
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.ButtonTextColor">
+            <summary>
+            Gets or Sets the Color of the button text
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.UseAlternateColor">
+            <summary>
+            Gets or sets whether to use the standard or alternate button color
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.DescriptionPercent">
+            <summary>
+            Gets or sets the Percentage width devoted to the Description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.DescriptionOnLeft">
+            <summary>
+            Gets or sets whether the description is to the left of the button
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.DescriptionAlignment">
+            <summary>
+            Gets or sets the Alignment of the description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.InputEnabled">
+            <summary>
+            Gets or sets whether input is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.TimeDelayInterval">
+            <summary>
+            Gets or sets whether input is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.TextSource">
+            <summary>
+            Gets or sets where to get the button text from
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.CustomText">
+            <summary>
+            Gets or sets Custom button text
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.Text">
+            <summary>
+            Gets the Text displayed on the button. Value depends on TextSource property
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.ReturnType">
+            <summary>
+            Gets or sets how the button reacts when pressed
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.Shape">
+            <summary>
+            Gets or sets the Shape of the Control
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.Button.Value">
+            <summary>
+            Gets or sets the current value
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.OnPaint(System.Windows.Forms.PaintEventArgs)">
+            <summary>
+            Paint Event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.UpdateLayout">
+            <summary>
+            Updates the layout of value, description and units and causes a repaint
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.NewToolTip(System.String)">
+            <summary>
+            A new tool tip is being set
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.OnSourcePropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)">
+            <summary>
+            A property in the Source channel has changed
+            </summary>
+            <param name="Sender">Object generating the event</param>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="E:KineticaRT.Studio.Controls.Button.ValueChanged">
+            <summary>Occurs when the value of the Value property changes.</summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.SetButtonState(System.Boolean)">
+            <summary>Sets the value of the button to Pressed or Unpressed</summary>
+            <param name="Pressed">True to set the Value to Pressed; False to set the Value to Unpressed</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.Connect">
+            <summary>
+            Connects this object to others.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.Button.Disconnect">
+            <summary>
+            Disconnects this object from others.
+            </summary>
+        </member>
+    </members>
+</doc>

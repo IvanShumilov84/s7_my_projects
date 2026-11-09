@@ -1,0 +1,1536 @@
+Imports Microsoft.Office.Interop 'Excel
+Imports KineticaRT
+Imports KineticaRT.Channels
+Imports KineticaRT.Logic.Message
+Imports KineticaRT.Sequence
+Imports KineticaRT.Servers.OpcClient
+Imports KineticaRT.Values
+Imports Microsoft.VisualBasic
+Imports System
+Imports System.Collections
+Imports System.Data 
+Imports System.Data.OleDb 
+Imports System.Diagnostics
+Imports System.IO
+Imports System.Runtime.InteropServices
+'Client/Server
+Imports PwcSharedInterface
+Imports System.ServiceModel
+'Imports System.ServiceModel.Channels
+'
+Imports System.Security
+Imports System.Security.Permissions
+Imports System.Text
+Imports System.Threading
+Imports System.Windows.Forms
+
+Imports CEL.HMI
+
+Namespace StudioDemonstration
+	Public Class PWC83032_Sequence
+		Inherits CEL.KineticaRT.Sequence.Sequence
+
+		Private CELProject As CELDAS = CELDAS.Instance()
+
+		Private Const sPWCConfigurationPath As String = "C:\Program Files\Pratt & Whitney Canada\PWC83032\configuration\"
+		Private Const sConfigurationPath As String = ".\PWC\PWC83032\exe\"
+
+        Private Enum eTestStepPW980A
+            MES = 10
+            ECS_900 = 11
+            ECS_800 = 12
+            FINAL_DATA = 13
+        End Enum
+
+        Private ReadOnly Property EngineConfiguration() As EngineInformationItem
+            Get
+                Return UsingConfigurationManager.engineInfoCollection.Item("PW980A")
+            End Get
+        End Property
+
+		Private Sub CopyConfigurationFiles()
+			Dim files As String() = Directory.GetFiles(sPWCConfigurationPath)
+			Dim baseFileName, fileName As String
+
+			If Directory.Exists(sConfigurationPath) = True Then
+				Directory.Delete(sConfigurationPath, True)
+			End If
+
+			Directory.CreateDirectory(sConfigurationPath)
+
+			For Each fileName In files
+				baseFileName = Path.GetFileName(fileName)
+
+				File.Copy(fileName, sConfigurationPath + baseFileName)
+			Next
+		End Sub
+
+        Protected Overrides Sub OnEngineWorkingThread()
+            'Do Nothing
+        End Sub
+		Private Function CreateHandler() As Boolean
+			Try
+				If CELProject.EngineModel = "PW980A" Then
+					AddHandler PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnBTN_TAKE_POINT
+                    AddHandler PERF_ENTER_PERFORMANCE_DATA_BTN.ValueChanged, AddressOf OnEnterPerformanceData
+                End If
+
+				Return True
+			Catch ex As Exception
+				MessageBox.Show("PWC83032_Sequence : CreateHandler()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+				Return False
+			End Try
+		End Function
+
+        Private Function CreateRevimaPerformanceFile(ByVal AppendOption As Boolean, ByVal TestStepNumber As Integer, ByVal ProtectPassword As String, ByVal UnProtectPassword As String, ByRef excelWorkbook As Excel.Workbook) As Boolean
+            'Declaration
+            Dim Column As Integer
+            Dim excelSheets As Excel.Sheets
+            Dim excelWorksheet As Excel.Worksheet
+
+            CreateRevimaPerformanceFile = True
+
+            ' The following gets the Worksheets collection
+            excelSheets = excelWorkbook.Worksheets
+
+            Try
+                'Unlock Sheets
+                excelWorkbook.Worksheets(1).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(2).Unprotect(UnProtectPassword)
+                excelWorkbook.Worksheets(3).Unprotect(UnProtectPassword)
+
+                If AppendOption = False Then
+
+                    excelWorksheet = excelSheets.Item("PAGE 1")
+
+                    'HEADER
+
+                    'Serial Number
+                    excelWorksheet.Cells(5, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(5, 28).Value = UserInputs.EngineSerialNumber
+
+                    'Work Order
+                    excelWorksheet.Cells(6, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(6, 28).Value = UserInputs.WorkOrder
+
+                    'ECB Serial Number
+                    excelWorksheet.Cells(7, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(7, 28).Value = UserInputs.ECBSerialNumber
+
+                    'Exhaust Duct Serial Number
+                    excelWorksheet.Cells(8, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(8, 28).Value = UserInputs.ExhaustDuctSerialNumber
+
+                    'Bellmouth Serial Number
+                    excelWorksheet.Cells(9, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(9, 28).Value = UserInputs.BellmouthSerialNumber
+
+                    'Bleed Duct Serial Number
+                    excelWorksheet.Cells(10, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(10, 28).Value = UserInputs.BleedDuctSerialNumber
+
+                    'Starter Serial Number
+                    excelWorksheet.Cells(11, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(11, 28).Value = UserInputs.StarterSerialNumber
+
+                    'Dyno 1 Serial Number
+                    excelWorksheet.Cells(12, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(12, 28).Value = UserInputs.Dyno1SerialNumber
+
+                    'Dyno 2 Serial Number
+                    excelWorksheet.Cells(13, 28).NumberFormat = "@"
+                    excelWorksheet.Cells(13, 28).Value = UserInputs.Dyno2SerialNumber
+
+                    'GG Vibration Pickup Serial Number
+                    excelWorksheet.Cells(5, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(5, 96).Value = UserInputs.GGVibPickupSerialNumber
+
+                    'LGB Vibration Pickup Serial Number
+                    excelWorksheet.Cells(6, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(6, 96).Value = UserInputs.LGBVibPickupSerialNumber
+
+                    'Oil Type
+                    excelWorksheet.Cells(7, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(7, 96).Value = UserInputs.OilType
+
+                    'TSN
+                    excelWorksheet.Cells(8, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(8, 96).Value = UserInputs.TimeSinceNewOrOverhaul
+
+                    'CSN
+                    excelWorksheet.Cells(9, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(9, 96).Value = UserInputs.CyclesSinceNew
+
+                    'Reason
+                    excelWorksheet.Cells(10, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(10, 96).Value = UserInputs.Reason
+
+                    'Test Type
+                    excelWorksheet.Cells(11, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(11, 96).Value = UserInputs.TestType
+
+                    'Load Cell 1 Serial Number
+                    excelWorksheet.Cells(12, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(12, 96).Value = UserInputs.LoadCell1SerialNumber
+
+                    'Load Cell 1 Serial Number
+                    excelWorksheet.Cells(13, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(13, 96).Value = UserInputs.LoadCell2SerialNumber
+
+                    'Date
+                    excelWorksheet.Cells(14, 96).NumberFormat = "@"
+                    excelWorksheet.Cells(14, 96).Value = Format(Now, "d MMMM yyyy")
+
+                    excelWorksheet = excelSheets.Item("ACCEPTANCE")
+
+                    'Document Number
+                    excelWorksheet.Cells(31, 5).NumberFormat = "@"
+                    excelWorksheet.Cells(31, 5).Value = excelWorksheet.Cells(31, 5).Value.ToString() + Custom_Parameters("APUTestedAccordingTo").ToString()
+
+                End If
+
+                ' Wait 0.5 second to let the dll to compute before putting the limits in the report
+                Thread.Sleep(500)
+                'Page 1
+                excelWorksheet = excelSheets.Item("PAGE 1")
+                Select Case TestStepNumber
+                    ' PERFORMANCE SUMMARY
+                    Case eTestStepPW980A.ECS_800
+                        Column = 53
+                        excelWorksheet.Cells(28, Column).Value = PERF_N2_LIMIT_RPM.Value.ToString(PERF_N2_LIMIT_RPM.Format, Nothing)
+                        excelWorksheet.Cells(29, Column).Value = PERF_T_T7_AVG_LIMIT_DEGC.Value.ToString(PERF_T_T7_AVG_LIMIT_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(30, Column).Value = PERF_WF_LIMIT_PPH.Value.ToString(PERF_WF_LIMIT_PPH.Format, Nothing)
+
+                        excelWorksheet.Cells(32, Column).Value = PERF_P_P17_AVG_LIMIT_PSIA.Value.ToString(PERF_P_P17_AVG_LIMIT_PSIA.Format, Nothing)
+                        excelWorksheet.Cells(33, Column).Value = PERF_W17_LIMIT_LBMIN.Value.ToString(PERF_W17_LIMIT_LBMIN.Format, Nothing)
+
+                        Column = 67
+                        excelWorksheet.Cells(22, Column).Value = LOG_PERF_P_P09_AVG_PSIA.Value.ToString("F2", Nothing)
+                        excelWorksheet.Cells(23, Column).Value = LOG_PERF_T_T09_AVG_DEGC.Value.ToString(LOG_PERF_T_T09_AVG_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(24, Column).Value = LOG_PERF_E_IGVACT_PCT.Value.ToString(LOG_PERF_E_IGVACT_PCT.Format, Nothing)
+                        excelWorksheet.Cells(25, Column).Value = LOG_PERF_W17C.Value.ToString(LOG_PERF_W17C.Format, Nothing)
+                        excelWorksheet.Cells(26, Column).Value = LOG_PERF_LOAD_TOTAL_KVA.Value.ToString(LOG_PERF_LOAD_TOTAL_KVA.Format, Nothing)
+
+                        excelWorksheet.Cells(28, Column).Value = LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing)
+                        excelWorksheet.Cells(29, Column).Value = LOG_PERF_E_EGT_DEGC.Value.ToString(LOG_PERF_E_EGT_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(30, Column).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+
+                        excelWorksheet.Cells(32, Column).Value = LOG_PERF_P_P17_AVG_PSIA.Value.ToString("F2", Nothing)
+                        excelWorksheet.Cells(33, Column).Value = LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing)
+
+                    Case eTestStepPW980A.ECS_900
+                        Column = 81
+                        excelWorksheet.Cells(28, Column).Value = PERF_N2_LIMIT_RPM.Value.ToString(PERF_N2_LIMIT_RPM.Format, Nothing)
+                        excelWorksheet.Cells(29, Column).Value = PERF_T_T7_AVG_LIMIT_DEGC.Value.ToString(PERF_T_T7_AVG_LIMIT_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(30, Column).Value = PERF_WF_LIMIT_PPH.Value.ToString(PERF_WF_LIMIT_PPH.Format, Nothing)
+
+                        excelWorksheet.Cells(32, Column).Value = PERF_P_P17_AVG_LIMIT_PSIA.Value.ToString(PERF_P_P17_AVG_LIMIT_PSIA.Format, Nothing)
+                        excelWorksheet.Cells(33, Column).Value = PERF_W17_LIMIT_LBMIN.Value.ToString(PERF_W17_LIMIT_LBMIN.Format, Nothing)
+
+                        Column = 95
+                        excelWorksheet.Cells(22, Column).Value = LOG_PERF_P_P09_AVG_PSIA.Value.ToString("F2", Nothing)
+                        excelWorksheet.Cells(23, Column).Value = LOG_PERF_T_T09_AVG_DEGC.Value.ToString(LOG_PERF_T_T09_AVG_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(24, Column).Value = LOG_PERF_E_IGVACT_PCT.Value.ToString(LOG_PERF_E_IGVACT_PCT.Format, Nothing)
+                        excelWorksheet.Cells(25, Column).Value = LOG_PERF_W17C.Value.ToString(LOG_PERF_W17C.Format, Nothing)
+                        excelWorksheet.Cells(26, Column).Value = LOG_PERF_LOAD_TOTAL_KVA.Value.ToString(LOG_PERF_LOAD_TOTAL_KVA.Format, Nothing)
+
+                        excelWorksheet.Cells(28, Column).Value = LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing)
+                        excelWorksheet.Cells(29, Column).Value = LOG_PERF_E_EGT_DEGC.Value.ToString(LOG_PERF_E_EGT_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(30, Column).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+
+                        excelWorksheet.Cells(32, Column).Value = LOG_PERF_P_P17_AVG_PSIA.Value.ToString("F2", Nothing)
+                        excelWorksheet.Cells(33, Column).Value = LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing)
+
+                    Case eTestStepPW980A.MES
+                        Column = 109
+                        excelWorksheet.Cells(32, Column).Value = PERF_P_P17_AVG_LIMIT_PSIA.Value.ToString(PERF_P_P17_AVG_LIMIT_PSIA.Format, Nothing)
+
+                        Column = 123
+                        excelWorksheet.Cells(22, Column).Value = LOG_PERF_P_P09_AVG_PSIA.Value.ToString("F2", Nothing)
+                        excelWorksheet.Cells(23, Column).Value = LOG_PERF_T_T09_AVG_DEGC.Value.ToString(LOG_PERF_T_T09_AVG_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(24, Column).Value = LOG_PERF_E_IGVACT_PCT.Value.ToString(LOG_PERF_E_IGVACT_PCT.Format, Nothing)
+                        excelWorksheet.Cells(25, Column).Value = LOG_PERF_W17C.Value.ToString(LOG_PERF_W17C.Format, Nothing)
+                        excelWorksheet.Cells(26, Column).Value = LOG_PERF_LOAD_TOTAL_KVA.Value.ToString(LOG_PERF_LOAD_TOTAL_KVA.Format, Nothing)
+
+                        excelWorksheet.Cells(28, Column).Value = LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing)
+                        excelWorksheet.Cells(29, Column).Value = LOG_PERF_E_EGT_DEGC.Value.ToString(LOG_PERF_E_EGT_DEGC.Format, Nothing)
+                        excelWorksheet.Cells(30, Column).Value = LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing)
+
+                        excelWorksheet.Cells(32, Column).Value = LOG_PERF_P_P17_AVG_PSIA.Value.ToString("F2", Nothing)
+                        excelWorksheet.Cells(33, Column).Value = LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing)
+
+                    Case eTestStepPW980A.FINAL_DATA
+                        ' STARTING
+                        Column = 52
+                        excelWorksheet.Cells(36, Column).Value = PERF_T09_AVG.Value.ToString(PERF_T09_AVG.Format, Nothing)
+                        excelWorksheet.Cells(37, Column).Value = PERF_MAX_EGT.Value.ToString(PERF_MAX_EGT.Format, Nothing)
+                        excelWorksheet.Cells(38, Column).Value = PERF_TIME_TO_LIGHT.Value.ToString(PERF_TIME_TO_LIGHT.Format, Nothing)
+                        excelWorksheet.Cells(39, Column).Value = PERF_TIME_TO_NO_LOAD.Value.ToString(PERF_TIME_TO_NO_LOAD.Format, Nothing)
+
+                        ' DATA PLATE INFORMATION
+                        Column = 120
+                        excelWorksheet.Cells(36, Column).Value = PERF_ENGINE_DRY_WEIGHT.Value.ToString(PERF_ENGINE_DRY_WEIGHT.Format, Nothing)
+                        excelWorksheet.Cells(38, Column).Value = PERF_EGT_TRIM.Value.ToString(PERF_EGT_TRIM.Format, Nothing)
+                End Select
+                TestProgress_RecordPerfStep(TestStepNumber)
+
+                'Page 2 And Acceptance
+                Select Case TestStepNumber
+
+                    Case eTestStepPW980A.FINAL_DATA
+
+                        excelWorksheet = excelSheets.Item("PAGE 2")
+
+                        ' ADDITIONAL INFORMATION
+                        Column = 52
+                        excelWorksheet.Cells(6, Column).Value = UserInputs.LHV
+                        excelWorksheet.Cells(7, Column).Value = PERF_ENGINE_OIL_PRESSURE.Value.ToString(PERF_ENGINE_OIL_PRESSURE.Format, Nothing)
+                        excelWorksheet.Cells(8, Column).Value = PERF_GEN_OIL_PRESSURE.Value.ToString(PERF_GEN_OIL_PRESSURE.Format, Nothing)
+
+                        Column = 120
+                        excelWorksheet.Cells(6, Column).Value = PERF_IGV_TRIM_MES.Value.ToString(PERF_IGV_TRIM_MES.Format, Nothing)
+                        excelWorksheet.Cells(7, Column).Value = PERF_IGV_TRIM_ECS_800.Value.ToString(PERF_IGV_TRIM_ECS_800.Format, Nothing)
+                        excelWorksheet.Cells(8, Column).Value = PERF_IGV_TRIM_ECS_900.Value.ToString(PERF_IGV_TRIM_ECS_900.Format, Nothing)
+
+                        ' TRANSITIONS
+                        Column = 103
+                        If CELProject.IsTrue(PERF_RTL_TO_MES.Value) Then
+                            excelWorksheet.Cells(11, Column).Value = "YES"
+                        Else
+                            excelWorksheet.Cells(11, Column).Value = "NO"
+                        End If
+
+                        If CELProject.IsTrue(PERF_MES_TO_ECS.Value) Then
+                            excelWorksheet.Cells(12, Column).Value = "YES"
+                        Else
+                            excelWorksheet.Cells(12, Column).Value = "NO"
+                        End If
+
+                        If CELProject.IsTrue(PERF_MIN_TO_MAX_ECS.Value) Then
+                            excelWorksheet.Cells(13, Column).Value = "YES"
+                        Else
+                            excelWorksheet.Cells(13, Column).Value = "NO"
+                        End If
+
+                        If CELProject.IsTrue(PERF_ELECT_LOAD_SHED.Value) Then
+                            excelWorksheet.Cells(14, Column).Value = "YES"
+                        Else
+                            excelWorksheet.Cells(14, Column).Value = "NO"
+                        End If
+
+                        ' MISCELLANEOUS CHECKS
+                        Column = 103
+                        If CELProject.IsTrue(PERF_CHIP_DETECTION.Value) Then
+                            excelWorksheet.Cells(17, Column).Value = "YES"
+                        Else
+                            excelWorksheet.Cells(17, Column).Value = "NO"
+                        End If
+
+                        If CELProject.IsTrue(PERF_FILTER_CHECK.Value) Then
+                            excelWorksheet.Cells(18, Column).Value = "YES"
+                        Else
+                            excelWorksheet.Cells(18, Column).Value = "NO"
+                        End If
+
+                        If CELProject.IsTrue(PERF_LEAKAGE_CHECK.Value) Then
+                            excelWorksheet.Cells(19, Column).Value = "YES"
+                        Else
+                            excelWorksheet.Cells(19, Column).Value = "NO"
+                        End If
+
+                        If CELProject.IsTrue(PERF_N1_RUNDOWN_TIME.Value) Then
+                            excelWorksheet.Cells(20, Column).Value = "YES"
+                        Else
+                            excelWorksheet.Cells(20, Column).Value = "NO"
+                        End If
+
+                        If CELProject.IsTrue(PERF_N2_RUNDOWN_TIME.Value) Then
+                            excelWorksheet.Cells(21, Column).Value = "YES"
+                        Else
+                            excelWorksheet.Cells(21, Column).Value = "NO"
+                        End If
+
+                        ' VIBRATION DATA
+                        Column = 103
+                        excelWorksheet.Cells(27, Column).Value = PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN1.Value.ToString(PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN1.Format, Nothing)
+                        excelWorksheet.Cells(28, Column).Value = PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN2.Value.ToString(PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN2.Format, Nothing)
+                        excelWorksheet.Cells(29, Column).Value = PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_1EN2.Value.ToString(PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_1EN2.Format, Nothing)
+                        excelWorksheet.Cells(30, Column).Value = PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_0_925EN2.Value.ToString(PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_0_925EN2.Format, Nothing)
+                        excelWorksheet.Cells(31, Column).Value = PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN1.Value.ToString(PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN1.Format, Nothing)
+                        excelWorksheet.Cells(32, Column).Value = PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN2.Value.ToString(PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN2.Format, Nothing)
+                        excelWorksheet.Cells(33, Column).Value = PERF_VIB_STEADY_STATE_AT_MAX_N2_0_925EN2.Value.ToString(PERF_VIB_STEADY_STATE_AT_MAX_N2_0_925EN2.Format, Nothing)
+
+                        excelWorksheet.Cells(35, Column).Value = PERF_VIB_STEADY_STATE_AT_MAX_N2_39EN1.Value.ToString(PERF_VIB_STEADY_STATE_AT_MAX_N2_39EN1.Format, Nothing)
+
+                        excelWorksheet = excelSheets.Item("ACCEPTANCE")
+
+                        'Test Result
+                        If CELProject.IsTrue(PERF_TEST_RESULT_ACCEPTED.Value) Then
+                            excelWorksheet.OLEObjects("TestResultAccepted").object.value = True
+                        Else
+                            excelWorksheet.OLEObjects("TestResultAccepted").object.value = False
+                        End If
+
+                        If CELProject.IsTrue(PERF_TEST_RESULT_REJECTED.Value) Then
+                            excelWorksheet.OLEObjects("TestResultRejected").object.value = True
+                        Else
+                            excelWorksheet.OLEObjects("TestResultRejected").object.value = False
+                        End If
+                    Case Else
+                        ' Do Nothing
+                End Select
+
+            Catch ex As Exception
+                System.Diagnostics.Trace.WriteLine("CreateRevimaPerformanceFile: " + ex.Message)
+                MessageBox.Show(ex.ToString)
+                CreateRevimaPerformanceFile = False
+            Finally
+                'Lock Sheets
+                excelWorkbook.Worksheets(1).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(2).Protect(ProtectPassword)
+                excelWorkbook.Worksheets(3).Protect(ProtectPassword)
+
+            End Try
+
+        End Function
+
+		Private Function DeleteHandler() As Boolean
+			Try
+                If Not CELProject.EngineModel Is Nothing Then
+                    If CELProject.EngineModel = "PW980A" Then
+                        If Not PERF_TAKE_POINT_BTN Is Nothing Then
+                            RemoveHandler PERF_TAKE_POINT_BTN.ValueChanged, AddressOf OnBTN_TAKE_POINT
+                        End If
+
+                        If Not (PERF_ENTER_PERFORMANCE_DATA_BTN Is Nothing) Then
+                            RemoveHandler PERF_ENTER_PERFORMANCE_DATA_BTN.ValueChanged, AddressOf OnEnterPerformanceData
+                        End If
+                    End If
+                End If
+
+				Return True
+			Catch ex As Exception
+				MessageBox.Show("PWC83032_Sequence : DeleteHandler()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+				Return False
+			End Try
+		End Function
+
+        Private Function GetOutputFilename() As String
+            Dim conditionNo As Integer
+            Dim engineBuildNo As Integer
+            Dim engineSN As String = ""
+            Dim fileName As String
+            Dim sDataPath As String = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + CELProject.Test_Mgr_UUT_Answer(0).Value.ToString() + "\" + CELProject.Test_Mgr_UUT_Answer(1).Value.ToString() + "\perf\"
+
+            pwc83032.GetEngine(engineSN)
+            pwc83032.GetBuild(engineBuildNo)
+            pwc83032.GetCondition(conditionNo)
+
+            fileName = sDataPath + "OUT_" + engineSN + "_" + Format(engineBuildNo, "0000") + _
+                "_" + Format(conditionNo, "0000") + ".DAT"
+
+            Return fileName
+        End Function
+
+
+		Private Function Init_Engine_Channels() As Boolean
+			Dim Return_Value As New ArrayList()
+            Dim i As Integer
+
+			Return_Value.Clear()
+
+			Try
+
+				Select Case CELProject.EngineModel
+					'Not For "DAS CALIBRATION"
+					Case "PW980A"
+						'Initialise Engine Channels		
+
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_E_EGT_DEGC, "LOG_PERF_E_EGT_DEGC"))
+						Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_E_IGVACT_PCT, "LOG_PERF_E_IGVACT_PCT"))
+						Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_E_PAMB_PSIA, "LOG_PERF_E_PAMB_PSIA"))
+						Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_E_Q13, "LOG_PERF_E_Q13"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_E_Q13REF, "LOG_PERF_E_Q13REF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_E_Q13REF_TO_DLL, "LOG_PERF_E_Q13REF_TO_DLL"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_E_SCVPOS_PCT, "LOG_PERF_E_SCVPOS_PCT"))
+						Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_LOAD_DYNO_1_KVA, "LOG_PERF_LOAD_DYNO_1_KVA"))
+						Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_LOAD_DYNO_2_KVA, "LOG_PERF_LOAD_DYNO_2_KVA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_LOAD_TOTAL_KVA, "LOG_PERF_LOAD_TOTAL_KVA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_N1_RPM, "LOG_PERF_N1_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_N2_RPM, "LOG_PERF_N2_RPM"))
+
+                        For i = 0 To LOG_PERF_P_P09_PSIA.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_P09_PSIA(i), "LOG_PERF_P_P09_" + (i + 1).ToString() + "_PSIA"))
+                        Next
+
+                        For i = 0 To LOG_PERF_P_P17_PSIA.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_P17_PSIA(i), "LOG_PERF_P_P17_" + (i + 1).ToString() + "_PSIA"))
+                        Next
+
+                        For i = 0 To LOG_PERF_P_S7_PSIA.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S7_PSIA(i), "LOG_PERF_P_S7_" + (i + 1).ToString() + "_PSIA"))
+                        Next
+
+                        For i = 0 To LOG_PERF_P_S79_PSIA.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S79_PSIA(i), "LOG_PERF_P_S79_" + (i + 1).ToString() + "_PSIA"))
+                        Next
+
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_P09_AVG_PSIA, "LOG_PERF_P_P09_AVG_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_P17_AVG_PSIA, "LOG_PERF_P_P17_AVG_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S7_AVG_PSIA, "LOG_PERF_P_S7_AVG_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_S79_AVG_PSIA, "LOG_PERF_P_S79_AVG_PSIA"))
+						Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_P_BARO_PSIA, "LOG_PERF_P_BARO_PSIA"))
+						Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_SAMPLE_SG_FUEL, "LOG_PERF_SAMPLE_SG_FUEL"))
+						Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_SAMPLE_T_FUEL, "LOG_PERF_SAMPLE_T_FUEL"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_FUEL_FM1_DEGF, "LOG_PERF_T_FUEL_FM1_DEGF"))
+
+                        For i = 0 To LOG_PERF_T_T09_DEGF.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T09_DEGF(i), "LOG_PERF_T_T09_" + (i + 1).ToString() + "_DEGF"))
+                        Next
+
+                        For i = 0 To LOG_PERF_T_T17_DEGF.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T17_DEGF(i), "LOG_PERF_T_T17_" + (i + 1).ToString() + "_DEGF"))
+                        Next
+
+                        For i = 0 To LOG_PERF_T_T7_DEGF.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_DEGF(i), "LOG_PERF_T_T7_" + (i + 1).ToString() + "_DEGF"))
+                        Next
+
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T09_AVG_DEGC, "LOG_PERF_T_T09_AVG_DEGC"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T09_AVG_DEGF, "LOG_PERF_T_T09_AVG_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T17_AVG_DEGF, "LOG_PERF_T_T17_AVG_DEGF"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_T_T7_AVG_DEGF, "LOG_PERF_T_T7_AVG_DEGF"))
+						Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_TFV_SG_BASE, "LOG_PERF_TFV_SG_BASE"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_W17_LBMIN, "LOG_PERF_W17_LBMIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_W17_LBSEC, "LOG_PERF_W17_LBSEC"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_W17C, "LOG_PERF_W17C"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF_PPH, "LOG_PERF_WF_PPH"))
+                        Return_Value.Add(MyBase.InitializeChannel(LOG_PERF_WF_PPH_PERF, "LOG_PERF_WF_PPH_PERF"))
+                        Return_Value.Add(MyBase.InitializeChannel(N2_LIMIT_RPM, "N2_LIMIT_RPM"))
+
+                        For i = 0 To P_P09_DELETE_BTN.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(P_P09_DELETE_BTN(i), "P_P09_" + (i + 1).ToString() + "_DELETE_BTN"))
+                        Next
+
+                        For i = 0 To P_P17_DELETE_BTN.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(P_P17_DELETE_BTN(i), "P_P17_" + (i + 1).ToString() + "_DELETE_BTN"))
+                        Next
+
+                        For i = 0 To P_S7_DELETE_BTN.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(P_S7_DELETE_BTN(i), "P_S7_" + (i + 1).ToString() + "_DELETE_BTN"))
+                        Next
+
+                        For i = 0 To P_S79_DELETE_BTN.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(P_S79_DELETE_BTN(i), "P_S79_" + (i + 1).ToString() + "_DELETE_BTN"))
+                        Next
+
+                        Return_Value.Add(MyBase.InitializeChannel(P_P17_AVG_LIMIT_PSIA, "P_P17_AVG_LIMIT_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_TAKE_POINT_BTN, "PERF_TAKE_POINT_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_CHIP_DETECTION, "PERF_CHIP_DETECTION"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_CONDITION_NUMBER, "PERF_CONDITION_NUMBER"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_EGT_TRIM, "PERF_EGT_TRIM"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_ELECT_LOAD_SHED, "PERF_ELECT_LOAD_SHED"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_ENGINE_DRY_WEIGHT, "PERF_ENGINE_DRY_WEIGHT"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_ENGINE_OIL_PRESSURE, "PERF_ENGINE_OIL_PRESSURE"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_ENTER_PERFORMANCE_DATA_BTN, "PERF_ENTER_PERFORMANCE_DATA_BTN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_FILTER_CHECK, "PERF_FILTER_CHECK"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_GEN_OIL_PRESSURE, "PERF_GEN_OIL_PRESSURE"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_IGV_TRIM_ECS_800, "PERF_IGV_TRIM_ECS_800"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_IGV_TRIM_ECS_900, "PERF_IGV_TRIM_ECS_900"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_IGV_TRIM_MES, "PERF_IGV_TRIM_MES"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_LEAKAGE_CHECK, "PERF_LEAKAGE_CHECK"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_MAX_EGT, "PERF_MAX_EGT"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_MES_TO_ECS, "PERF_MES_TO_ECS"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_MIN_TO_MAX_ECS, "PERF_MIN_TO_MAX_ECS"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_N1_RUNDOWN_TIME, "PERF_N1_RUNDOWN_TIME"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_N2_LIMIT_RPM, "PERF_N2_LIMIT_RPM"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_N2_RUNDOWN_TIME, "PERF_N2_RUNDOWN_TIME"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_P_P17_AVG_LIMIT_PSIA, "PERF_P_P17_AVG_LIMIT_PSIA"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_RTL_TO_MES, "PERF_RTL_TO_MES"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_REMARK_TEXT, "PERF_REMARK_TEXT"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_T_T7_AVG_LIMIT_DEGC, "PERF_T_T7_AVG_LIMIT_DEGC"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_T09_AVG, "PERF_T09_AVG"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_TEST_RESULT_ACCEPTED, "PERF_TEST_RESULT_ACCEPTED"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_TEST_RESULT_REJECTED, "PERF_TEST_RESULT_REJECTED"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_TEST_STEP_NB, "PERF_TEST_STEP_NB"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_TIME_TO_LIGHT, "PERF_TIME_TO_LIGHT"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_TIME_TO_NO_LOAD, "PERF_TIME_TO_NO_LOAD"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN1, "PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN1"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN2, "PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN2"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_0_925EN2, "PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_0_925EN2"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_1EN2, "PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_1EN2"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_VIB_STEADY_STATE_AT_MAX_N2_0_925EN2, "PERF_VIB_STEADY_STATE_AT_MAX_N2_0_925EN2"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN1, "PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN1"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN2, "PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN2"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_VIB_STEADY_STATE_AT_MAX_N2_39EN1, "PERF_VIB_STEADY_STATE_AT_MAX_N2_39EN1"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_W17_LIMIT_LBMIN, "PERF_W17_LIMIT_LBMIN"))
+                        Return_Value.Add(MyBase.InitializeChannel(PERF_WF_LIMIT_PPH, "PERF_WF_LIMIT_PPH"))
+
+                        For i = 0 To T_T09_DELETE_BTN.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(T_T09_DELETE_BTN(i), "T_T09_" + (i + 1).ToString() + "_DELETE_BTN"))
+                        Next
+
+                        For i = 0 To T_T17_DELETE_BTN.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(T_T17_DELETE_BTN(i), "T_T17_" + (i + 1).ToString() + "_DELETE_BTN"))
+                        Next
+
+                        For i = 0 To T_T7_DELETE_BTN.GetUpperBound(0) - 1
+                            Return_Value.Add(MyBase.InitializeChannel(T_T7_DELETE_BTN(i), "T_T7_" + (i + 1).ToString() + "_DELETE_BTN"))
+                        Next
+
+                        Return_Value.Add(MyBase.InitializeChannel(T_T7_AVG_LIMIT_DEGC, "T_T7_AVG_LIMIT_DEGC"))
+                        Return_Value.Add(MyBase.InitializeChannel(W17_LIMIT_LBSEC, "W17_LIMIT_LBSEC"))
+                        Return_Value.Add(MyBase.InitializeChannel(WF_LIMIT_PPH, "WF_LIMIT_PPH"))
+                        Return_Value.Add(MyBase.InitializeChannel(OPERATING_TIME_CURRENT_SEC, "OPERATING_TIME_CURRENT_SEC"))
+                        Return_Value.Add(MyBase.InitializeChannel(FUEL_USED_TOTAL_LITERS, "FUEL_USED_TOTAL_LITERS"))
+
+                End Select
+
+			Catch ex As Exception
+				MessageBox.Show("Init_Engine_Channels: " & ex.Message)
+				Return_Value.Add(False)
+			Finally
+
+			End Try
+
+			If Return_Value.Contains(False) Then
+				Init_Engine_Channels = False
+			Else
+				Init_Engine_Channels = True
+			End If
+		End Function
+
+
+		Private Function Initialize() As Boolean
+			Try
+
+				PERF_REMARK_TEXT.Value = New KineticaRT.Values.Text("")
+
+				Return True
+
+			Catch Ex As Exception
+				MessageBox.Show("PWC83032_Sequence : Initialize()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+				Return False
+			End Try
+		End Function
+
+        Private Function Initialize_Perf() As Boolean
+            Dim iError As Integer
+            Dim sDataPath As String = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + CELProject.Test_Mgr_UUT_Answer(0).Value.ToString() + "\" + CELProject.Test_Mgr_UUT_Answer(1).Value.ToString() + "\perf\"
+
+            Try
+
+                CopyConfigurationFiles()
+
+                pwc83032.SetDataPath(sDataPath)
+                pwc83032.SetConfigurationPath(sConfigurationPath)
+
+                pwc83032.SetStatus(UserInputs.Status)
+
+                pwc83032.LoadBuildSpec(iError, UserInputs.BuildSpec, "X", "X")
+
+                If iError <> 0 Then
+                    MessageBox.Show("PWC83032_Sequence : Initialize_Perf() Couldn't load Build Spec", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+                    Return False
+                Else
+                    pwc83032.SetEngine(UserInputs.EngineSerialNumber)
+
+                    pwc83032.SetBuild(UserInputs.Build)
+                    Return True
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("PWC83032_Sequence : Initialize_Perf() : Cannot communicate with P&WC DLL Processing Server" & vbCrLf & vbCrLf & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Function
+
+        Private Sub ProcessCondition()
+            Dim Cond_nb As Integer
+            Dim FileName As String
+            Dim iError As Integer
+
+            Try
+                pwc83032.CalOn()
+
+                If PERF_CONDITION_NUMBER.Value.ToDouble() < 10.0 Then 'Not a Performance point
+                    pwc83032.SetCal(1)
+                Else
+                    pwc83032.SetCal(2)
+                End If
+
+                Cond_nb = CInt(PERF_CONDITION_NUMBER.Value.ToDouble())
+                pwc83032.SetCondition(Cond_nb)
+
+                Dim EngineModel As String = ""
+                Dim BuildSpec As Integer
+                Dim EngineSN As String = ""
+                Dim Build As Integer
+                Dim Condition As Integer
+                Dim Result As Single
+
+                'Inputs validation
+                pwc83032.GetEngineModel(EngineModel)
+                If EngineModel <> CELProject.EngineModel Then
+                    MessageBox.Show("PWC83032_Sequence : ProcessCondition() Engine Model input is incorrect", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+                pwc83032.GetBuildSpec(BuildSpec)
+                If BuildSpec <> UserInputs.BuildSpec Then
+                    MessageBox.Show("PWC83032_Sequence : ProcessCondition() Build Spec input is incorrect", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+                pwc83032.GetEngine(EngineSN)
+                If EngineSN <> UserInputs.EngineSerialNumber Then
+                    MessageBox.Show("PWC83032_Sequence : ProcessCondition() Engine S/N input is incorrect", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+                pwc83032.GetBuild(Build)
+                If Build <> UserInputs.Build Then
+                    MessageBox.Show("PWC83032_Sequence : ProcessCondition() Engine Build input is incorrect", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+                pwc83032.GetCondition(Condition)
+                If Condition <> Cond_nb Then
+                    MessageBox.Show("PWC83032_Sequence : ProcessCondition() Condition input is incorrect", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End If
+
+                pwc83032.GetUnitData(iError)
+                SetUnitValues()
+                pwc83032.SaveUnitData(iError)
+
+                If SubmitPerfValues() Then
+                    pwc83032.SaveData(iError)
+
+                    pwc83032.OutputData()
+                    pwc83032.TransferData(iError)
+                    pwc83032.ProcessData(iError)
+                    pwc83032.CloseOutputData()
+
+                    pwc83032.GetResult("1ZN2", Result)
+                    N2_LIMIT_RPM.Value = New KineticaRT.Values.Double(Result)
+
+                    pwc83032.GetResult("1ZP17", Result)
+                    P_P17_AVG_LIMIT_PSIA.Value = New KineticaRT.Values.Double(Result)
+
+                    pwc83032.GetResult("1ZEGT", Result)
+                    T_T7_AVG_LIMIT_DEGC.Value = New KineticaRT.Values.Double(Result)
+
+                    pwc83032.GetResult("1ZW17", Result)
+                    W17_LIMIT_LBSEC.Value = New KineticaRT.Values.Double(Result)
+
+                    pwc83032.GetResult("1ZWFE", Result)
+                    WF_LIMIT_PPH.Value = New KineticaRT.Values.Double(Result)
+
+                    If (iError = 0) Then
+                        FileName = GetOutputFilename()
+
+                        PerfFileName = "C:\CELDAS DATA\" + CELProject.EngineModel + "\" + UserInputs.EngineSerialNumber + "\" + UserInputs.WorkOrder + "\Perf\" + "Performance " + Format(Now, "yyyy-MM-dd HH'h'mm'm'ss's'") + ".txt"
+
+                        If (System.IO.File.Exists(PerfFileName)) Then
+                            System.IO.File.Delete(PerfFileName)
+                        End If
+
+                        System.IO.File.Copy(FileName, PerfFileName)
+                        ShowOutputFile(FileName)
+                    Else
+                        MessageBox.Show("UNEXPECTED ERROR:" + vbCrLf + "==== ERROR PROCESSING CONDITION ====" + vbCrLf)
+                        ShowOutputFile("Pwc83032TEMP.OUT")
+                    End If
+                End If
+            Catch ex As Exception
+                MessageBox.Show("PWC83032_Sequence : ProcessCondition() : Cannot communicate with P&WC DLL Processing Server" & vbCrLf & vbCrLf & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub SampleValues(isPerfEntry As Boolean)
+            Try
+
+                'Temperature and Pressure
+                Var_LOG_PERF_P_P09_AVG_PSIA = LOG_PERF_P_P09_AVG_PSIA.Value.ToDouble()
+                Var_LOG_PERF_P_P17_AVG_PSIA = LOG_PERF_P_P17_AVG_PSIA.Value.ToDouble()
+                Var_LOG_PERF_P_S7_AVG_PSIA = LOG_PERF_P_S7_AVG_PSIA.Value.ToDouble()
+                Var_LOG_PERF_P_S79_AVG_PSIA = LOG_PERF_P_S79_AVG_PSIA.Value.ToDouble()
+                Var_LOG_PERF_T_T09_AVG_DEGF = LOG_PERF_T_T09_AVG_DEGF.Value.ToDouble()
+                Var_LOG_PERF_T_T7_AVG_DEGF = LOG_PERF_T_T7_AVG_DEGF.Value.ToDouble()
+                Var_LOG_PERF_T_T17_AVG_DEGF = LOG_PERF_T_T17_AVG_DEGF.Value.ToDouble()
+
+            Catch ex As Exception
+                MessageBox.Show("PWC83032_Sequence : SampleValues()" & ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub SetUnitValues()
+            Dim i As Integer
+
+            For i = UnitValues.GetLowerBound(0) To UnitValues.GetUpperBound(0)
+                If Not pwc83032.PutUnitValue(UnitValues(i, 0), UnitValues(i, 1)) Then
+                    MessageBox.Show("SetUnitValues: Unknown label Or unit '" + _
+                        UnitValues(i, 0) + "' (" + UnitValues(i, 1) + ")")
+                End If
+            Next
+        End Sub
+
+        Private Sub ShowOutputFile(fileName As String)
+            Dim DetailsForm As CEL.Forms.DisplayFile = Nothing
+
+            Try
+                DetailsForm = New CEL.Forms.DisplayFile(fileName)
+
+                DetailsForm.MinimizeBox = False
+                DetailsForm.MaximizeBox = False
+                DetailsForm.Text = fileName
+                DetailsForm.ShowDialog()
+            Catch e As Exception
+                MsgBox(e.ToString(), MsgBoxStyle.OkOnly Or MsgBoxStyle.Critical, _
+                    fileName)
+            Finally
+                If (Not (DetailsForm Is Nothing)) Then
+                    DetailsForm.Dispose()
+                End If
+            End Try
+        End Sub
+
+        Private Function SubmitPerfValues() As Boolean
+
+            Dim i As Integer
+
+            'LHV
+            If Not pwc83032.PutValue("LHV", UserInputs.LHV, "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering LHV")
+                Return False
+            End If
+
+            'TSG
+            If Not pwc83032.PutValue("TSG", LOG_PERF_SAMPLE_T_FUEL.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering TSG")
+                Return False
+            End If
+
+            'SG & SGBASE
+            If Not pwc83032.PutValue("SG", LOG_PERF_SAMPLE_SG_FUEL.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering SG")
+                Return False
+            End If
+
+            If Not pwc83032.PutValue("SG_BASE", LOG_PERF_TFV_SG_BASE.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering SG_BASE")
+                Return False
+            End If
+
+            'T/C ID
+            If Not pwc83032.PutValue("CELL", "REVIMA", "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering CELL")
+                Return False
+            End If
+
+            'CONDITION NUMBER
+            If Not pwc83032.PutValue("COND_TYPE_NUM", PERF_CONDITION_NUMBER.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering COND_TYPE_NUM")
+                Return False
+            End If
+
+            'DATE & TIME
+            If Not pwc83032.PutValue("DATE", Format(Now, "yyyy/MM/dd"), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering DATE")
+                Return False
+            End If
+            If Not pwc83032.PutValue("TIME", Format(Now, "HH:MM"), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering TIME")
+                Return False
+            End If
+
+            'REMARK
+            If Not pwc83032.PutValue("REMARK", PERF_REMARK_TEXT.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering REMARK")
+                Return False
+            End If
+
+            'SPEEDS
+            If Not pwc83032.PutValue("N1", LOG_PERF_N1_RPM.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering N1")
+                Return False
+            End If
+
+            If Not pwc83032.PutValue("N2", LOG_PERF_N2_RPM.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering N2")
+                Return False
+            End If
+
+            'FUEL FLOWS
+            'We feed a WF Perf specifically for PWC software : Volumetric value x 8.3378 (water density at 60F) x SG_BASE x 60
+            If Not pwc83032.PutValue("WF1", LOG_PERF_WF_PPH_PERF.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering WF1")
+                Return False
+            End If
+
+            If Not pwc83032.PutValue("WF2", LOG_PERF_WF_PPH_PERF.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering WF2")
+                Return False
+            End If
+
+            'FUEL TEMPERATURE
+            If Not pwc83032.PutValue("WFT1", LOG_PERF_T_FUEL_FM1_DEGF.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering WFT1")
+                Return False
+            End If
+
+            If Not pwc83032.PutValue("WFT2", LOG_PERF_T_FUEL_FM1_DEGF.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering WFT2")
+                Return False
+            End If
+
+            'BLEED FLOW
+            If Not pwc83032.PutValue("W17", LOG_PERF_W17_LBSEC.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering W17")
+                Return False
+            End If
+
+            'BARO
+            If Not pwc83032.PutValue("BARO", LOG_PERF_P_BARO_PSIA.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering BARO")
+                Return False
+            End If
+
+            'INLET GUIDE VALVE
+            If Not pwc83032.PutValue("VIGV", LOG_PERF_E_IGVACT_PCT.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering VIGV")
+                Return False
+            End If
+
+            'GENERATOR LOAD
+            If Not pwc83032.PutValue("ACGEN1", LOG_PERF_LOAD_DYNO_1_KVA.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering ACGEN1")
+                Return False
+            End If
+
+            If Not pwc83032.PutValue("ACGEN2", LOG_PERF_LOAD_DYNO_2_KVA.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering ACGEN2")
+                Return False
+            End If
+
+            'INLET PRESSURE (P1) -- 8 PROBES
+            For i = 0 To P_P09_DELETE_BTN.GetUpperBound(0) - 1
+
+                If CELProject.IsTrue(P_P09_DELETE_BTN(i).Value) Then
+                    If Not pwc83032.PutValue("P1", Var_LOG_PERF_P_P09_AVG_PSIA.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering P1 Average (" + (i + 1).ToString() + ") - Deleted")
+                        Return False
+                    End If
+                Else
+                    If Not pwc83032.PutValue("P1", LOG_PERF_P_P09_PSIA(i).Value.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering P1(" + (i + 1).ToString() + ")")
+                        Return False
+                    End If
+                End If
+
+            Next
+
+            'EXHAUST PRESSURE (P7) -- 4 PROBES
+            For i = 0 To P_S7_DELETE_BTN.GetUpperBound(0) - 1
+
+                If CELProject.IsTrue(P_S7_DELETE_BTN(i).Value) Then
+                    If Not pwc83032.PutValue("P7", Var_LOG_PERF_P_S7_AVG_PSIA.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering P7 Average (" + (i + 1).ToString() + ") - Deleted")
+                        Return False
+                    End If
+                Else
+                    If Not pwc83032.PutValue("P7", LOG_PERF_P_S7_PSIA(i).Value.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering P7(" + (i + 1).ToString() + ")")
+                        Return False
+                    End If
+                End If
+
+            Next
+
+            'EXHAUST PRESSURE (P8) -- 4 PROBES
+            For i = 0 To P_S79_DELETE_BTN.GetUpperBound(0) - 1
+
+                If CELProject.IsTrue(P_S79_DELETE_BTN(i).Value) Then
+                    If Not pwc83032.PutValue("P8", Var_LOG_PERF_P_S79_AVG_PSIA.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering P8 Average (" + (i + 1).ToString() + ") - Deleted")
+                        Return False
+                    End If
+                Else
+                    If Not pwc83032.PutValue("P8", LOG_PERF_P_S79_PSIA(i).Value.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering P8(" + (i + 1).ToString() + ")")
+                        Return False
+                    End If
+                End If
+
+            Next
+
+            'BLEED PRESSURE (P17) -- 8 PROBES
+            For i = 0 To P_P17_DELETE_BTN.GetUpperBound(0) - 1
+
+                If CELProject.IsTrue(P_P17_DELETE_BTN(i).Value) Then
+                    If Not pwc83032.PutValue("P17", Var_LOG_PERF_P_P17_AVG_PSIA.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering P17 Average (" + (i + 1).ToString() + ") - Deleted")
+                        Return False
+                    End If
+                Else
+                    If Not pwc83032.PutValue("P17", LOG_PERF_P_P17_PSIA(i).Value.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering P17(" + (i + 1).ToString() + ")")
+                        Return False
+                    End If
+                End If
+
+            Next
+
+            'INLET TEMPERATURE (T1) -- 12 PROBES
+            For i = 0 To T_T09_DELETE_BTN.GetUpperBound(0) - 1
+
+                If CELProject.IsTrue(T_T09_DELETE_BTN(i).Value) Then
+                    If Not pwc83032.PutValue("T1", Var_LOG_PERF_T_T09_AVG_DEGF.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering T1 Average (" + (i + 1).ToString() + ") - Deleted")
+                        Return False
+                    End If
+                Else
+                    If Not pwc83032.PutValue("T1", LOG_PERF_T_T09_DEGF(i).Value.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering T1(" + (i + 1).ToString() + ")")
+                        Return False
+                    End If
+                End If
+
+            Next
+
+            'EXHAUST TEMPERATURE (T7) -- 24 PROBES
+            For i = 0 To T_T7_DELETE_BTN.GetUpperBound(0) - 1
+
+                If CELProject.IsTrue(T_T7_DELETE_BTN(i).Value) Then
+                    If Not pwc83032.PutValue("T7", Var_LOG_PERF_T_T7_AVG_DEGF.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering T7 Average (" + (i + 1).ToString() + ") - Deleted")
+                        Return False
+                    End If
+                Else
+                    If Not pwc83032.PutValue("T7", LOG_PERF_T_T7_DEGF(i).Value.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering T7(" + (i + 1).ToString() + ")")
+                        Return False
+                    End If
+                End If
+
+            Next
+
+            'BLEED TEMPERATURE (T17) -- 4 PROBES
+            For i = 0 To T_T17_DELETE_BTN.GetUpperBound(0) - 1
+
+                If CELProject.IsTrue(T_T17_DELETE_BTN(i).Value) Then
+                    If Not pwc83032.PutValue("T17", Var_LOG_PERF_T_T17_AVG_DEGF.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering T17 Average (" + (i + 1).ToString() + ") - Deleted")
+                        Return False
+                    End If
+                Else
+                    If Not pwc83032.PutValue("T17", LOG_PERF_T_T17_DEGF(i).Value.ToString(), (i + 1).ToString()) Then
+                        MessageBox.Show("SubmitPerfValues: Error on entering T17(" + (i + 1).ToString() + ")")
+                        Return False
+                    End If
+                End If
+
+            Next
+
+            'AMBIENT PRESSURE
+            If Not pwc83032.PutValue("PAMB", LOG_PERF_E_PAMB_PSIA.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering PAMB")
+                Return False
+            End If
+
+            'EGT (ENGINE PROBE)
+            If Not pwc83032.PutValue("EGT", LOG_PERF_E_EGT_DEGC.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering EGT")
+                Return False
+            End If
+
+            'Q13 & Q13REF
+            If Not pwc83032.PutValue("Q13", LOG_PERF_E_Q13.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering Q13")
+                Return False
+            End If
+
+            'If Not pwc83032.PutValue("Q13REF", LOG_PERF_E_Q13REF.Value.ToString(), "") Then
+            If Not pwc83032.PutValue("Q13REF", LOG_PERF_E_Q13REF_TO_DLL.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering Q13REF")
+                Return False
+            End If
+
+            'SURGE CONTROL VALVE
+            If Not pwc83032.PutValue("SCVPOS", LOG_PERF_E_SCVPOS_PCT.Value.ToString(), "") Then
+                MessageBox.Show("SubmitPerfValues: Error on entering SCVPOS")
+                Return False
+            End If
+
+            Return True
+
+        End Function
+
+        Private Sub OnBTN_TAKE_POINT(sender As IChannel, newVal As Value)
+            Try
+                If (newVal Is Values.True) Then
+
+                    'Update the Log/Perf channel set
+                    'CELProject.LogPerfSynch.UpdateValues() 'ft 30sept2014 pourquoi on ne call pas le UpdateValues????
+
+                    FlowmeterCtrl.ComputeFlow(True)
+
+                    SampleValues(True)
+
+                    ProcessCondition()
+
+                    Dim SearchPath As String
+                    Dim NewFileCreated As Boolean
+
+                    SearchPath = CELProject.EngineSession.PerfFolder
+
+                    If PERF_CONDITION_NUMBER.Value.ToDouble() = eTestStepPW980A.MES Or PERF_CONDITION_NUMBER.Value.ToDouble() = eTestStepPW980A.ECS_800 Or PERF_CONDITION_NUMBER.Value.ToDouble() = eTestStepPW980A.ECS_900 Then
+                        PERF_TEST_STEP_NB.Value = New KineticaRT.Values.Double(PERF_CONDITION_NUMBER.Value.ToDouble())
+                        Dim Revima12917AlternateTemplateReportFullFileName As String = EngineConfiguration.PerformanceReportAlternateTemplateFile
+                        NewFileCreated = CELProject.ProcessPerformanceReport(SearchPath, Revima12917AlternateTemplateReportFullFileName, AddressOf CreateRevimaPerformanceFile)
+                    End If
+
+                    PERF_TAKE_POINT_BTN.Value = Values.False
+                End If
+            Catch Ex As Exception
+                MessageBox.Show("PWC83032_Sequence : OnBTN_TAKE_POINT()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End Try
+        End Sub
+
+        Private Sub OnEnterPerformanceData(ByVal sender As IChannel, ByVal newVal As Value)
+            Try
+                Dim SearchPath As String
+
+                If CELProject.IsTrue(newVal) Then
+                    PERF_TEST_STEP_NB.Value = New KineticaRT.Values.Double(eTestStepPW980A.FINAL_DATA)
+
+                    Dim NewFileCreated As Boolean
+
+                    SearchPath = CELProject.EngineSession.PerfFolder
+
+                    Dim Revima12917AlternateTemplateReportFullFileName As String = EngineConfiguration.PerformanceReportAlternateTemplateFile
+                    NewFileCreated = CELProject.ProcessPerformanceReport(SearchPath, Revima12917AlternateTemplateReportFullFileName, AddressOf CreateRevimaPerformanceFile)
+                End If
+
+            Catch Ex As Exception
+                MessageBox.Show("OnEStop: " & Ex.ToString())
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionInitialized(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionInitialized(newStatus)
+
+                Select Case CELProject.EngineModel
+
+                    Case "PW980A"
+
+                        'Client Initialization
+                        Dim endpointAddress As New EndpointAddress(Configuration.CreateServerUriString())
+                        Dim binding As System.ServiceModel.Channels.Binding = Configuration.CreateBinding()
+                        Dim factory As New ChannelFactory(Of IPwc83032)(binding, endpointAddress)
+                        pwc83032 = factory.CreateChannel()
+
+                        UserInputs.MapUserInputsParameters(CELProject)
+                        Init_Engine_Channels()
+                        If Initialize_Perf() = False Then
+                            Perf_Status_Close = True
+                            CELProject.Test_Mgr_Cmd.Value = New KineticaRT.Values.Text(CELDAS.eTest_Mgr_Cmd.Close)
+                        Else
+                            Perf_Status_Close = False
+                        End If
+
+                        'CreateLogFile() Ajouter Creation du Log generique
+                        Initialize()
+
+                End Select
+
+            Catch Ex As Exception
+                MessageBox.Show("PWC83032_Sequence : OnTestSessionInitialized()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionOpened(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionOpened(newStatus)
+
+            Catch ex As Exception
+
+                MessageBox.Show("PWC83032_Sequence.OnTestSessionOpened: " & ex.ToString, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionRunning(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+
+            Try
+                MyBase.OnTestSessionRunning(newStatus)
+
+                Select Case CELProject.EngineModel
+
+                    Case "PW980A"
+
+                        FlowmeterCtrl = New FlowmeterController(Me)
+
+                        If Perf_Status_Close Then
+                            CELProject.Test_Mgr_Cmd.Value = New KineticaRT.Values.Text(CELDAS.eTest_Mgr_Cmd.Close)
+                        End If
+                        CELProject.LoadSave_Custom_Parameters(Custom_Parameters, False)
+                        CreateHandler()
+                        TestProgress_Initialize()
+
+                End Select
+
+            Catch Ex As Exception
+                MessageBox.Show("PWC83032_Sequence : OnTestSessionRunning()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Protected Overrides Sub OnTestSessionClosing(newStatus As CEL.KineticaRT.Sequence.eTestMgrStatus)
+            Try
+                MyBase.OnTestSessionClosing(newStatus)
+
+                Select Case CELProject.EngineModel
+
+                    Case "PW980A"
+
+                        DeleteHandler()
+
+                        If Not (FlowmeterCtrl Is Nothing) Then
+                            FlowmeterCtrl.Dispose()
+                        End If
+
+                        If TestProgressMgr IsNot Nothing Then
+                            TestProgress_Save()
+                            TestProgressMgr.Dispose()
+                            TestProgressMgr = Nothing
+                        End If
+                End Select
+
+            Catch Ex As Exception
+                MessageBox.Show("PWC83032_Sequence : OnTestSessionClosing()" & Ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
+
+        Private Sub TestProgress_Initialize()
+            Dim dataInfo As CEL.TestProgress.TestProgressMgr.TestProgress_DataInfo
+
+            dataInfo.EngineStartEventChannelName = "START_BTN"
+            dataInfo.EngineStartEventChannelValue = True
+            dataInfo.EngineStartEventDescription = "Mise en route"
+            dataInfo.EngineStartEventRecordTime = True
+            dataInfo.EngineStopEventChannelName = "RUN_STOP_BTN"
+            dataInfo.EngineStopEventChannelValue = False
+            dataInfo.EngineStopEventDescription = "Arrêt moteur - Temps d'arrêt (s): "
+            dataInfo.EngineStopEventRecordTime = True
+            dataInfo.TestProgressFrameName = CELProject.EngineModel.Replace("-", "_") + "_Screen.fraTestProgressHorizontal"
+            dataInfo.TestProgressSheetFileName = CELProject.EngineSession.LogFolder + "/TestProgress.xml"
+            dataInfo.UUTModel = CELProject.EngineModel
+            dataInfo.UUTSerialNumber = Me.UserInputs.EngineSerialNumber
+            dataInfo.UUTWorkOrder = Me.UserInputs.WorkOrder
+            Me.TestProgressMgr = New CEL.TestProgress.TestProgressMgr(dataInfo)
+        End Sub
+
+        Private Sub TestProgress_RecordPerfStep(testStep As eTestStepPW980A)
+
+            If Me.TestProgressMgr IsNot Nothing Then
+
+                Dim sheetEntry As CEL.TestProgress.TestProgressSheetEntry = Nothing
+
+                Dim checkItemP09 As String = "P09 - Actual: " + LOG_PERF_P_P09_AVG_PSIA.Value.ToString("F2", Nothing) + " psia"
+                Dim checkItemT09 As String = "T09 - Actual: " + LOG_PERF_T_T09_AVG_DEGC.Value.ToString(LOG_PERF_T_T09_AVG_DEGC.Format, Nothing) + " °C"
+                Dim checkItemIGV As String = "IGV - Actual: " + LOG_PERF_E_IGVACT_PCT.Value.ToString(LOG_PERF_E_IGVACT_PCT.Format, Nothing) + " %"
+                Dim checkItemW17C As String = "W17C - Target: "
+                Dim checkItemGENERATOR As String = "GENERATOR - Target: 240 Actual : " + _
+                    LOG_PERF_LOAD_TOTAL_KVA.Value.ToString(LOG_PERF_LOAD_TOTAL_KVA.Format, Nothing) + " kVA"
+                Dim checkItemN2 As String = "N2 - "
+                Dim checkItemEGT As String = "EGT - "
+                Dim checkItemWF As String = "FUEL FLOW - "
+                Dim checkItemP17 As String = "P17 - Min: " + PERF_P_P17_AVG_LIMIT_PSIA.Value.ToString(PERF_P_P17_AVG_LIMIT_PSIA.Format, Nothing) + _
+                            " Actual: " + LOG_PERF_P_P17_AVG_PSIA.Value.ToString("F2", Nothing) + " psi"
+                Dim checkItemW17 As String = "W17 - "
+
+                Select Case testStep
+                    Case eTestStepPW980A.ECS_800
+                        checkItemW17C += "1.78 Actual: " + LOG_PERF_W17C.Value.ToString(LOG_PERF_W17C.Format, Nothing) + " kg/s"
+                        checkItemN2 += "Max: " + PERF_N2_LIMIT_RPM.Value.ToString(PERF_N2_LIMIT_RPM.Format, Nothing) + _
+                            " Actual: " + LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing) + " RPM"
+                        checkItemEGT += "Max: " + PERF_T_T7_AVG_LIMIT_DEGC.Value.ToString(PERF_T_T7_AVG_LIMIT_DEGC.Format, Nothing) + _
+                            " Actual: " + LOG_PERF_E_EGT_DEGC.Value.ToString(LOG_PERF_E_EGT_DEGC.Format, Nothing) + " °C"
+                        checkItemWF += "Max: " + PERF_WF_LIMIT_PPH.Value.ToString(PERF_WF_LIMIT_PPH.Format, Nothing) + _
+                            " Actual: " + LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing) + " lb/h"
+                        checkItemW17 += "Min: " + PERF_W17_LIMIT_LBMIN.Value.ToString(PERF_W17_LIMIT_LBMIN.Format, Nothing) + _
+                            " Actual: " + LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing) + " lb/min"
+
+                        sheetEntry = New CEL.TestProgress.TestProgressSheetEntry(String.Empty, "Max ECS-800", {checkItemP09, checkItemT09, _
+                                                                                                       checkItemIGV, checkItemW17C, checkItemGENERATOR, _
+                                                                                                       checkItemN2, checkItemEGT, checkItemWF, checkItemP17, _
+                                                                                                       checkItemW17})
+                    Case eTestStepPW980A.ECS_900
+                        checkItemW17C += "1.81 Actual: " + LOG_PERF_W17C.Value.ToString(LOG_PERF_W17C.Format, Nothing) + " kg/s"
+                        checkItemN2 += "Max: " + PERF_N2_LIMIT_RPM.Value.ToString(PERF_N2_LIMIT_RPM.Format, Nothing) + _
+                            " Actual: " + LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing) + " RPM"
+                        checkItemEGT += "Max: " + PERF_T_T7_AVG_LIMIT_DEGC.Value.ToString(PERF_T_T7_AVG_LIMIT_DEGC.Format, Nothing) + _
+                            " Actual: " + LOG_PERF_E_EGT_DEGC.Value.ToString(LOG_PERF_E_EGT_DEGC.Format, Nothing) + " °C"
+                        checkItemWF += "Max: " + PERF_WF_LIMIT_PPH.Value.ToString(PERF_WF_LIMIT_PPH.Format, Nothing) + _
+                            " Actual: " + LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing) + " lb/h"
+                        checkItemW17 += "Min: " + PERF_W17_LIMIT_LBMIN.Value.ToString(PERF_W17_LIMIT_LBMIN.Format, Nothing) + _
+                            " Actual: " + LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing) + " lb/min"
+
+                        sheetEntry = New CEL.TestProgress.TestProgressSheetEntry(String.Empty, "Max ECS-900", {checkItemP09, checkItemT09, _
+                                                                                                       checkItemIGV, checkItemW17C, checkItemGENERATOR, _
+                                                                                                       checkItemN2, checkItemEGT, checkItemWF, checkItemP17, _
+                                                                                                       checkItemW17})
+
+                    Case eTestStepPW980A.MES
+                        checkItemW17C += "0.78 Actual: " + LOG_PERF_W17C.Value.ToString(LOG_PERF_W17C.Format, Nothing) + " kg/s"
+                        checkItemN2 += "Actual: " + LOG_PERF_N2_RPM.Value.ToString(LOG_PERF_N2_RPM.Format, Nothing) + " RPM"
+                        checkItemEGT += "Actual: " + LOG_PERF_E_EGT_DEGC.Value.ToString(LOG_PERF_E_EGT_DEGC.Format, Nothing) + " °C"
+                        checkItemWF += "Actual: " + LOG_PERF_WF_PPH.Value.ToString(LOG_PERF_WF_PPH.Format, Nothing) + " lb/h"
+                        checkItemW17 += "Actual: " + LOG_PERF_W17_LBMIN.Value.ToString(LOG_PERF_W17_LBMIN.Format, Nothing) + " lb/min"
+
+                        sheetEntry = New CEL.TestProgress.TestProgressSheetEntry(String.Empty, "MES", {checkItemP09, checkItemT09, _
+                                                                                                       checkItemIGV, checkItemW17C, checkItemGENERATOR, _
+                                                                                                       checkItemN2, checkItemEGT, checkItemWF, checkItemP17, _
+                                                                                                       checkItemW17})
+                End Select
+
+                If sheetEntry IsNot Nothing Then
+                    Me.TestProgressMgr.AddTestProgressEntry(sheetEntry)
+                End If
+            End If
+
+        End Sub
+
+      Private Sub TestProgress_Save()
+            If Not Me.TestProgressMgr Is Nothing Then
+                TestProgress_UpdateProgressSheetHeader(Me.TestProgressMgr.TestProgressSheet)
+                Dim fileName As String = CELProject.EngineSession.LogFolder + "/TestProgress.xml"
+                Dim settings As Xml.XmlWriterSettings = New Xml.XmlWriterSettings()
+                settings.Indent = True
+
+                Using writer As Xml.XmlWriter = Xml.XmlWriter.Create(fileName, settings)
+                    Dim xslPath As String = "type=""text/xsl"" href=""" + Application.StartupPath + "/TestProgressSheet.xsl"""
+                    writer.WriteProcessingInstruction("xml-stylesheet", xslPath)
+                    Dim ser As New Xml.Serialization.XmlSerializer(GetType(CEL.TestProgress.TestProgressSheet))
+                    ser.Serialize(writer, Me.TestProgressMgr.TestProgressSheet)
+                End Using
+            End If
+        End Sub
+
+        Private Sub TestProgress_UpdateProgressSheetHeader(progressSheet As CEL.TestProgress.TestProgressSheet)
+            progressSheet.Header("No capteur de vibration GG") = Me.UserInputs.GGVibPickupSerialNumber
+            progressSheet.Header("No capteur de vibration LGB") = Me.UserInputs.LGBVibPickupSerialNumber
+            progressSheet.Header("Type d'huile") = Me.UserInputs.OilType
+            progressSheet.Header("Quantité totale Jet A1") = Me.FUEL_USED_TOTAL_LITERS.Value.ToString()
+            Dim runningTime As System.TimeSpan = System.TimeSpan.FromSeconds(Me.OPERATING_TIME_CURRENT_SEC.Value.ToDouble())
+            progressSheet.Header("Temps de fonctionnement") = Math.Floor(runningTime.TotalHours).ToString() + _
+                " h " + runningTime.Minutes.ToString("00")
+        End Sub
+
+        '********************************************************************
+        '* Private Members **************************************************
+        '********************************************************************
+
+        '*************
+        ' Client      
+        '*************
+        Private pwc83032 As IPwc83032
+
+        '*************
+        '* Channels  *
+        '*************
+        Private LOG_PERF_E_EGT_DEGC As INumericChannel
+        Private LOG_PERF_E_IGVACT_PCT As INumericChannel
+        Private LOG_PERF_E_PAMB_PSIA As INumericChannel
+        Private LOG_PERF_E_Q13 As INumericChannel
+        Private LOG_PERF_E_Q13REF As INumericChannel
+        Private LOG_PERF_E_Q13REF_TO_DLL As INumericChannel
+        Private LOG_PERF_E_SCVPOS_PCT As INumericChannel
+        Private LOG_PERF_LOAD_DYNO_1_KVA As INumericChannel
+        Private LOG_PERF_LOAD_DYNO_2_KVA As INumericChannel
+        Private LOG_PERF_LOAD_TOTAL_KVA As INumericChannel
+        Private LOG_PERF_N1_RPM As INumericChannel
+        Private LOG_PERF_N2_RPM As INumericChannel
+        Private LOG_PERF_P_BARO_PSIA As INumericChannel
+        Private LOG_PERF_SAMPLE_SG_FUEL As INumericChannel
+        Private LOG_PERF_SAMPLE_T_FUEL As INumericChannel
+        Private LOG_PERF_T_FUEL_FM1_DEGF As INumericChannel
+        Private LOG_PERF_TFV_SG_BASE As INumericChannel
+        Private LOG_PERF_W17_LBSEC As INumericChannel
+        Private LOG_PERF_W17_LBMIN As INumericChannel
+        Private LOG_PERF_W17C As INumericChannel
+        Private LOG_PERF_WF_PPH As INumericChannel
+        Private LOG_PERF_WF_PPH_PERF As INumericChannel
+        Private N2_LIMIT_RPM As INumericChannel
+        Private P_P17_AVG_LIMIT_PSIA As INumericChannel
+
+        Private PERF_TAKE_POINT_BTN As IBooleanChannel
+        Private PERF_CHIP_DETECTION As IBooleanChannel
+        Private PERF_CONDITION_NUMBER As INumericChannel
+        Private PERF_EGT_TRIM As INumericChannel
+        Private PERF_ELECT_LOAD_SHED As IBooleanChannel
+        Private PERF_ENGINE_DRY_WEIGHT As INumericChannel
+        Private PERF_ENGINE_OIL_PRESSURE As INumericChannel
+        Private PERF_ENTER_PERFORMANCE_DATA_BTN As IBooleanChannel
+        Private PERF_FILTER_CHECK As IBooleanChannel
+        Private PERF_GEN_OIL_PRESSURE As INumericChannel
+        Private PERF_IGV_TRIM_ECS_800 As INumericChannel
+        Private PERF_IGV_TRIM_ECS_900 As INumericChannel
+        Private PERF_IGV_TRIM_MES As INumericChannel
+        Private PERF_LEAKAGE_CHECK As IBooleanChannel
+        Private PERF_MAX_EGT As INumericChannel
+        Private PERF_MES_TO_ECS As IBooleanChannel
+        Private PERF_MIN_TO_MAX_ECS As IBooleanChannel
+        Private PERF_N1_RUNDOWN_TIME As IBooleanChannel
+        Private PERF_N2_LIMIT_RPM As INumericChannel
+        Private PERF_N2_RUNDOWN_TIME As IBooleanChannel
+        Private PERF_P_P17_AVG_LIMIT_PSIA As INumericChannel
+        Private PERF_RTL_TO_MES As IBooleanChannel
+        Private PERF_REMARK_TEXT As ITextChannel
+        Private PERF_T_T7_AVG_LIMIT_DEGC As INumericChannel
+        Private PERF_T09_AVG As INumericChannel
+        Private PERF_TEST_RESULT_ACCEPTED As IBooleanChannel
+        Private PERF_TEST_RESULT_REJECTED As IBooleanChannel
+        Private PERF_TEST_STEP_NB As INumericChannel
+        Private PERF_TIME_TO_LIGHT As INumericChannel
+        Private PERF_TIME_TO_NO_LOAD As INumericChannel
+        Private PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN1 As INumericChannel
+        Private PERF_VIB_LIGHT_UP_TO_NO_LOAD_1EN2 As INumericChannel
+        Private PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_0_925EN2 As INumericChannel
+        Private PERF_VIB_N2_RUN_UP_TO_MAX_SPEED_1EN2 As INumericChannel
+        Private PERF_VIB_STEADY_STATE_AT_MAX_N2_0_925EN2 As INumericChannel
+        Private PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN1 As INumericChannel
+        Private PERF_VIB_STEADY_STATE_AT_MAX_N2_1EN2 As INumericChannel
+        Private PERF_VIB_STEADY_STATE_AT_MAX_N2_39EN1 As INumericChannel
+        Private PERF_W17_LIMIT_LBMIN As INumericChannel
+        Private PERF_WF_LIMIT_PPH As INumericChannel
+        Private T_T7_AVG_LIMIT_DEGC As INumericChannel
+        Private W17_LIMIT_LBSEC As INumericChannel
+        Private WF_LIMIT_PPH As INumericChannel
+
+        'sylvain signal revised to used array
+
+        Private LOG_PERF_P_P09_AVG_PSIA As INumericChannel
+        Private LOG_PERF_P_P09_PSIA(8) As INumericChannel
+        Private P_P09_DELETE_BTN(8) As IBooleanChannel
+
+        Private LOG_PERF_P_P17_AVG_PSIA As INumericChannel
+        Private LOG_PERF_P_P17_PSIA(8) As INumericChannel
+        Private P_P17_DELETE_BTN(8) As IBooleanChannel
+
+        Private LOG_PERF_P_S7_AVG_PSIA As INumericChannel
+        Private LOG_PERF_P_S7_PSIA(4) As INumericChannel
+        Private P_S7_DELETE_BTN(4) As IBooleanChannel
+
+        Private LOG_PERF_P_S79_AVG_PSIA As INumericChannel
+        Private LOG_PERF_P_S79_PSIA(4) As INumericChannel
+        Private P_S79_DELETE_BTN(4) As IBooleanChannel
+
+        Private LOG_PERF_T_T09_AVG_DEGC As INumericChannel
+        Private LOG_PERF_T_T09_AVG_DEGF As INumericChannel
+        Private LOG_PERF_T_T09_DEGF(12) As INumericChannel
+        Private T_T09_DELETE_BTN(12) As IBooleanChannel
+
+        Private LOG_PERF_T_T7_AVG_DEGF As INumericChannel
+        Private LOG_PERF_T_T7_DEGF(24) As INumericChannel
+        Private T_T7_DELETE_BTN(24) As IBooleanChannel
+
+        Private LOG_PERF_T_T17_AVG_DEGF As INumericChannel
+        Private LOG_PERF_T_T17_DEGF(4) As INumericChannel
+        Private T_T17_DELETE_BTN(4) As IBooleanChannel
+
+        '***************************
+        '* Perf/Log Sampled Values *
+        '***************************
+        Private Var_LOG_PERF_P_P09_AVG_PSIA As Double
+        Private Var_LOG_PERF_P_P17_AVG_PSIA As Double
+        Private Var_LOG_PERF_P_S7_AVG_PSIA As Double
+        Private Var_LOG_PERF_P_S79_AVG_PSIA As Double
+        Private Var_LOG_PERF_T_T09_AVG_DEGF As Double
+        Private Var_LOG_PERF_T_T7_AVG_DEGF As Double
+        Private Var_LOG_PERF_T_T17_AVG_DEGF As Double
+
+        '********
+        '* Misc *
+        '********
+        Private Custom_Parameters As New System.Collections.Specialized.OrderedDictionary()
+        Private Perf_Status_Close As Boolean = False
+        Private PerfFileName As String
+        Private UnitValues(,) As String = { _
+            {"TSG", "DegF"}, {"LHV", "Btu/lb"}, {"BARO", "psia"}, {"WF", "PPH"}, {"WFT", "DegF"}, _
+            {"T7", "DegF"}, {"ACGEN", "KVA"}, {"T1", "DegF"}, {"P1", "psia"}, {"P7", "psia"}, _
+            {"P8", "psia"}, {"T17", "DegF"}, {"P17", "psia"}, {"W17", "PPS"}, {"PAMB", "psia"} _
+        }
+        Private OPERATING_TIME_CURRENT_SEC As IChannel
+        Private TestProgressMgr As CEL.TestProgress.TestProgressMgr = Nothing
+        Private FUEL_USED_TOTAL_LITERS As INumericChannel
+
+		'***************
+		'* Controllers *
+        '***************
+        Private FlowmeterCtrl As FlowmeterController = Nothing
+
+		Private UserInputs As New UserInputPW980A()
+
+		Public Class UserInputPW980A
+
+            Public EngineSerialNumber As String = ""
+            Public WorkOrder As String = ""
+            Public ECBSerialNumber As String = ""
+            Public ExhaustDuctSerialNumber As String = ""
+            Public BellmouthSerialNumber As String = ""
+            Public BleedDuctSerialNumber As String = ""
+            Public StarterSerialNumber As String = ""
+            Public Dyno1SerialNumber As String = ""
+            Public Dyno2SerialNumber As String = ""
+            Public GGVibPickupSerialNumber As String = ""
+            Public LGBVibPickupSerialNumber As String = ""
+            Public OilType As String = ""
+            Public LHV As String = ""
+            Public TimeSinceNewOrOverhaul As String = "" 'TSN/TSO
+            Public CyclesSinceNew As String = ""
+            Public Customer As String = ""
+
+            Public Reason As String = ""
+            Public TestType As String = ""
+            Public LoadCell1SerialNumber As String = ""
+            Public LoadCell2SerialNumber As String = ""
+
+			Public Build As Integer
+			Public BuildSpec As String = ""
+            Public Status As String = ""
+
+			' Allow friend access to the empty constructor.
+			Friend Sub New()
+
+			End Sub
+			Public Sub MapUserInputsParameters(ByRef CELProject As CELDAS)
+
+                EngineSerialNumber = CELProject.Test_Mgr_UUT_Answer(0).Value.ToString()
+                WorkOrder = CELProject.Test_Mgr_UUT_Answer(1).Value.ToString()
+                ECBSerialNumber = CELProject.Test_Mgr_UUT_Answer(2).Value.ToString()
+                ExhaustDuctSerialNumber = CELProject.Test_Mgr_UUT_Answer(3).Value.ToString()
+                BellmouthSerialNumber = CELProject.Test_Mgr_UUT_Answer(4).Value.ToString()
+                BleedDuctSerialNumber = CELProject.Test_Mgr_UUT_Answer(5).Value.ToString()
+                StarterSerialNumber = CELProject.Test_Mgr_UUT_Answer(6).Value.ToString()
+                Dyno1SerialNumber = CELProject.Test_Mgr_UUT_Answer(7).Value.ToString()
+                Dyno2SerialNumber = CELProject.Test_Mgr_UUT_Answer(8).Value.ToString()
+                GGVibPickupSerialNumber = CELProject.Test_Mgr_UUT_Answer(9).Value.ToString()
+                LGBVibPickupSerialNumber = CELProject.Test_Mgr_UUT_Answer(10).Value.ToString()
+                OilType = CELProject.Test_Mgr_UUT_Answer(12).Value.ToString()
+                LHV = CELProject.Test_Mgr_UUT_Answer(13).Value.ToString()
+                Customer = CELProject.Test_Mgr_UUT_Answer(14).Value.ToString()
+                TimeSinceNewOrOverhaul = CELProject.Test_Mgr_UUT_Answer(15).Value.ToString()
+                CyclesSinceNew = CELProject.Test_Mgr_UUT_Answer(16).Value.ToString()
+                Reason = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+                TestType = CELProject.Test_Mgr_UUT_Choice(1).Value.ToString()
+                LoadCell1SerialNumber = CELProject.Test_Mgr_UUT_Choice(4).Value.ToString()
+                LoadCell2SerialNumber = CELProject.Test_Mgr_UUT_Choice(5).Value.ToString()
+
+				Build = CELProject.Test_Mgr_UUT_Answer(17).Value.ToDouble()
+				BuildSpec = CELProject.Test_Mgr_UUT_Choice(2).Value.ToString()
+                Status = CELProject.Test_Mgr_UUT_Choice(0).Value.ToString()
+
+			End Sub
+
+		End Class
+
+	End Class
+End Namespace

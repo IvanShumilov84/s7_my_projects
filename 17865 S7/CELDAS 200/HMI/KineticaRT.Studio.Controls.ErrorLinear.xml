@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>KineticaRT.Studio.Controls.ErrorLinear</name>
+    </assembly>
+    <members>
+        <member name="T:KineticaRT.Studio.Controls.ErrorLinear">
+            <summary>
+            KineticaRT Studio Error Linear control.
+            Displays the difference between numeric Values from two source channels on a slider,
+            together with an optional description and units
+            </summary>
+        </member>
+        <member name="F:KineticaRT.Studio.Controls.ErrorLinear.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.#ctor">
+            <summary>
+            Initialises a new instance of the ErrorLinear class
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify 
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.CustomDescription">
+            <summary>
+            Gets or sets a Custom Description
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.DescriptionSource">
+            <summary>
+            Gets or sets where to get the Description from
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.CustomUnits">
+            <summary>
+            Gets or sets a Custom Units string
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.UseCustomUnits">
+            <summary>
+            Gets or sets whether to use the Custom units string or the Source channel's value
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.Format">
+            <summary>
+            Gets or sets the text formatting of the Value
+            If specified (ie non-blank string), overrides the format of the Source
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.NeedleColor">
+            <summary>
+            Gets or Sets the Color of the Needle
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.FillColor">
+            <summary>
+            Gets or Sets the Color of the Fill
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.ScaleColor">
+            <summary>
+            Gets or Sets the Color of the Scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.Orientation">
+            <summary>
+            Gets or sets the orientation of the linear
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.FillEnabled">
+            <summary>
+            Gets or sets whether fill is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.NeedleEnabled">
+            <summary>
+            Gets or sets whether the needle is enabled
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.NeedleStyle">
+            <summary>
+            Gets or sets the style of the needle
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.NeedleWidth">
+            <summary>
+            Gets or sets the width of the needle in pixels
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.ScaleWidth">
+            <summary>
+            Gets or sets the width devoted to the scale (in pixels)
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.ScalePosition">
+            <summary>
+            Gets or sets the position of the scale
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.SourceChannel">
+            <summary>
+            Gets or sets the Source channel to which this object is connected
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.SetPointSourceChannel">
+            <summary>
+            Gets or sets the SetPoint channel to which this object is connected
+            </summary>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.Value">
+            <summary>
+            Gets the current Value
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.OnPaint(System.Windows.Forms.PaintEventArgs)">
+            <summary>
+            Paint Event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.UpdateLayout">
+            <summary>
+            Updates the sizes of all sections
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.NewToolTip(System.String)">
+            <summary>
+            A new tool tip is being set
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.NewRange(System.Double,System.Double)">
+            <summary>
+            Set the range of scaled objects
+            </summary>
+            <param name="Min">New minimum value</param>
+            <param name="Max">New Maximum value</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.NewDPs(System.Int32)">
+            <summary>
+            Set the decimal places of scaled objects
+            </summary>
+            <param name="DPs">New decimal places</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.SetScalePosition">
+            <summary>
+            Correctly (re)position the scale
+            </summary>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.OnResize(System.EventArgs)">
+            <summary>
+            Rezise event
+            </summary>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="M:KineticaRT.Studio.Controls.ErrorLinear.OnSourcePropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)">
+            <summary>
+            A property in the Source channel has changed
+            </summary>
+            <param name="Sender">Object generating the event</param>
+            <param name="e">Event Data</param>
+        </member>
+        <member name="P:KineticaRT.Studio.Controls.ErrorLinear.ValueScale">
+            <summary>
+            Gets the scale for the Scaled Control.
+            </summary>
+        </member>
+    </members>
+</doc>

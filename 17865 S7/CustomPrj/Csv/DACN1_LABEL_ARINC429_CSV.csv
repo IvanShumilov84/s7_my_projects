@@ -1,0 +1,51 @@
+"GTCP131-9A","APU Serial Number","APU Serial Number",0,"",0,0,0,0,"0050",15,4,"",2,79999,5,500,1000
+"GTCP131-9A","APU Speed","APU Speed (%)",0,"%",0,0,0,0,"0176",15,4,"",0,256,9,100,200
+"GTCP131-9A","APU Status","APU Status (037)",0,"Hex",0,0,0,0,"0037",15,4,"",2,524288,19,250,500
+"GTCP131-9A","Bleed Pressure","Bleed Pressure",0,"millibar",0,0,0,0,"0166",15,4,"",0,8192,10,150,250
+"GTCP131-9A","Cooldown Timer","Cooldown Timer",0,"sec",0,0,0,0,"0004",15,4,"",1,79999,5,500,1000
+"GTCP131-9A","Delta Pressure","Delta Pressure",0,"millibar",0,0,0,0,"0165",15,4,"",0,2048,9,150,250
+"GTCP131-9A","ECB Input Check","ECB Input Check",0,"Hex",0,0,0,0,"0274",15,4,"",2,524288,19,500,1000
+"GTCP131-9A","Exhaust Gas Temp","EGT",0,"°C",0,0,0,0,"0175",15,4,"",0,2048,11,100,200
+"GTCP131-9A","EGT OverTemp Limit","EGT OverTemp Limit",0,"°C",0,0,0,0,"0120",15,4,"",0,2048,11,100,200
+"GTCP131-9A","Fuel Servo Current","Fuel Servo Current",0,"mA",0,0,0,0,"0145",15,4,"",0,512,9,100,200
+"GTCP131-9A","Inlet Guide Vane Position","IGV Position",0,"°",0,0,0,0,"0130",15,4,"",0,180,12,150,250
+"GTCP131-9A","Inlet Pressure","Inlet Pressure",0,"millibar",0,0,0,0,"0112",15,4,"",0,2048,9,150,250
+"GTCP131-9A","LRU Fault #1","LRU Fault #1 (351)",0,"Hex",0,0,0,0,"0351",15,4,"",2,524288,19,250,500
+"GTCP131-9A","LRU Fault #2","LRU Fault #2 (352)",0,"Hex",0,0,0,0,"0352",15,4,"",2,524288,19,250,500
+"GTCP131-9A","LRU Fault #3","LRU Fault #3 (353)",0,"Hex",0,0,0,0,"0353",15,4,"",2,524288,19,250,500
+"GTCP131-9A","Oil Sump Temperature","Oil Sump Temp",0,"°C",0,0,0,0,"0247",15,4,"",0,256,8,250,500
+"GTCP131-9A","Operating Hours","Operating Hours",0,"hours",0,0,0,0,"0132",15,4,"",0,16384,14,500,1000
+"GTCP131-9A","Operating Hours Precise","Operating Hours Precise",0,"hours",0,0,0,0,"0135",15,4,"",0,131072,17,500,1000
+"GTCP131-9A","SCV Position","SCV Position",0,"°",0,0,0,0,"0134",15,4,"",0,180,12,150,250
+"GTCP131-9A","Start Cycles","Start Cycles",0,"starts",0,0,0,0,"0133",15,4,"",0,16384,14,500,1000
+"GTCP131-9A","Start Cycles Precise","Start Cycles Precise",0,"starts",0,0,0,0,"0136",15,4,"",0,131072,17,500,1000
+"GTCP131-9A","T2","T2 (TENIVA)",0,"°C",0,0,0,0,"0110",15,4,"",0,128,7,150,250
+"GTCP131-9A","Corrected Bleed Air Flow","WC",0,"g/sec",0,0,0,0,"0123",15,4,"",0,2048,9,150,250
+"GTCP131-9B","APU Serial Number","APU Serial Number",0,"",0,0,0,0,"0057",15,4,"",2,79999,19,1000,1500
+"GTCP131-9B","APU Speed","APU Speed",0,"%",0,0,0,0,"0040",15,4,"",0,128,8,100,250
+"GTCP131-9B","Corrected PT","CPTATP",0,"psia",0,0,0,0,"0067",15,4,"",0,128,10,1000,1500
+"GTCP131-9B","Corrected EGT","CT5ATP",0,"°C",0,0,0,0,"0066",15,4,"",0,2048,11,1000,1500
+"GTCP131-9B","Corrected WF","CWFATP",0,"lb/hr",0,0,0,0,"0070",15,4,"",0,512,9,1000,1500
+"GTCP131-9B","Delta Pressure","DP",0,"psid",0,0,0,0,"0062",15,4,"",0,32,9,100,250
+"GTCP131-9B","ECU Serial Number","ECU Serial Number",0,"",0,0,0,0,"0065",15,4,"",0,262144,18,1000,1500
+"GTCP131-9B","Failed Starts","Failed Starts",0,"starts",0,0,0,0,"0055",15,4,"",0,65536,16,1000,1500
+"GTCP131-9B","Fault #1","Fault #1",0,"",0,0,0,0,"0360",15,4,"",0,131072,17,1000,1500
+"GTCP131-9B","Fault #2","Fault #2",0,"",0,0,0,0,"0361",15,4,"",0,131072,17,1000,1500
+"GTCP131-9B","Fault #3","Fault #3",0,"",0,0,0,0,"0362",15,4,"",0,131072,17,1000,1500
+"GTCP131-9B","Fault #4","Fault #4",0,"",0,0,0,0,"0363",15,4,"",0,131072,17,1000,1500
+"GTCP131-9B","Fault #5","Fault #5",0,"",0,0,0,0,"0364",15,4,"",0,131072,17,1000,1500
+"GTCP131-9B","IGV Position","IGV Position",0,"°",0,0,0,0,"0051",15,4,"",0,128,8,100,250
+"GTCP131-9B","IGV Position","IGVATP",0,"°",0,0,0,0,"0071",15,4,"",0,128,8,1000,1500
+"GTCP131-9B","Maintenance Word 1","Maintenance Word 1 (351)",0,"Hex",0,0,0,0,"0351",15,4,"",2,524288,19,1000,1500
+"GTCP131-9B","Maintenance Word 2","Maintenance Word 2 (352)",0,"Hex",0,0,0,0,"0352",15,4,"",2,524288,19,1000,1500
+"GTCP131-9B","Oil Temp","Oil Temp",0,"°C",0,0,0,0,"0045",15,4,"",0,512,9,100,250
+"GTCP131-9B","APU Hours","Operating Hours",0,"hours",0,0,0,0,"0052",15,4,"",0,65536,18,1000,1500
+"GTCP131-9B","P2","P2",0,"psia",0,0,0,0,"0050",15,4,"",0,16,8,100,250
+"GTCP131-9B","Total Pressure","PT",0,"psia",0,0,0,0,"0061",15,4,"",0,128,10,100,250
+"GTCP131-9B","SCV Position","SCV Position",0,"°",0,0,0,0,"0060",15,4,"",0,128,8,100,250
+"GTCP131-9B","APU Cycles","Start Cycles",0,"starts",0,0,0,0,"0054",15,4,"",0,65536,16,1000,1500
+"GTCP131-9B","T2","T2 (TENIVA)",0,"°C",0,0,0,0,"0047",15,4,"",0,512,9,100,250
+"GTCP131-9B","T5","T5",0,"°C",0,0,0,0,"0046",15,4,"",0,2048,11,100,250
+"GTCP131-9B","Corrected Flow","WC",0,"lb/sec",0,0,0,0,"0064",15,4,"",0,2,9,100,250
+"GTCP131-9B","Fuel Flow","WFMES",0,"lb/hr",0,0,0,0,"0063",15,4,"",0,512,9,100,250
+"GTCP131-9B","ECS Demand","IGV demand",0,"°",0,0,8,1,"0222",2,3,"",0,128,16,100,200

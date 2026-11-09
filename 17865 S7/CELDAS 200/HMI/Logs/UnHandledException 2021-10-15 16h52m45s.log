@@ -1,0 +1,11 @@
+An error occurred please contact the adminstrator with the following information:
+
+Object reference not set to an instance of an object.
+
+Stack Trace:
+   at CEL.HMI.HobartController.ControlContactor(Int32& Index) in C:\My Projects\17865 S7\CELDAS 200\CEL.Net\HMI\Controllers\HobartController.vb:line 493
+   at CEL.HMI.HobartController.Hobart_WorkingThread() in C:\My Projects\17865 S7\CELDAS 200\CEL.Net\HMI\Controllers\HobartController.vb:line 532
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+   at System.Threading.ExecutionContext.Run(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+   at System.Threading.ExecutionContext.Run(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.ThreadHelper.ThreadStart()
